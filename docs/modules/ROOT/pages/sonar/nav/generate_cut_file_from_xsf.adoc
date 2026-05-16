@@ -1,0 +1,7 @@
+= Generate Cut file from SONAR-netCDF (XSF)
+
+== Overview
+
+From an XSF file set, this application generates a Cut file (*.cut) with corresponding time bounds.
+
+include::example$generated/sonar/generate_cut_file_from_xsf_params.adoc[]

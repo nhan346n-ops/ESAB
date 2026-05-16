@@ -1,0 +1,16 @@
+= Shom Harmonic Tide
+
+== Overview
+
+This processus compute a tide prediction on a set of time-stamped geographic points
+
+== Parameters
+
+// TODO: include generated parameters file
+* harmonic_file : the harmonic file to use, this file is located in a directory where the tide prediction library is expected to be found in a clib64 subdirectory
+* data_file : a csv file containing datapoints
+* output_file : a file name where results will be stores
+
+include::tide_file_format.adoc[]
+
+include::tide_processing.adoc[]

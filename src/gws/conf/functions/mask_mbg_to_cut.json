@@ -1,0 +1,30 @@
+{
+    "name": "Apply a mask to a MBG file and produce the cut lines",
+    "function": "pyat.mbg.mbg_to_cut.CutMbg",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input MBG files",
+            "nargs": "+",
+            "type": "infile(content_type=MBG_NETCDF_3)"
+        },
+        {
+            "name": "mask",
+            "key": "-m",
+            "long_key": "--mask_shapefile",
+            "help": "Mask Shapefile",
+            "nargs": "1",
+            "type": "file(extensions=shp|kml)"
+        },
+        {
+            "name": "reverse_mask",
+            "type": "bool",
+            "key": "-r",
+            "long_key": "--reverse_mask",
+            "help": "Reverse masking (cut lines outside the mask)",
+            "default": false
+        }
+    ]
+}

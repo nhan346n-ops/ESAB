@@ -1,0 +1,46 @@
+{
+    "name": "Export Summary Lines from XSF",
+    "function": "pyat.sonarscope.bs_correction.mean_bs_processes.export_summary_lines_process",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/bs/calibration/export_summary_lines.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-in",
+            "long_key": "--i_paths",
+            "help": "Input files list",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        },
+        {
+            "name": "sounder_type",
+            "type": "string",
+            "key": "-sounder_type",
+            "choices": [
+                "AUTO",
+                "EM1002_ALL",
+                "EM2040_ALL",
+                "EM120_ALL",
+                "EM122_ALL",
+                "EM302_ALL",
+                "EM710_ALL",
+                "ME70_ALL",
+                "EM2040_KMALL",
+                "EM124_KMALL",
+                "EM304_KMALL",
+                "EM712_KMALL",
+                "7150_S7K",
+                "7125_S7K",
+                "7111_S7K"
+            ],
+            "help": "Sounder type for all datafiles",
+            "default": "AUTO"
+        },
+        {
+            "name": "o_dir",
+            "key": "-o",
+            "long_key": "--o_dir",
+            "help": "Optional directory in which all output data will be written",
+            "type": "folder"
+        }
+    ]
+}

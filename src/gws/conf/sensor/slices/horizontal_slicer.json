@@ -1,0 +1,52 @@
+{
+    "name": "Horizontal Grid (g3d)",
+    "function": "pyat.sensor.slice.sensor_to_horizontal_g3d.slice_sensor_files",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sensor/horizontal_section.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-in",
+            "long_key": "--i_paths",
+            "help": "Input file list (.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=SENSOR_NETCDF_4, extension=nc)"
+        },
+        {
+            "name": "o_path",
+            "key": "-o",
+            "long_key": "--o_path",
+            "help": "Output G3D file",
+            "nargs": "1",
+            "type": "outfile(content_type=G3D_NETCDF_4)"
+        },
+        {
+            "name": "coord",
+            "key": "-c",
+            "long_key": "--coord",
+            "help": "Coordinates of geographic bounds",
+            "type": "geobox#coords"
+        },
+        {
+            "name": "target_resolution",
+            "type": "geobox#resolution",
+            "key": "-tr",
+            "long_key": "--target_resolution",
+            "help": "Set output file resolution (in target georeferenced units).",
+            "default": "0.000277778"
+        },
+        {
+            "name": "layers",
+            "key": "-l",
+            "long_key": "--layers",
+            "help": "Select layers to export",
+            "type": "layers"
+        },
+        {
+            "name": "overwrite",
+            "key": "-o",
+            "long_key": "--overwrite",
+            "help": "Allow overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

@@ -1,0 +1,17 @@
+services:
+  docker-base-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ifremer/miniconda_base
+    entrypoint: bash -i
+
+  build-miniconda:
+    image: ifremer/miniconda_base
+    depends_on:
+      - docker-base-build
+    user: ci_user
+    volumes:
+      - "..:/data:rw"
+    working_dir: /data
+    entrypoint: bash -i /data/docker/build-miniconda.sh

@@ -1,0 +1,11 @@
+= SBE21 NMEA/TECHSAS -> CSV
+
+== Overview
+
+This application takes sensor file(s) as input and will use navigation file to geolocalize data and export them to csv file
+
+Geolocatization is based on time of the sensor data : navigation (latitude,longitude) are interpolated at time of the sensor.
+
+Supported input format are : SBE21 NMEA or Techsas file
+
+include::example$generated/sensor/export/sbe21_to_csv_params.adoc[]

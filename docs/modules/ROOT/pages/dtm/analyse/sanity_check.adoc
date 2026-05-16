@@ -1,0 +1,19 @@
+= Sanity Check
+
+== Overview
+
+This application takes DTM file(s) in new format and will return DTM file(s) with checked layers.
+This process will perform a sanity check on the given files.
+
+* Reset cells where elevation values are missing
+* Check for interpolation flag layer. For each cell, set it to zero
+(not interpolated) if elevation value exists and if its interpolation flag is set to invalid value.
+Leave it unchanged if it is already set to a valid value.
+* Compress CDI metadata or Force CDI. If one and only one CDI is declared in the nc file, and if this
+CDI is not used. i.e. the CDI_LAYER is fully filled with invalid values, then set this CDI to valid
+elevation values in the file.
+Compress CDI metadata. Remove declared CDI entries that are not effectively
+used in the file.
+* Recompute CDI for interpolated cells. Search for the nearest valid cell with a valid CDI.
+
+include::example$generated/dtm/analyse/sanity_check_params.adoc[]

@@ -1,0 +1,82 @@
+pipeline {
+	agent any
+	parameters {
+        booleanParam(name: 'BUILD_GLOBE', defaultValue: false, description: 'Generate a new Globe product.')
+	}
+	stages {
+        stage('Pre-build') {
+            steps {
+                script {
+                    currentBuild.displayName = "#${env.BUILD_NUMBER} ${env.GIT_BRANCH}"
+                }
+                script {
+                    echo "Retrieve email list"
+                    withCredentials([
+                        string(credentialsId: 'NOTIFICATION_GLOBE_MAIL_LIST', variable: 'mail_list')]) {
+                        env.NOTIFICATION_MAIL_LIST = mail_list
+                    }
+                }
+                echo 'Cleaning up Globe repository if exists'
+                bat 'if exist globe ( rmdir /s /q globe )'
+            }
+        }
+		stage('Create and Deploy GWS environment'){
+            steps{
+               echo 'Building anaconda environment'
+				echo 'Path = ${Path}'
+                    bat label: 'create conda environments', script: '''call C:\\Tools\\Miniconda3\\Library\\bin\\conda.bat activate
+                                cd gws/requirements
+                                python create_anaconda_environments.py -target runtime
+                                cd ../..
+                                '''
+                    bat label: 'Clean gws_runtime environment', script: '''call C:\\Tools\\Miniconda3\\Library\\bin\\conda.bat activate gws_runtime
+                                conda clean -a -y
+                                '''
+                    bat label: 'Packaging gws_runtime environment', script: '''call C:\\Tools\\Miniconda3\\Library\\bin\\conda.bat activate gws_runtime
+                                conda-pack -n gws_runtime -o miniconda.zip --exclude "*.pyc"
+                                '''
+                    // Archive the build output artifacts.
+                    archiveArtifacts artifacts: 'miniconda.zip'
+            }
+        }
+        stage('Build Globe product') {
+            when { expression { return params.BUILD_GLOBE } }
+            steps {
+                echo "Building Globe product"
+                bat label: 'Clone Globe project', script: 'git clone https://oauth2:qKInfsM6npJ1GI_rgIzfkm86MQp1OjM4ZAk.01.0z1eyj5uw@gitlab.ifremer.fr/fleet/data-processing/globe/globe.git'
+                powershell label: 'Unzip miniconda', script: 'Expand-Archive -Path miniconda.zip -DestinationPath globe/fr.ifremer.globe.app/resources/miniconda -Force'
+                bat label: 'Build Globe project', script: '''cd globe
+                                                            C:\\Tools\\apache-maven-3.9.12\\bin\\mvn clean package
+                                                            '''
+                archiveArtifacts artifacts: 'globe/fr.ifremer.globe.app/target/products/*-Globe-windows.zip'
+            }
+        }
+    }
+
+	post {
+        success {
+            emailext (
+                subject: "Jenkins BUILD GWS CONDA ENV SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}] ${env.GIT_BRANCH}'",
+                attachLog: true,
+                body: """BUILD SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}] ${env.GIT_BRANCH}'
+                    Check console output at ${env.BUILD_URL}
+                    Download miniconda : ${env.BUILD_URL}artifact/miniconda.zip
+                    ${params.BUILD_GLOBE ? "Download Globe product : ${env.BUILD_URL}artifact/globe/fr.ifremer.globe.app/target/products/*-Globe-windows.zip"
+                    : "Globe product was not built. To build it, check 'BUILD_GLOBE' parameter and re-run the job."}
+                    (see Log attached for details)
+                """,
+                to: "${env.NOTIFICATION_MAIL_LIST}"
+                )
+        }
+        failure {
+            emailext (
+            subject: "Jenkins FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}] ${env.GIT_BRANCH}'",
+            attachLog: true,
+            body: """BUILD FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}] ${env.GIT_BRANCH}': Check console output at ${env.BUILD_URL}
+                (see Log attached for details)
+            """,
+            to: "${env.NOTIFICATION_MAIL_LIST}"
+            )
+        }
+    }
+}

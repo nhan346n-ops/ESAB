@@ -1,0 +1,13 @@
+= Merge Simple
+
+== Overview
+
+This application takes two (or more) DTM files in new format as input and merge them into one DTM file
+in new format.
+
+* "simple" which will apply an average of the set.
+
+By default, process on all layers, with the same spatial resolution and the
+coordinates than the reference file (first file).
+
+include::example$generated/dtm/merge/merge_simple_params.adoc[]

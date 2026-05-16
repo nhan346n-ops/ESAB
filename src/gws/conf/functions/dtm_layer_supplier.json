@@ -1,0 +1,20 @@
+{
+    "name": "DTM Layer Supplier",
+    "function": "pyat.dtm.experimental.dtm_layer_supplier.get_dtm_layer",
+    "parameters": [
+        {
+            "name": "i_path",
+            "key": "-i_path",
+            "help": "Input file path",
+            "nargs": "1",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "cog_path",
+            "key": "-cog",
+            "help": "Cloud Optimized GeoTIFF path (.tif)",
+            "nargs": "1",
+            "type": "outfile(extension=tif)"
+        }
+    ]
+}

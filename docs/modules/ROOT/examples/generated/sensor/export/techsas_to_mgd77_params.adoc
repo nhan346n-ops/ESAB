@@ -1,0 +1,69 @@
+// Generated documentation from source $sensor\export\techsas_to_mgd77.json
+== Parameters
+
+[cols="1,1,3",options="header"]
+|===
+| Name | Type | Description
+| i_paths | infile(content_type=TECHSAS_NETCDF_MAG\|TECHSAS_NETCDF_GRAVI\|TECHSAS_NETCDF_DEPTH) | Input gravimetry (.gravi.nc), magnetism(.mag.nc) and depth (.depth.nc) TECHSAS files
+| o_path | outfile(content_type=MGD77) | Output file (.mgd77)
+| survey_identifier | string | Survey identifier
+| data_center_file_number | string | Data center file number
+| parameters_surveyed_code | string | Parameters surveyed code
+| source_institution | string | Source institution
+| country | string | Country
+| platform_name | string | Platform name
+| platform_type_code | string | Platform type code
+| platform_type | string | Platform type
+| chief_scientist | string | Chief scientist
+| project | string | Project
+| funding | string | Funding
+| survey_departure_date | datetime | Survey departure date
+| port_of_departure | string | Port of departure
+| survey_arrival_date | datetime | Survey departure date
+| port_of_arrival | string | Port of arrival
+| navigation_instrumentation | string | Navigation instrumentation
+| position_determination_method | string | Position determination method
+| bathymetry_instrumentation | string | Bathymetry instrumentation
+| additional_form_of_bathymetric_data | string | Additional form of bathymetric data
+| magnetics_instrumentation | string | Magnetics instrumentation
+| additional_form_of_magnetics_data | string | Additional form of magnetics data
+| gravity_instrumentation | string | Gravity instrumentation
+| additional_form_of_gravity_data | string | Additional form of gravity data
+| seismic_instrumentation | string | Seismic instrumentation
+| formats_of_seismic_data | string | Formats of seismic data
+| general_digitizing_rate_of_bathymetry | float | General digitizing rate of bathymetry
+| general_sampling_rate_of_bathymetry | string | General sampling rate of bathymetry
+| assumed_sound_velocity | float | Assumed sound velocity
+| bathymetric_datum_code | string | Bathymetric datum code
+| interpolation_scheme | string | Interpolation scheme
+| general_digitizing_rate_of_magnetics | float | General digitizing rate of magnetics
+| general_sampling_rate_of_magnetics | int | General sampling rate of magnetics
+| magnetics_tow_sensor_distance | int | Magnetics tow sensor distance
+| sensor_depth | float | Sensor depth
+| horizontal_sensor_separation | int | Horizontal sensor separation
+| reference_field_code | string | Reference field code
+| reference_field | string | Reference field
+| method_of_applying_residual_field | string | Method of applying residual field
+| general_digitizing_rate_of_gravity | float | General digitizing rate of gravity
+| general_sampling_rate_of_gravity | string | General sampling rate of gravity
+| theoretical_gravity_formula_code | string | Theoretical gravity formula code
+| theoretical_gravity_formula | string | Theoretical gravity formula
+| reference_system_code | string | Reference system code
+| reference_system | string | Reference system
+| correction_applied | string | Correction applied
+| departure_base_station_gravity | float | Departure base station gravity
+| departure_base_station_description | string | Departure base station description
+| arrival_base_station_gravity | float | Arrival base station gravity
+| arrival_base_station_description | string | Arrival base station description
+| number_of_10_degree_identifiers | string | Number of 10 degree identifier
+| ten_degree_identifier | string | 10 degree identifier
+| sequence18 | string | Additional documentation sequence 18
+| sequence19 | string | Additional documentation sequence 19
+| sequence20 | string | Additional documentation sequence 20
+| sequence21 | string | Additional documentation sequence 21
+| sequence22 | string | Additional documentation sequence 22
+| sequence23 | string | Additional documentation sequence 23
+| sequence24 | string | Additional documentation sequence 24
+| overwrite | outfile#overwrite | Allow to overwrite file if already exists.
+|===
+

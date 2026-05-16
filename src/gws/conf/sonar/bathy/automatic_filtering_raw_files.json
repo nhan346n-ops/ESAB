@@ -1,0 +1,57 @@
+{
+    "name": "Automatic filtering on raw files",
+    "function": "pyat.sounder.sounder_automatic_filtering.process",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar\\bathy\\automatic_filtering_raw_files.html",
+    "pages": [
+        {
+            "title": "Masked arguments",
+            "visible": true,
+            "parameters": [
+                "inAbscissaFile",
+                "inOrdinateFile",
+                "inDepthFile",
+                "inValidityFile",
+                "outValidityFile",
+                "contamination"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "inAbscissaFile",
+            "help": "Binary input file containing the X values (projected latitudes)",
+            "type": "file",
+            "nargs": "1"
+        },
+        {
+            "name": "inOrdinateFile",
+            "help": "Binary input file containing the Y values (projected longitudes)",
+            "type": "file",
+            "nargs": "1"
+        },
+        {
+            "name": "inDepthFile",
+            "help": "Binary input file containing the Z values (depths)",
+            "type": "file",
+            "nargs": "1"
+        },
+        {
+            "name": "inValidityFile",
+            "help": "Binary input file containing the validity of the soundings (1 == valid, 0 = invalid).",
+            "type": "file",
+            "nargs": "1"
+        },
+        {
+            "name": "outValidityFile",
+            "help": "Copy of validity file modified with the result of the filtering. Values are 0 or 1 (original valid and invalid), 2 = filtered).",
+            "type": "file",
+            "nargs": "1"
+        },
+        {
+            "name": "contamination",
+            "help": "The proportion of outliers in the data set. Range is ]0, 0.5].",
+            "type": "float",
+            "default": 0.05
+        }
+    ]
+}

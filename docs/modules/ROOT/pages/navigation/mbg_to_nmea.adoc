@@ -1,0 +1,7 @@
+= MBG -> NMEA
+
+== Overview
+
+This application takes MBG file(s) as input and will export it (or them) as Techsas like nmead file(s) in containing vertical depth data.
+
+include::example$generated/navigation/convert_mbg_to_nmea_params.adoc[]

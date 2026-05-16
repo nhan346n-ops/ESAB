@@ -1,0 +1,65 @@
+{
+    "name": "Export NVI to CSV",
+    "function": "pynvi.version_2.exporter.convert_nvi_V2_to_csv",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/navigation/nvi_to_csv.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "help": "Input file(s) (.nvi.nc)",
+            "type": "infile(content_type=NVI_V2_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_path",
+            "help": "Output file (.csv)",
+            "nargs": "+",
+            "type": "outfile(extension=csv)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "header",
+            "type": "bool",
+            "help": "Header",
+            "default": true
+        },
+        {
+            "name": "separator",
+            "type": "string",
+            "choices": [
+                "Semicolon",
+                "Comma",
+                "Space",
+                "Tabulation",
+                "Other"
+            ],
+            "default": "Semicolon",
+            "help": "Column separator"
+        },
+        {
+            "name": "other",
+            "type": "string",
+            "default": ";",
+            "help": "Other separator (if 'Other' selected)"
+        },
+        {
+            "name": "elevation",
+            "type": "string",
+            "choices": [
+                "Positive",
+                "Negative"
+            ],
+            "default": "Positive",
+            "help": "Height above sea surface"
+        }
+    ]
+}

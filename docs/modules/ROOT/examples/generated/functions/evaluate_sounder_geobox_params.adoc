@@ -1,0 +1,10 @@
+// Generated documentation from source $functions\evaluate_sounder_geobox.json
+== Parameters
+
+[cols="1,1,3",options="header"]
+|===
+| Name | Type | Description
+| i_paths | infile(content_type=XSF_NETCDF_4) | Input file list (.xsf.nc)
+| target_spatial_reference | projection | Set spatial reference as a PROJ.4 declarations
+|===
+

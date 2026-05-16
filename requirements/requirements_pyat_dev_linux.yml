@@ -1,0 +1,12 @@
+channels:
+  - conda-forge
+  - anaconda
+  - msys2
+  - anaconda-fusion
+  - nodefaults
+dependencies:
+  - black
+  - cython
+  - libgfortran
+
+

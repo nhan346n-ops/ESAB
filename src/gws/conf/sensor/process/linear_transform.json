@@ -1,0 +1,52 @@
+{
+    "name": "Linear Transform",
+    "function": "pyat.sensor.linear_transform.apply_linear_transform_batch",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sensor/linear_transform.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "type": "infile(content_type=TECHSAS)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "output files list",
+            "nargs": "+",
+            "type": "outfile(content_type=TECHSAS,suffix=linear_transform)"
+        },
+        {
+            "name": "layers",
+            "key": "-l",
+            "long_key": "--layers",
+            "help": "Select layers to transform.",
+            "type": "layers"
+        },
+        {
+            "name": "a",
+            "type": "float",
+            "key": "-a",
+            "long_key": "--a",
+            "help": "Multiplicator",
+            "default": 1.0
+        },
+        {
+            "name": "b",
+            "type": "float",
+            "key": "-b",
+            "long_key": "--b",
+            "help": "Adder",
+            "default": 0.0
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

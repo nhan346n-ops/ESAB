@@ -1,0 +1,90 @@
+= Quality Indicators
+
+== Overview
+This process computes quality indicators for each cell of one or more DTM (.dtm.nc).
+
+This is intended to warn the user of less accurate or suspicious cells, in order to avoid misinterpretation of the geomorphology.
+
+The computation is based on the layers available in a DTM file, if those have been selected at its generation.
+
+Needed layers are given in the table below :
+
+
+.DTM Layers used to compute indicators
+[width="100%",options="header"]
+[cols="20h,~"]
+|====================
+|Layer  |Description
+|elevation | Elevation relative to sea level.
+
+|interpolation_flag |True if the elevation value of this cell was obtained by interpolation over the values of the surrounding cells.
+
+|value_count | Number of detections used to compute the resulting elevation over the cell, if not interpolated.
+
+|filtered_sounding |Number of detections wihtin the cell not used for mean elevation computation. These could be invalidated detections (at acquisition or during processings) or filtered at DTM creation.
+
+|stdev |Standard deviation of dectections used to compute cell's mean elevation value.
+
+|max_across_angle |Max across angle value of detections used to compute cell's mean elevation value. The angle is the associated beam pointing angle to the transducer at time of acquisition.
+
+|max_across_distance |Max across distance value of detections used to compute cell's mean elevation value. The distance is the across distance between the platform and the detection at acquisition time.
+|====================
+
+The table below describes the indicators and the algorithm used to compute them.
+
+.Quality indicators
+[options="header"]
+[cols="h,20,,,"]
+|=======================
+|Indicator |Description |Observed layer | Parameter |True if
+
+|interpolation
+|Indicates if the elevation has been computed by interpolation (and not coming from real detections).
+|**interpolation_flag**
+|-
+|interpolation_flag == True
+
+|density
+|Indicates if the number of valid detection to compute elevation is insufficient.
+|**value_count**
+|**min_value_count** : minimum threshold
+|value_count < **min_value_count**
+
+
+|stdev
+|Indicates an abnormal standard deviation compared to neighboring cells (= the 8 cells around).
+|**stdev** and **elevation**
+
+neighborhood_stdev = mean of the *stdev* values of the 8 surrounding cells.
+
+stdev_of_neighborhood_elev = standard deviation of the **elevation** values of the 8 surrounding cells.
+|-
+|stdev - neighborhood_stdev > stdev_of_neighborhood_elev
+
+
+
+|invalid_detection
+|Indicates a high rate of invalid detections.
+|**value_count** and **filtered_sounding**
+
+invalid_rate = filtered_sounding / (value_count + filtered_sounding)
+
+mean_invalid_rate = mean of all invalid_rate
+
+|**threshold** : maximum ratio
+|invalid_rate / mean_invalid_rate > **threshold**
+
+
+|across_angle
+|Indicates cells filled by less accurate outerbeam's detections.
+|**max_across_angle** if present, else across_angle is computed from **max_across_distance** and **elevation**.
+|**across_angle_max_threshold** : maximum threshold
+|across_angle > **across_angle_max_threshold**
+
+|=======================
+
+== Result
+
+For each cell, the quality indicator is a byte (bit field) computed from quality indicator values :
+
+ quality_indicator = [NOT_USED, NOT_USED, NOT_USED, NOT_USED, interpolation, density, stdev, invalid_detection, across_angle]

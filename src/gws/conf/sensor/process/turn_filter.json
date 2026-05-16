@@ -1,0 +1,72 @@
+{
+    "name": "Turn Filter",
+    "function": "pyat.sensor.turn_filter.apply_filter_batch",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sensor/turn_filter.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "help": "Input file list",
+            "nargs": "+",
+            "type": "infile(content_type=TECHSAS|NVI_NETCDF_4|NVI_V2_NETCDF_4,extensions=nav|subnav|gps|nc)"
+        },
+        {
+            "name": "filter_method",
+            "type": "string",
+            "choices": [
+                "std",
+                "weighted_std",
+                "gap"
+            ],
+            "default": "std",
+            "help": "Method (used to compute the value compared with threshold)"
+        },
+        {
+            "name": "heading_period",
+            "type": "duration",
+            "help": "Heading window period (sec)",
+            "page": "Filter parameters"
+        },
+        {
+            "name": "heading_threshold",
+            "type": "float",
+            "help": "Heading threshold (degrees)",
+            "page": "Filter parameters"
+        },
+        {
+            "name": "speed_period",
+            "type": "duration",
+            "help": "Speed window period (sec)",
+            "page": "Filter parameters"
+        },
+        {
+            "name": "speed_threshold",
+            "type": "float",
+            "help": "Speed threshold (m/s)",
+            "page": "Filter parameters"
+        },
+        {
+            "name": "minimum_duration",
+            "type": "duration",
+            "help": "Minimum duration of result lines (sec)",
+            "page": "Filter parameters"
+        },
+        {
+            "name": "save_in_input_file",
+            "type": "bool",
+            "help": "Edit input file (.nc) (only for TECHSAS)",
+            "page": "Edit input file"
+        },
+        {
+            "name": "o_cut_file",
+            "nargs": "?",
+            "help": "Output cut file (.cut) (Optional)",
+            "type": "file(extensions=cut)"
+        },
+        {
+            "name": "overwrite",
+            "key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

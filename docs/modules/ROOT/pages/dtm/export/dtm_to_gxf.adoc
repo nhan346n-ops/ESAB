@@ -1,0 +1,12 @@
+= DTM -> GXF
+
+== Overview
+
+This application takes **DTM** file(s) as input and will export it (or them) as **GXF-3** file(s).
+
+Mainly used for exporting bathymetry to **Kingdom software**.
+
+**GXF** stands for **G**rid e**X**change **F**ile. This is a raster exchange format propagated by Geosoft, and made a standard in the gravity/magnetics field. Details on the format can be found on the https://web.archive.org/web/20130730111701/http://home.gdal.org/projects/gxf/index.html[GXF-3 page].
+
+
+include::example$generated/dtm/export/dtm_to_gxf_params.adoc[]

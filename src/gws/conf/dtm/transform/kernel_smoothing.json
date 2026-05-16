@@ -1,0 +1,54 @@
+{
+    "name": "Kernel Smoothing",
+    "function": "pyat.dtm.transform.smoothing_kernel.SmoothingProcess",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/transform/kernel_smoothing.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "help": "Input file list (.nc)",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "nargs": "+",
+            "help": "Output file list (.nc)",
+            "type": "outfile(content_type=DTM_NETCDF_4,suffix=smooth)"
+        },
+        {
+            "name": "kernel_choice",
+            "type": "string",
+            "key": "-k",
+            "long_key": "--kernel",
+            "choices": [
+                "3x3 flat",
+                "3x3 cross",
+                "3x3 X",
+                "5x5 gaussian",
+                "custom",
+                "custom2"
+            ],
+            "help": "kernel choice, see smoothing_process_kernel.py file for detailed values about kernel coefficient and to change the custom one",
+            "default": "3x3 flat"
+        },
+        {
+            "name": "mask",
+            "key": "-m",
+            "long_key": "--mask",
+            "help": "Mask file list (*.kml or *.shp)",
+            "nargs": "+",
+            "type": "file(content_type=KML_XML|SHAPEFILE)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

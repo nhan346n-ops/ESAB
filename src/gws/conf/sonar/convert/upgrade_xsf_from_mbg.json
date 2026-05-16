@@ -1,0 +1,34 @@
+{
+    "name": "Upgrade XSF from MBG",
+    "function": "pyat.xsf.xsf_upgrader_from_mbg.XsfUpgrader",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/convert/upgrade_xsf_from_mbg.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (.xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        },
+        {
+            "name": "out_dir",
+            "key": "-o",
+            "long_key": "--out-dir",
+            "help": "Directory in which all output data will be written",
+            "type": "folder"
+        },
+        {
+            "name": "overwrite",
+            "key": "--overwrite",
+            "help": "Allow overwriting if files already exists.",
+            "type": "bool"
+        },
+        {
+            "name": "i_mbg",
+            "help": "Reference files (.mbg)",
+            "nargs": "+",
+            "type": "file(content_type=MBG_NETCDF_3)"
+        }
+    ]
+}

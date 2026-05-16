@@ -1,0 +1,51 @@
+{
+    "name": "Longitudinal Slicer (g3d)",
+    "function": "pyat.sensor.slice.sensor_to_longitudinal_g3d.export_files",
+    "help": "app/sensor/help/export_to_g3d.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "help": "Input Sensor-netCDF files",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "type": "infile(content_type=SENSOR_NETCDF_4, extension=nc)"
+        },
+        {
+            "name": "o_path",
+            "key": "-o",
+            "long_key": "--o_path",
+            "help": "Output G3D file",
+            "nargs": "1",
+            "type": "outfile(content_type=G3D_NETCDF_4)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "interpolation_algo",
+            "type": "string",
+            "help": "Interpolation algorithm",
+            "choices": [
+                "linear"
+            ],
+            "default": "linear"
+        },
+        {
+            "name": "grid_length",
+            "type": "int",
+            "help": "Number of grid points along horizontal axis",
+            "default": 1200
+        },
+        {
+            "name": "grid_height",
+            "type": "int",
+            "help": "Number of grid points along vertical axis",
+            "default": 800
+        }
+    ]
+}

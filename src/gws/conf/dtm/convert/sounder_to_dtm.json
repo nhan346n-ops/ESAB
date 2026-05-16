@@ -1,0 +1,229 @@
+{
+    "name": "SONAR-netCDF to DTM",
+    "function": "pyat.sounder.sounder_to_dtm.SounderToDtmExporter",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/convert/sounder_to_dtm.html",
+    "icon": "DTM",
+    "pages": [
+        {
+            "title": "Compute options",
+            "parameters": [
+                "spatial_antialiasing",
+                "valid_sounds_only",
+                "min_valid_sounds",
+                "min_elevation",
+                "max_elevation",
+                "min_sounds"
+            ]
+        },
+        {
+            "title": "Quality factor",
+            "parameters": [
+                "quality_indicator",
+                "stdev_csv_path"
+            ]
+        },
+        {
+            "title": "Metadata",
+            "parameters": [
+                "title",
+                "institution",
+                "source",
+                "references",
+                "comment"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (.mbg, .xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=MBG_NETCDF_3|XSF_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "Output file list (.dtm.nc)",
+            "nargs": "+|1",
+            "type": "outfile(restore_from_pref=lastOutputDtmFile,content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "layers",
+            "key": "-l",
+            "long_key": "--layers",
+            "help": "Select optional layers to export. Layer Depth is exported by default",
+            "type": "checklist",
+            "choices": [
+                "elevation_min",
+                "elevation_max",
+                "stdev",
+                "backscatter",
+                "min_across_distance",
+                "max_across_distance",
+                "max_across_angle",
+                "filtered_sounding"
+            ],
+            "default": null
+        },
+        {
+            "name": "target_spatial_reference",
+            "type": "projection(restore=false)",
+            "key": "-t_srs",
+            "long_key": "--target_spatial_reference",
+            "help": "Set target spatial reference as a PROJ.4 declarations",
+            "default": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+        },
+        {
+            "name": "coord",
+            "key": "-c",
+            "long_key": "--coord",
+            "help": "Coordinates of geographic bounds",
+            "type": "geobox#coords",
+            "function": "functions/evaluate_sounder_geobox.json"
+        },
+        {
+            "name": "target_resolution",
+            "type": "geobox#resolution",
+            "key": "-tr",
+            "long_key": "--target_resolution",
+            "help": "Set output file resolution (in target georeferenced units).",
+            "default": "0.000277778",
+            "function": "functions/evaluate_sounder_spatial_resolution.json"
+        },
+        {
+            "name": "gap_filling",
+            "type": "mask#enable",
+            "key": "-gf",
+            "long_key": "--call_gap_filling",
+            "help": "Fill gap after computation",
+            "default": false
+        },
+        {
+            "name": "mask_size",
+            "type": "mask#size",
+            "key": "-ms",
+            "long_key": "--mask_size",
+            "default": 3
+        },
+        {
+            "name": "mask",
+            "type": "mask#files",
+            "key": "-m",
+            "long_key": "--mask"
+        },
+        {
+            "name": "cdi",
+            "key": "-c",
+            "long_key": "--cdi",
+            "help": "Name of the CDI to set on all valid cell",
+            "type": "cdi#set",
+            "nargs": "+"
+        },
+        {
+            "name": "valid_sounds_only",
+            "type": "bool",
+            "key": "-vso",
+            "long_key": "--valid_sounds_only",
+            "help": "Use valid sounds only.",
+            "default": true
+        },
+        {
+            "name": "spatial_antialiasing",
+            "type": "bool",
+            "key": "-saa",
+            "long_key": "--spatial_antialiasing",
+            "help": "Apply spatial antialiasing (bilinear interpolation on cell centroids).",
+            "default": false
+        },
+        {
+            "name": "min_elevation",
+            "type": "float",
+            "key": "-minE",
+            "long_key": "--min_elevation",
+            "help": "Minimal elevation (m) for Z soundings min-max filter.",
+            "default": null
+        },
+        {
+            "name": "max_elevation",
+            "type": "float",
+            "key": "-maxE",
+            "long_key": "--max_elevation",
+            "help": "Maximal elevation (m) for Z soundings min-max filter.",
+            "default": null
+        },
+        {
+            "name": "min_sounds",
+            "type": "int",
+            "key": "-iso",
+            "long_key": "--minimum_sounds",
+            "help": "Minimum sounds expected to compute a cell",
+            "default": null
+        },
+        {
+            "name": "title",
+            "type": "string",
+            "key": "-tit",
+            "long_key": "--title",
+            "help": "Title",
+            "default": ""
+        },
+        {
+            "name": "institution",
+            "type": "string",
+            "key": "-ins",
+            "long_key": "--institution",
+            "help": "Institution",
+            "default": ""
+        },
+        {
+            "name": "source",
+            "type": "string",
+            "key": "-sco",
+            "long_key": "--source",
+            "help": "Source",
+            "default": ""
+        },
+        {
+            "name": "references",
+            "type": "string",
+            "key": "-ref",
+            "long_key": "--references",
+            "help": "References",
+            "default": ""
+        },
+        {
+            "name": "comment",
+            "type": "string",
+            "key": "-com",
+            "long_key": "--comment",
+            "help": "Comment",
+            "default": ""
+        },
+        {
+            "name": "quality_indicator",
+            "type": "bool",
+            "key": "-qi",
+            "long_key": "--quality_indicator",
+            "help": "Compute the quatity indicator (tif file).",
+            "default": false
+        },
+        {
+            "name": "stdev_csv_path",
+            "nargs": "1",
+            "type": "file(extension=csv)",
+            "key": "-scp",
+            "long_key": "--stdev_csv_path",
+            "help": "CSV file to compute expected STDEV by beam angle (tif file)."
+        }
+    ]
+}

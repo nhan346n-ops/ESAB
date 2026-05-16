@@ -1,0 +1,144 @@
+{
+    "name": "Smoother",
+    "function": "pyat.sensor.smoother.apply_smoothing_batch",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sensor/smoother.html",
+    "pages": [
+        {
+            "title": "Choose the algorithm",
+            "parameters": [
+                "algorithm"
+            ]
+        },
+        {
+            "title": "Savitzky-Golay filter settings",
+            "parameters": [
+                "savgol_window_size",
+                "savgol_order"
+            ],
+            "visible_when": "algorithm=SAVITZKY_GOLAY"
+        },
+        {
+            "title": "Butterworth digital filter settings",
+            "parameters": [
+                "butter_critical_freq",
+                "butter_order",
+                "butter_sampling_freq"
+            ],
+            "visible_when": "algorithm=BUTTERWORTH"
+        },
+        {
+            "title": "Bessel/Thomson digital filter settings",
+            "parameters": [
+                "bessel_critical_freq",
+                "bessel_order",
+                "bessel_sampling_freq"
+            ],
+            "visible_when": "algorithm=BESSEL"
+        },
+        {
+            "title": "Median filter settings",
+            "parameters": [
+                "medfilt_window_size"
+            ],
+            "visible_when": "algorithm=MEDIAN_FILTER"
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "type": "infile(content_type=TECHSAS)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "output files list",
+            "nargs": "+",
+            "type": "outfile(content_type=TECHSAS,suffix=smoothed)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "layers",
+            "key": "-l",
+            "long_key": "--layers",
+            "help": "Select layers to transform.",
+            "type": "layers"
+        },
+        {
+            "name": "algorithm",
+            "type": "string",
+            "help": "Filter algorithm",
+            "choices": [
+                "SAVITZKY_GOLAY",
+                "BUTTERWORTH",
+                "BESSEL",
+                "BESSEL_Q",
+                "MEDIAN_FILTER"
+            ],
+            "default": "SAVITZKY_GOLAY"
+        },
+        {
+            "name": "savgol_order",
+            "type": "int",
+            "help": "Order",
+            "default": 2
+        },
+        {
+            "name": "savgol_window_size",
+            "type": "int",
+            "help": "Window size",
+            "default": 10
+        },
+        {
+            "name": "butter_critical_freq",
+            "type": "float",
+            "help": "Critical frequency",
+            "default": 0.2
+        },
+        {
+            "name": "butter_order",
+            "type": "int",
+            "help": "Order",
+            "default": 2
+        },
+        {
+            "name": "butter_sampling_freq",
+            "type": "float",
+            "help": "Sampling frequency",
+            "default": 1.0
+        },
+        {
+            "name": "bessel_critical_freq",
+            "type": "float",
+            "help": "Critical frequency",
+            "default": 0.2
+        },
+        {
+            "name": "bessel_order",
+            "type": "int",
+            "help": "Order",
+            "default": 2
+        },
+        {
+            "name": "bessel_sampling_freq",
+            "type": "float",
+            "help": "Sampling frequency",
+            "default": 1.0
+        },
+        {
+            "name": "medfilt_window_size",
+            "type": "int",
+            "help": "Window size",
+            "default": 3
+        }
+    ]
+}

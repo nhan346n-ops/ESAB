@@ -1,0 +1,157 @@
+{
+    "name": "Export binary files to NVI",
+    "function": "pyat.navigation.raw_files_to_nvi.exports",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/navigation/raw_files_to_nvi.html",
+    "visible": false,
+    "pages": [
+        {
+            "title": "Hidden parameters",
+            "description": "List of parameters computed by Globe, not edited by user",
+            "visible": false,
+            "parameters": [
+                "o_value_count",
+                "time",
+                "latitude",
+                "longitude",
+                "quality_flag",
+                "heading",
+                "heading_rate",
+                "pitch",
+                "roll",
+                "Platform roll",
+                "height_above_reference_ellipsoid",
+                "vertical_offset",
+                "speed_over_ground",
+                "course_over_ground",
+                "pitch_rate",
+                "roll_rate",
+                "speed_relative",
+                "position_quality_indicator"
+            ]
+        },
+        {
+            "title": "Define the soundings sampling",
+            "description": "Choose whether to apply time or sounding number sampling. To keep all soundings, leave values at zero",
+            "parameters": [
+                "time_interval",
+                "sounding_interval"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "nargs": "+",
+            "help": "Any navigation file",
+            "type": "infile(content_type=MBG_NETCDF_3|NVI_NETCDF_4|SOUNDER_S7K|SOUNDER_ALL|SOUNDER_KMALL|XSF_NETCDF_4|SONAR_NETCDF_4|NAVIGATION_CSV|MGD77|TECHSAS_NETCDF_WITH_NAV|TECHSAS_NETCDF_DEPTH|TECHSAS_NETCDF_GRAVI|TECHSAS_NETCDF_MAG|ADCP_OCEANSITE)"
+        },
+        {
+            "name": "o_paths",
+            "help": "Output file (.nvi.nc)",
+            "nargs": "+",
+            "type": "outfile(extension=nvi.nc)"
+        },
+        {
+            "name": "overwrite",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "o_value_count",
+            "help": "Number of values for each output file",
+            "nargs": "+",
+            "type": "int"
+        },
+        {
+            "name": "time_interval",
+            "help": "Keep one navigation soundings every N seconds",
+            "type": "int",
+            "default": 0
+        },
+        {
+            "name": "sounding_interval",
+            "help": "Keep one navigation sounding per N navigation soundings",
+            "type": "int",
+            "default": 0
+        },
+        {
+            "name": "time",
+            "help": "Timestamp for navigation data",
+            "type": "file"
+        },
+        {
+            "name": "latitude",
+            "help": "Latitude of the platform reference point in the reference geodesic datum",
+            "type": "file"
+        },
+        {
+            "name": "longitude",
+            "help": "Longitude of the platform reference point in the reference geodesic datum",
+            "type": "file"
+        },
+        {
+            "name": "quality_flag",
+            "help": "Global data  indicator applied to all sensors variables and based on the SeaDatanet",
+            "type": "file"
+        },
+        {
+            "name": "heading",
+            "help": "Heading of the platform at time relative to the true north",
+            "type": "file"
+        },
+        {
+            "name": "heading_rate",
+            "help": "Platform heading rate",
+            "type": "file"
+        },
+        {
+            "name": "pitch",
+            "help": "Platform pitch",
+            "type": "file"
+        },
+        {
+            "name": "roll",
+            "help": "Platform roll",
+            "type": "file"
+        },
+        {
+            "name": "height_above_reference_ellipsoid",
+            "help": "Height of the platform reference point above the reference ellipsoid",
+            "type": "file"
+        },
+        {
+            "name": "vertical_offset",
+            "help": "Distance from the nominal water level to the actual water level",
+            "type": "file"
+        },
+        {
+            "name": "speed_over_ground",
+            "help": "The platform speed",
+            "type": "file"
+        },
+        {
+            "name": "course_over_ground",
+            "help": "Cardinal direction along which the platform is to be steered",
+            "type": "file"
+        },
+        {
+            "name": "pitch_rate",
+            "help": "Platform pitch rate",
+            "type": "file"
+        },
+        {
+            "name": "roll_rate",
+            "help": "Platform roll rate",
+            "type": "file"
+        },
+        {
+            "name": "speed_relative",
+            "help": "Platform speed relative to water",
+            "type": "file"
+        },
+        {
+            "name": "position_quality_indicator",
+            "help": "Sensor quality indicator",
+            "type": "file"
+        }
+    ]
+}

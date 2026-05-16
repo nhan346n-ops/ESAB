@@ -1,0 +1,10 @@
+:last-update-label!:
+
+= Smoothing process
+
+== Overview
+This application takes DTM file(s) in new format as input and will return DTM file(s) with the
+elevation_smoothed layer.
+
+By default, the name of the output file is i_path with the suffix "-smoothed". The size of the
+smoothed window is (3, 3). No zone selected.

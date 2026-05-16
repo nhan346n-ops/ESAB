@@ -1,0 +1,8 @@
+= MBG/XSF -> DTM
+
+== Overview
+
+This application takes MBG/XSF file(s) as input and will export it (or them) as DTM file(s) in
+the new netcdf format.
+
+include::example$generated/dtm/convert/sounder_to_dtm_params.adoc[]

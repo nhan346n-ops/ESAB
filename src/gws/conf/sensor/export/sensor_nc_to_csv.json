@@ -1,0 +1,56 @@
+{
+    "name": "Sensor-netCDF to CSV",
+    "function": "pyat.sensor.export_to_csv.export_files",
+    "help": "app/sensor/help/export_to_csv.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "type": "infile(content_type=TECHSAS|TIDE_NETCDF_4)"
+        },
+        {
+            "name": "o_path",
+            "key": "-o",
+            "long_key": "--o_path",
+            "help": "Output CSV file",
+            "nargs": "1",
+            "type": "outfile(extension=csv)"
+        },
+        {
+            "name": "layers",
+            "key": "-l",
+            "long_key": "--layers",
+            "help": "Select layers to transform.",
+            "type": "layers"
+        },
+        {
+            "name": "separator",
+            "type": "string",
+            "help": "Column separator",
+            "choices": [
+                "Comma",
+                "Semicolon",
+                "Space",
+                "Tabulation"
+            ],
+            "default": "Semicolon"
+        },
+        {
+            "name": "valid_data_only",
+            "type": "bool",
+            "key": "-vdo",
+            "long_key": "--valid_data_only",
+            "help": "Export only valid data",
+            "default": true
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

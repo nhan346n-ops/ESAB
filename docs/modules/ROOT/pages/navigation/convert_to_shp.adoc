@@ -1,0 +1,7 @@
+= MBG / NVI -> Shape
+
+== Overview
+
+Creates a shape file (.shp) from sounder files (.mbg) or/and navigation files (.nvi).
+
+include::example$generated/navigation/convert_to_shp_params.adoc[]

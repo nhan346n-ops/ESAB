@@ -1,0 +1,48 @@
+{
+    "name": "Compute Isobaths",
+    "function": "pyat.dtm.export.dtm_to_isobath.Dtm2Isobath",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/analyse/compute_isobaths.html",
+    "pages": [
+        {
+            "title": "Isobath computation parameters",
+            "description": "Optional parameters for isobath computation",
+            "visible": true,
+            "parameters": [
+                "isobath_interval"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input DTM file list (*.dtm.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "Output file list (.shp)",
+            "nargs": "+",
+            "type": "outfile(content_type=SHAPEFILE)"
+        },
+        {
+            "name": "isobath_interval",
+            "type": "float",
+            "key": "-i",
+            "long_key": "--isobath_interval",
+            "help": "Isobath interval (m)",
+            "default": 50
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

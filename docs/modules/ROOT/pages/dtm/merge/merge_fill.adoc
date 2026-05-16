@@ -1,0 +1,15 @@
+= Merge fill
+
+== Overview
+
+This application takes two (or more) DTM files in new format as input and merge them into one DTM file
+in new format.
+
+* "fill" which takes the first file as the reference file and fill the gap with the others file.
+
+By default, process the merge on all layers, with the same spatial resolution and the
+coordinates than the reference file (first file).
+
+include::example$generated/dtm/merge/merge_fill_params.adoc[]
+
+include::merge_fill_with_border_smoothing.adoc[leveloffset=2]

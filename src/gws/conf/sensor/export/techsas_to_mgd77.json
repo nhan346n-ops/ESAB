@@ -1,0 +1,410 @@
+{
+    "name": "TECHSAS (gravi/mag/depth) to MGD77",
+    "function": "pytechsas.mgd77.convert_techsas_to_mgd77.ConvertToMGD77",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sensor/techsas_to_mgd77.html",
+    "pages": [
+        {
+            "title": "Survey information",
+            "parameters": [
+                "survey_identifier",
+                "data_center_file_number",
+                "parameters_surveyed_code",
+                "source_institution",
+                "country",
+                "platform_name",
+                "platform_type_code",
+                "platform_type",
+                "chief_scientist",
+                "project",
+                "funding",
+                "survey_departure_date",
+                "port_of_departure",
+                "survey_arrival_date",
+                "port_of_arrival"
+            ]
+        },
+        {
+            "title": "General instrumentation",
+            "parameters": [
+                "navigation_instrumentation",
+                "position_determination_method",
+                "bathymetry_instrumentation",
+                "additional_form_of_bathymetric_data",
+                "magnetics_instrumentation",
+                "additional_form_of_magnetics_data",
+                "gravity_instrumentation",
+                "additional_form_of_gravity_data",
+                "seismic_instrumentation",
+                "formats_of_seismic_data"
+            ]
+        },
+        {
+            "title": "Bathymetry record information",
+            "parameters": [
+                "general_digitizing_rate_of_bathymetry",
+                "general_sampling_rate_of_bathymetry",
+                "assumed_sound_velocity",
+                "bathymetric_datum_code",
+                "interpolation_scheme"
+            ]
+        },
+        {
+            "title": "Magnetics record information",
+            "parameters": [
+                "general_digitizing_rate_of_magnetics",
+                "general_sampling_rate_of_magnetics",
+                "magnetics_tow_sensor_distance",
+                "sensor_depth",
+                "horizontal_sensor_separation",
+                "reference_field_code",
+                "reference_field",
+                "method_of_applying_residual_field"
+            ]
+        },
+        {
+            "title": "Gravity record information",
+            "parameters": [
+                "general_digitizing_rate_of_gravity",
+                "general_sampling_rate_of_gravity",
+                "theoretical_gravity_formula_code",
+                "theoretical_gravity_formula",
+                "reference_system_code",
+                "reference_system",
+                "correction_applied",
+                "departure_base_station_gravity",
+                "departure_base_station_description",
+                "arrival_base_station_gravity",
+                "arrival_base_station_description"
+            ]
+        },
+        {
+            "title": "Additional documentation",
+            "parameters": [
+                "number_of_10_degree_identifiers",
+                "ten_degree_identifier",
+                "sequence18",
+                "sequence19",
+                "sequence20",
+                "sequence21",
+                "sequence22",
+                "sequence23",
+                "sequence24"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-in",
+            "long_key": "--i_paths",
+            "help": "Input gravimetry (.gravi.nc), magnetism(.mag.nc) and depth (.depth.nc) TECHSAS files",
+            "nargs": "+",
+            "type": "infile(content_type=TECHSAS_NETCDF_MAG|TECHSAS_NETCDF_GRAVI|TECHSAS_NETCDF_DEPTH)"
+        },
+        {
+            "name": "o_path",
+            "key": "-o",
+            "long_key": "--o_path",
+            "help": "Output file (.mgd77)",
+            "nargs": "1",
+            "type": "outfile(content_type=MGD77)"
+        },
+        {
+            "name": "survey_identifier",
+            "type": "string",
+            "help": "Survey identifier"
+        },
+        {
+            "name": "data_center_file_number",
+            "type": "string",
+            "help": "Data center file number"
+        },
+        {
+            "name": "parameters_surveyed_code",
+            "type": "string",
+            "help": "Parameters surveyed code"
+        },
+        {
+            "name": "source_institution",
+            "type": "string",
+            "help": "Source institution"
+        },
+        {
+            "name": "country",
+            "type": "string",
+            "help": "Country"
+        },
+        {
+            "name": "platform_name",
+            "type": "string",
+            "help": "Platform name"
+        },
+        {
+            "name": "platform_type_code",
+            "type": "string",
+            "help": "Platform type code"
+        },
+        {
+            "name": "platform_type",
+            "type": "string",
+            "help": "Platform type"
+        },
+        {
+            "name": "chief_scientist",
+            "type": "string",
+            "help": "Chief scientist"
+        },
+        {
+            "name": "project",
+            "type": "string",
+            "help": "Project"
+        },
+        {
+            "name": "funding",
+            "type": "string",
+            "help": "Funding"
+        },
+        {
+            "name": "survey_departure_date",
+            "type": "datetime",
+            "help": "Survey departure date"
+        },
+        {
+            "name": "port_of_departure",
+            "type": "string",
+            "help": "Port of departure"
+        },
+        {
+            "name": "survey_arrival_date",
+            "type": "datetime",
+            "help": "Survey departure date"
+        },
+        {
+            "name": "port_of_arrival",
+            "type": "string",
+            "help": "Port of arrival"
+        },
+        {
+            "name": "navigation_instrumentation",
+            "type": "string",
+            "help": "Navigation instrumentation"
+        },
+        {
+            "name": "position_determination_method",
+            "type": "string",
+            "help": "Position determination method"
+        },
+        {
+            "name": "bathymetry_instrumentation",
+            "type": "string",
+            "help": "Bathymetry instrumentation"
+        },
+        {
+            "name": "additional_form_of_bathymetric_data",
+            "type": "string",
+            "help": "Additional form of bathymetric data"
+        },
+        {
+            "name": "magnetics_instrumentation",
+            "type": "string",
+            "help": "Magnetics instrumentation"
+        },
+        {
+            "name": "additional_form_of_magnetics_data",
+            "type": "string",
+            "help": "Additional form of magnetics data"
+        },
+        {
+            "name": "gravity_instrumentation",
+            "type": "string",
+            "help": "Gravity instrumentation"
+        },
+        {
+            "name": "additional_form_of_gravity_data",
+            "type": "string",
+            "help": "Additional form of gravity data"
+        },
+        {
+            "name": "seismic_instrumentation",
+            "type": "string",
+            "help": "Seismic instrumentation"
+        },
+        {
+            "name": "formats_of_seismic_data",
+            "type": "string",
+            "help": "Formats of seismic data"
+        },
+        {
+            "name": "general_digitizing_rate_of_bathymetry",
+            "type": "float",
+            "help": "General digitizing rate of bathymetry"
+        },
+        {
+            "name": "general_sampling_rate_of_bathymetry",
+            "type": "string",
+            "help": "General sampling rate of bathymetry"
+        },
+        {
+            "name": "assumed_sound_velocity",
+            "type": "float",
+            "help": "Assumed sound velocity"
+        },
+        {
+            "name": "bathymetric_datum_code",
+            "type": "string",
+            "help": "Bathymetric datum code"
+        },
+        {
+            "name": "interpolation_scheme",
+            "type": "string",
+            "help": "Interpolation scheme"
+        },
+        {
+            "name": "general_digitizing_rate_of_magnetics",
+            "type": "float",
+            "help": "General digitizing rate of magnetics"
+        },
+        {
+            "name": "general_sampling_rate_of_magnetics",
+            "type": "int",
+            "help": "General sampling rate of magnetics"
+        },
+        {
+            "name": "magnetics_tow_sensor_distance",
+            "type": "int",
+            "help": "Magnetics tow sensor distance"
+        },
+        {
+            "name": "sensor_depth",
+            "type": "float",
+            "help": "Sensor depth"
+        },
+        {
+            "name": "horizontal_sensor_separation",
+            "type": "int",
+            "help": "Horizontal sensor separation"
+        },
+        {
+            "name": "reference_field_code",
+            "type": "string",
+            "help": "Reference field code"
+        },
+        {
+            "name": "reference_field",
+            "type": "string",
+            "help": "Reference field"
+        },
+        {
+            "name": "method_of_applying_residual_field",
+            "type": "string",
+            "help": "Method of applying residual field"
+        },
+        {
+            "name": "general_digitizing_rate_of_gravity",
+            "type": "float",
+            "help": "General digitizing rate of gravity"
+        },
+        {
+            "name": "general_sampling_rate_of_gravity",
+            "type": "string",
+            "help": "General sampling rate of gravity"
+        },
+        {
+            "name": "theoretical_gravity_formula_code",
+            "type": "string",
+            "help": "Theoretical gravity formula code"
+        },
+        {
+            "name": "theoretical_gravity_formula",
+            "type": "string",
+            "help": "Theoretical gravity formula"
+        },
+        {
+            "name": "reference_system_code",
+            "type": "string",
+            "help": "Reference system code"
+        },
+        {
+            "name": "reference_system",
+            "type": "string",
+            "help": "Reference system"
+        },
+        {
+            "name": "correction_applied",
+            "type": "string",
+            "help": "Correction applied"
+        },
+        {
+            "name": "departure_base_station_gravity",
+            "type": "float",
+            "help": "Departure base station gravity"
+        },
+        {
+            "name": "departure_base_station_description",
+            "type": "string",
+            "help": "Departure base station description"
+        },
+        {
+            "name": "arrival_base_station_gravity",
+            "type": "float",
+            "help": "Arrival base station gravity"
+        },
+        {
+            "name": "arrival_base_station_description",
+            "type": "string",
+            "help": "Arrival base station description"
+        },
+        {
+            "name": "number_of_10_degree_identifiers",
+            "type": "string",
+            "help": "Number of 10 degree identifier"
+        },
+        {
+            "name": "ten_degree_identifier",
+            "type": "string",
+            "help": "10 degree identifier"
+        },
+        {
+            "name": "sequence18",
+            "type": "string",
+            "help": "Additional documentation sequence 18"
+        },
+        {
+            "name": "sequence19",
+            "type": "string",
+            "help": "Additional documentation sequence 19"
+        },
+        {
+            "name": "sequence20",
+            "type": "string",
+            "help": "Additional documentation sequence 20"
+        },
+        {
+            "name": "sequence21",
+            "type": "string",
+            "help": "Additional documentation sequence 21"
+        },
+        {
+            "name": "sequence22",
+            "type": "string",
+            "help": "Additional documentation sequence 22"
+        },
+        {
+            "name": "sequence23",
+            "type": "string",
+            "help": "Additional documentation sequence 23"
+        },
+        {
+            "name": "sequence24",
+            "type": "string",
+            "help": "Additional documentation sequence 24"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

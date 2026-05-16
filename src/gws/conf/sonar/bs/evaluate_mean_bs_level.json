@@ -1,0 +1,15 @@
+{
+    "name": "Evaluate backscatter angular response file to get mean reference level",
+    "function": "pyat.sonarscope.function.evaluate_bs_reference_level.BSReferenceLevelEvaluator",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/evaluate_mean_bs_level.html",
+    "parameters": [
+        {
+            "name": "mean_model_file",
+            "key": "-model",
+            "long_key": "--mean_model_file",
+            "help": "Computed mean model file",
+            "nargs": "1",
+            "type": "file(content_type=BSAR_NETCDF_4)"
+        }
+    ]
+}

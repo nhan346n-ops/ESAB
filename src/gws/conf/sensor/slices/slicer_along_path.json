@@ -1,0 +1,111 @@
+{
+    "name": "Path-Based Slicer (g3d)",
+    "function": "pyat.sensor.slice.sensor_to_longitudinal_g3d_from_path.slice_sensor_files",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sensor/longitudinal_section.html",
+    "pages": [
+        {
+            "title": "Grids parameters",
+            "description": "Complete arguments to configure slices",
+            "parameters": [
+                "width",
+                "grid_length",
+                "delta_along",
+                "grid_height",
+                "delta_elevation",
+                "interpolate"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-in",
+            "long_key": "--i_paths",
+            "help": "Input file list (.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=SENSOR_NETCDF_4, extension=nc)"
+        },
+        {
+            "name": "o_path",
+            "key": "-o",
+            "long_key": "--o_path",
+            "help": "Output G3D file",
+            "nargs": "1",
+            "type": "outfile(content_type=G3D_NETCDF_4)"
+        },
+        {
+            "name": "path",
+            "key": "-t",
+            "long_key": "--path",
+            "help": "Path file (*.kml or *.shp)",
+            "nargs": "1",
+            "type": "file(content_type=KML_XML|SHAPEFILE)"
+        },
+        {
+            "name": "width",
+            "key": "-w",
+            "long_key": "--width",
+            "help": "Width around the path (m)",
+            "nargs": "1",
+            "type": "float",
+            "default" : 20
+        },
+        {
+            "name": "grid_length",
+            "key": "-gl",
+            "long_key": "--grid_length",
+            "help": "Longitudinal resolution defined by the number of cells",
+            "nargs": "1",
+            "type": "int",
+            "default" : 800
+        },
+        {
+            "name": "delta_along",
+            "key": "-dal",
+            "long_key": "--delta_along",
+            "help": "     or defined by the cell size",
+            "nargs": "1",
+            "type": "float"
+        },
+        {
+            "name": "grid_height",
+            "key": "-gh",
+            "long_key": "--grid_height",
+            "type": "int",
+            "help": "Vertical resolution defined by the number of cells",
+            "default": 100
+        },
+        {
+            "name": "delta_elevation",
+            "key": "-del",
+            "long_key": "--delta_elevation",
+            "help": "     or defined by the cell size",
+            "nargs": "1",
+            "type": "float"
+        },
+        {
+            "name": "interpolation_algo",
+            "type": "string",
+            "help": "Interpolation algorithm",
+            "choices": [
+                "None",
+                "linear"
+            ],
+            "default": "linear"
+        },
+        {
+            "name": "layers",
+            "key": "-l",
+            "long_key": "--layers",
+            "help": "Select layers to export",
+            "type": "layers"
+        },
+        {
+            "name": "overwrite",
+            "key": "-o",
+            "long_key": "--overwrite",
+            "help": "Allow overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

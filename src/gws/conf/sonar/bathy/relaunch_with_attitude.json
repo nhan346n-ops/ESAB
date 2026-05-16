@@ -1,0 +1,48 @@
+{
+    "name": "Recompute Detection Position (Raytracing) with attitude",
+    "function": "pyat.xsf.bathy.raytracing.relaunch.relaunch_with_attitude",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/bathy/raytracing.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file (.xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        },
+        {
+            "name": "i_phinsrepeater_path",
+            "key": "-i_phinsrepeater_path",
+            "help": "Input phins repeater data file",
+            "type": "file(content_type=UNDEFINED,extensions=txt|log)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "Output file (.nc)",
+            "nargs": "+",
+            "type": "outfile(content_type=XSF_NETCDF_4,suffix=relaunch_phinsrepeater,extension=xsf.nc)"
+        },
+        {
+            "name": "algo",
+            "help": "algorithm",
+            "type": "string",
+            "choices": [
+                "vcca",
+                "ncca",
+                "ncta",
+                "ncca_parallel",
+                "ncta_parallel"
+            ],
+            "default": "ncca_parallel"
+        },
+        {
+            "name": "overwrite",
+            "key": "--overwrite",
+            "help": "Allow overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

@@ -1,0 +1,10 @@
+= Set CDI
+
+== Overview
+
+Set a given CDI to all valid cell in a DTM file. Previous CDI are erased
+
+By default, the name of the cdi is SDN:CDI:LOCAL:0 (to changed). The name of the output path is
+i_path with the suffix "-cdi".
+
+include::example$generated/dtm/cdi/set_cdi_params.adoc[]

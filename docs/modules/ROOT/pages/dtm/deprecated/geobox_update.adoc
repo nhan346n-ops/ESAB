@@ -1,0 +1,6 @@
+= Geobox update process
+
+== Overview
+This application takes DTM file(s) in new format, and update the geographical box in new DTM file(s).
+
+By default, the output file(s) is the input path with the suffix "-newgeobox".No selected window.

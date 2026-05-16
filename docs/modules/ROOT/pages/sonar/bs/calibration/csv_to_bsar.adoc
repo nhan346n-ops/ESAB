@@ -1,0 +1,10 @@
+= CSV -> BSAR
+
+== Overview
+
+Read a CSV file containing mean BS Curve by indicence and convert it to BSAR format.
+The CSV file should have the following format:
+angle;bs_value
+where angle is the incidence angle in degrees and bs_value is the backscatter value in dB.
+
+include::example$generated/sonar/bs/calibration/csv_to_bsar_params.adoc[]

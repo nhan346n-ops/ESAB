@@ -1,0 +1,59 @@
+= Automatic Navigation Shift
+
+== Overview
+
+Computes navigation offset vectors using reference isobaths as ground thruth.
+
+The *navigation* of *Underwater Vehicles (AUV/ROV)* is generally :
+
+* less accurate than acquired bathymetry,
+* likely to drift over time,
+
+resulting in poorly georeferenced bathymetry, and thus noisy DTMs.
+This is append both at local and global levels : not only in terms of absolute positioning, but also in relative positioning between each survey lines.
+
+To cope with that, it is sometimes required to *offset AUV/ROV navigation* using shipborne *MBES bathymetry* and derived DTM's isobaths as a ground thruth.
+This can be done manualy using Globe _Navigation Shift Editor_
+
+This process is, by design, an automation of manual navigation offset done through the _Navigation Shift Editor_ : given source isobath and navigation, and target isobaths, it computes  and returns offset vectors that best match source and target isobaths through chain-codes correlations and https://en.wikipedia.org/wiki/Procrustes_analysis[procrustes analysis]
+
+This tool is also directly embedded in the navigation shift editor :
+
+image::sonar/isobath_registration_nav_shift_button.png[]
+
+== parameters
+* *_Reference Dtm_* : DTM (.dtm.nc) file used as ground thruth. All offsets will be computed to match these isobaths
+* *_Cell size_* : DTM cell size (m). Used for DTM computation from each input sounder file.
+* *_isobath interval_* : Isobath interval (m) derived from each individual DTMs
+* *_maximum distance_* : Maximum allowed navigation offset amplitude (m).
+* *_vertex distance_* : Isobath resampling distance (m)
+* *_minimum overlap_* : Minimum matching isobath vertices. At least 6 are needed
+ are neeeded to compute a robust match
+
+== Algorithm
+
+The algorithm has been inspired by the one in B. Kamgar-Parsi et al. (see reference at the bottom).
+
+    1. Gridding of the irregularly spaced raw sounding data -> DTM Cell size parameter : each input file is individualy gridded
+    2. isobaths extraction for both source and target DTMs -> isobath interval parameter
+    3. Spatial join between source isobath and navigation points
+    4. isobaths feature extraction : several chain-code like representation of the isobath (i.e. azimuth variation rate along different arc-length) -> Need for resampling isobath, thus the vertex distance parameter
+    5. Identification of best matching isobath portions between source and target, based on :
+        A. matching depth
+        B. correlation of the chain codes
+        C. geometrical proximity of the vertices -> max dist parameter
+    6. Local registration of matching source and target isobath portions, using Procrustes analysis -> min_overlap parameter, we need at list 6 vertices for a robust registration
+    7. Finaly, returns valid offset vectors (i.e. amplitude < max dist) with associated date-time
+
+image::sonar/isobath_registration_matches.png[several isobath matching portions]
+_Above : several isobath matching portions : source (orange) and target (cyan), with associated nav point (red +) and vector (orange)_
+
+image::sonar/isobath_registration_result_volt.png[]
+_Above : Result from the process, left, before, and right, after registration. Source isobaths from AUV (green) and target isobaths from reference DTM (purple), with associated computed offset vector (yellow)_
+
+
+== Reference
+
+https://ieeexplore.ieee.org/document/35982[Kamgar-Parsi, Behrooz & Rosenblum, Lawrence & Pipitone, Frank & Davis, Larry & Jones, Jeffrey. (1989). Toward an Automated System for a Correctly Registered Bathymetric Chart. Oceanic Engineering, IEEE Journal of. 14. 314 - 325. 10.1109/48.35982.]
+
+include::example$generated/sonar/nav/isobath_registration_params.adoc[]

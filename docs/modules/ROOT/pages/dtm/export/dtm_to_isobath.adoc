@@ -1,0 +1,8 @@
+= DTM -> isobath
+
+== Overview
+
+This application takes **DTM** file(s) as input, compute isobaths, and export them as **shape files** file(s), using  https://gdal.org/en/release-3.10/programs/gdal_contour.html[GDAL contour] capabilities .
+
+include::example$generated/dtm/export/dtm_to_isobath_params.adoc[]
+

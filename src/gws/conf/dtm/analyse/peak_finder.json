@@ -1,0 +1,151 @@
+{
+    "name": "Peak and Holes Finder",
+    "function": "pyat.dtm.analyse.peak_detector.PeakFinder",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/analyse/peak_finder.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "1",
+            "help": "Input file (*.nc)",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "geo_masks",
+            "key": "-m",
+            "long_key": "--geo-masks",
+            "help": "Restrict processing to a mask file list (*.kml or *.shp)",
+            "nargs": "+",
+            "type": "file(content_type=KML_XML|SHAPEFILE)"
+        },
+        {
+            "name": "clear_output",
+            "key": "-clear",
+            "long_key": "--clear",
+            "help": "Clear output directory",
+            "type": "bool",
+            "default": "True"
+        },
+        {
+            "name": "display",
+            "key": "-display",
+            "long_key": "--display",
+            "help": "Enable display plots",
+            "type": "bool",
+            "default": "False"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "nargs": "1",
+            "help": "Output directory",
+            "type": "folder"
+        },
+        {
+            "name": "use_gradient",
+            "key": "-g",
+            "long_key": "--gradient",
+            "help": "Use gradient method",
+            "type": "bool",
+            "default": "False"
+        },
+        {
+            "name": "peak_detection_threshold",
+            "type": "float",
+            "key": "-peak_detection_threshold",
+            "long_key": "--peak_detection_threshold",
+            "help": "\tAfter normalization of gradient vs filtered gradient, threshold for highest outliers",
+            "default": 10
+        },
+        {
+            "name": "percentile",
+            "type": "float",
+            "key": "-gradient_percentile",
+            "long_key": "--gradient_percentile",
+            "help": "\tPercentile filter parameter",
+            "default": 80
+        },
+        {
+            "name": "size",
+            "type": "int",
+            "key": "-gradient_size",
+            "long_key": "--gradient_size",
+            "help": "\tPercentile filter size : the shape from the input array to define the filter function",
+            "default": 5
+        },
+        {
+            "name": "use_percent",
+            "key": "-p",
+            "long_key": "--percent",
+            "help": "Enable percent detection method",
+            "type": "bool",
+            "default": "True"
+        },
+        {
+            "name": "percent",
+            "type": "int",
+            "key": "-percent_depth",
+            "long_key": "--percent_depth",
+            "help": "\tPercent of local depth threshold parameter",
+            "default": 10
+        },
+        {
+            "name": "percent_kernel",
+            "type": "int",
+            "key": "-percent_kernel",
+            "long_key": "--percent_kernel",
+            "help": "\tKernel for local mean computation",
+            "default": 2
+        },
+        {
+            "name": "use_stdev",
+            "key": "-s",
+            "long_key": "--stdev",
+            "help": "Use stdev detection method",
+            "type": "bool",
+            "default": "False"
+        },
+        {
+            "name": "maximum_allowed_std",
+            "type": "float",
+            "key": "-maximum_allowed_std",
+            "long_key": "--maximum_allowed_std",
+            "help": "\tStdev maximum stdev allowed value",
+            "default": 130
+        },
+        {
+            "name": "kernel_size_for_mean_computation",
+            "type": "float",
+            "key": "-kernel_size_for_mean_computation",
+            "long_key": "--kernel_size_for_mean_computation",
+            "help": "\tKernel for local mean computation",
+            "default": 2
+        },
+        {
+            "name": "kernel_size_for_stdev",
+            "type": "int",
+            "key": "-kernel_size_for_stdev",
+            "long_key": "--kernel_size_for_stdev",
+            "help": "\tStdev Kernel size for local stdev computation",
+            "default": 2
+        },
+        {
+            "name": "use_holes_detection",
+            "key": "-holes",
+            "long_key": "--holes",
+            "help": "Use holes detection method",
+            "type": "bool",
+            "default": "False"
+        },
+        {
+            "name": "maximum_hole_area_in_pixel",
+            "type": "int",
+            "key": "-maximum_hole_area_in_pixel",
+            "long_key": "--maximum_hole_area_in_pixel",
+            "help": "\tmaximum size of a hole, bigger ones are ignored",
+            "default": 100
+        }
+    ]
+}

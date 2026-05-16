@@ -1,0 +1,10 @@
+= FES harmonic tide
+
+== Overview
+This processus compute a tide prediction on a set of time-stamped geographic points
+
+include::example$generated/tide/fes_harmonic_tide_params.adoc[]
+
+include::tide_file_format.adoc[]
+
+include::tide_processing.adoc[]

@@ -1,0 +1,12 @@
+= DTM -> GeoTIFF
+
+== Overview
+This application takes DTM file(s) as input and will export it (or them) as TIFF file using GDAL Warp capabilities. (See https://gdal.org/programs/gdalwarp.html, https://gdal.org/drivers/raster/gtiff.html#raster-gtiff)
+
+Optional parameters can be set :
+
+* Compression with DEFLATE algorithm (gdalwarp -co "COMPRESS=DEFLATE")
+
+* Missing data value for float layers (gdalwarp -dstnodata "value")
+
+include::example$generated/dtm/export/dtm_to_tiff_params.adoc[]

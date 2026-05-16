@@ -1,0 +1,10 @@
+=== Tide output file format
+Datapoint prediction are given as a netcdf4 file with .tide.nc format described in pytide project
+or as a csv file in the format below. Times are UTC time
+
+....
+date;longitude;latitude;tide
+2012-06-07 07:47:32;43.6650967;-1.567564;2.917011397654118
+2012-06-07 07:57:32;43.665575394896265;-1.5356997643153527;2.7617014005941805
+2012-06-07 08:07:32;43.66552649569928;-1.5039062467498356;2.6029515149883053
+....

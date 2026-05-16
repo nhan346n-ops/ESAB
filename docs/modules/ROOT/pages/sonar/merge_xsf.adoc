@@ -1,0 +1,7 @@
+= Cut / Merge SONAR-netCDF (XSF)
+
+== Overview
+
+This application takes several XSF files as input and merge them into one (or several) XSF file.
+
+include::example$generated/sonar/merge_xsf_params.adoc[]

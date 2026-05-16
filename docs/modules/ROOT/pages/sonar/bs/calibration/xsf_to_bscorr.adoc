@@ -1,0 +1,10 @@
+= XSF -> bscorr
+
+== Overview
+
+Extract bscorr from XSF file if present in extra_parameters or backscatter_calibration datagrams and save it in a .txt file
+
+extra_parameters can only be found in XSF genereated from .all (Kongsberg) files.
+backscatter_calibration can only be found in XSF genereated from .kmall (Kongsberg) files.
+
+include::example$generated/sonar/bs/calibration/xsf_to_bscorr_params.adoc[]

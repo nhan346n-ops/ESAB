@@ -1,0 +1,49 @@
+{
+    "name": "Reduction",
+    "function": "pyat.dtm.transform.reduction.ReductionProcess",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/transform/reduction.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "help": "Input file list (.nc)",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "nargs": "+",
+            "help": "Output file list (.nc)",
+            "type": "outfile(content_type=DTM_NETCDF_4,suffix=reduction)"
+        },
+        {
+            "name": "factor",
+            "type": "int",
+            "key": "-f",
+            "long_key": "--factor",
+            "help": "Reduction factor",
+            "choices": [
+                2,
+                4
+            ],
+            "default": 4
+        },
+        {
+            "name": "layers",
+            "key": "-l",
+            "long_key": "--layers",
+            "help": "Activate layers.",
+            "type": "layers"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

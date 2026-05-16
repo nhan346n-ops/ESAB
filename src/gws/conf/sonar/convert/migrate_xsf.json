@@ -1,0 +1,35 @@
+{
+    "name": "Migrate XSF files",
+    "function": "pyat.xsf.xsf_updater.XsfUpdater",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/convert/migrate_xsf.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (.xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o_paths",
+            "help": "Output file (.nc)",
+            "nargs": "+",
+            "type": "outfile(extension=xsf.nc)"
+        },
+        {
+            "name": "overwrite",
+            "key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "i_ref",
+            "key": "-i_reference_folder",
+            "help": "Folder containing reference XSF files",
+            "nargs": "1",
+            "type": "folder"
+        }
+    ]
+}

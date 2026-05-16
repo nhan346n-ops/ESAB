@@ -1,0 +1,170 @@
+{
+    "name": "Export binary files to Tide",
+    "function": "pyat.tide.binary_files_to_tide.exports",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/tide/binary_files_to_tide.html",
+    "pages": [
+        {
+            "title": "Hidden parameters",
+            "description": "List of parameters computed by Globe, not edited by user",
+            "visible": false,
+            "parameters": [
+                "o_value_count",
+                "time",
+                "latitude",
+                "longitude",
+                "tide",
+                "metadata"
+            ]
+        },
+        {
+            "title": "Define tide metadata",
+            "description": "Fill tide metadata",
+            "visible": true,
+            "parameters": [
+                "tide_type",
+                "tide_source",
+                "vertical_reference",
+                "tide_gauge_id",
+                "tide_gauge_name",
+                "tide_gauge_latitude",
+                "tide_gauge_longitude",
+                "prediction_model",
+                "surge_corrected",
+                "vertical_datum",
+                "reference_height_above_ellipsoid",
+                "comment"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "nargs": "+",
+            "help": "Any tide file",
+            "type": "infile(content_type=TIDE_CSV|TIDE_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "help": "Output file (.tide.nc, .ttb)",
+            "nargs": "+",
+            "type": "outfile(extension=tide.nc,extensions=tide.nc|ttb|csv)"
+        },
+        {
+            "name": "overwrite",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "o_value_count",
+            "help": "Number of values for each output file",
+            "nargs": "+",
+            "type": "int"
+        },
+        {
+            "name": "time",
+            "help": "Timestamps for tide data",
+            "type": "file"
+        },
+        {
+            "name": "latitude",
+            "help": "Latitudes of the reference point in the reference geodesic datum",
+            "type": "file"
+        },
+        {
+            "name": "longitude",
+            "help": "Longitudes of the reference point in the reference geodesic datum",
+            "type": "file"
+        },
+        {
+            "name": "tide",
+            "help": "Tide values",
+            "type": "file"
+        },
+        {
+            "name": "metadata",
+            "help": "Metadata as a json dictionary",
+            "type": "string"
+        },
+        {
+            "name": "tide_type",
+            "help": "Tide type",
+            "type": "string",
+            "choices": [
+                "PREDICTED",
+                "MEASURED",
+                "UNKNOWN"
+            ]
+        },
+        {
+            "name": "tide_source",
+            "help": "Tide source",
+            "type": "string",
+            "choices": [
+                "TIDE_GAUGE",
+                "GNSS",
+                "MODEL",
+                "UNKNOWN"
+            ]
+        },
+        {
+            "name": "vertical_reference",
+            "help": "Vertical reference",
+            "type": "string",
+            "choices": [
+                "LAT",
+                "ZH",
+                "MSL",
+                "WGS84",
+                "UNKNOWN"
+            ]
+        },
+        {
+            "name": "surge_corrected",
+            "help": "Surge corrected",
+            "type": "string",
+            "choices": [
+                "TRUE",
+                "FALSE"
+            ]
+        },
+        {
+            "name": "vertical_datum",
+            "help": "Vertical datum (surface reference)",
+            "type": "string"
+        },
+        {
+            "name": "prediction_model",
+            "help": "Prediction model",
+            "type": "string"
+        },
+        {
+            "name": "reference_height_above_ellipsoid",
+            "help": "Reference height above ellipsoid (m)",
+            "type": "string"
+        },
+        {
+            "name": "tide_gauge_latitude",
+            "help": "Tide gauge latitude (°)",
+            "type": "string"
+        },
+        {
+            "name": "tide_gauge_longitude",
+            "help": "Tide gauge longitude (°)",
+            "type": "string"
+        },
+        {
+            "name": "tide_gauge_name",
+            "help": "Tide gauge name",
+            "type": "string"
+        },
+        {
+            "name": "tide_gauge_id",
+            "help": "Tide gauge id",
+            "type": "string"
+        },
+        {
+            "name": "comment",
+            "help": "Additional comment",
+            "type": "string"
+        }
+    ]
+}

@@ -1,0 +1,100 @@
+{
+    "name": "Triangulation Filtering",
+    "function": "pyat.xsf.bathy.triangulation_filtering.process",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/bathy/triangulation_filtering.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "help": "Input file list (.xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "help": "Output file (xsf.nc)",
+            "nargs": "+",
+            "type": "outfile(extension=xsf.nc,suffix=filtri)"
+        },
+        {
+            "name": "overwrite",
+            "key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "projection",
+            "type": "projection(restore=false)",
+            "help": "The projection used to transform sound coordinates"
+        },
+        {
+            "name": "method",
+            "help": "Filtering method.",
+            "type": "string",
+            "choices": [
+              "Height",
+              "Normal",
+              "Neighbour"
+            ],
+            "default": "Height"
+          },
+          {
+            "name": "heightInvalidLimit",
+            "help": "Height coefficient for sounding invalidation (method height).",
+            "type": "float",
+            "default": 4.0
+          },
+          {
+            "name": "heightIterationNumber",
+            "help": "Number of treatment iterations (method height).",
+            "type": "int",
+            "default": 30
+          },
+          {
+            "name": "normalHeightInvalidLimit",
+            "help": "Height coefficient for first invalidation (method normal).",
+            "type": "float",
+            "default": 6.0
+          },
+          {
+            "name": "normalSelectLimit",
+            "help": "Sounding selection parameter (method normal).",
+            "type": "int",
+            "default": 4
+          },
+          {
+            "name": "normalAngleInvalidLimit",
+            "help": "Maximum allowed angle between normals (method normal).",
+            "type": "float",
+            "default": 60.0
+          },
+          {
+            "name": "neighbourHeightInvalidLimit",
+            "help": "Height coefficient for first invalidation (method neighbour).",
+            "type": "float",
+            "default": 5.0
+          },
+          {
+            "name": "neighbourSelectLimit",
+            "help": "Sounding selection parameter (method neighbour).",
+            "type": "float",
+            "default": 10.0
+          },
+          {
+            "name": "neighbourDistanceInvalidLimit",
+            "help": "Neighbouring limit in % (method neighbour).",
+            "type": "float",
+            "default": 70.0
+          },
+          {
+            "name": "sliceSize",
+            "help": "Slice size",
+            "type": "int",
+            "default": 250
+          },
+          {
+            "name": "gws_http_port",
+            "type": "int",
+            "default": 8080
+          }
+    ]
+}

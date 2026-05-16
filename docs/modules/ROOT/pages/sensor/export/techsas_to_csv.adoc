@@ -1,0 +1,18 @@
+= TECHSAS -> CSV
+
+== Overview
+
+This application takes Techsas data directory as input and will use navigation file to geolocalize data and export them to csv files.
+Sensor file names have to follow the pattern %date-%time-%sensortype-%sensorname
+
+Geolocalization is based on time of the sensor data : navigation (longitude,latitude) are taken at time of the sensor as the previous available value in navigation file.
+
+Exported sensors and can be chosen in the list of available sensors. If no one is selected, all sensors are exported.
+
+Only one sensor can be selected for navigation.
+
+A sampling step (-ss) can be provided to subsample input files.
+
+A time interval can be set to reduce treatment.
+
+include::example$generated/sensor/export/techsas_to_csv_params.adoc[]

@@ -1,0 +1,10 @@
+= XYZ -> DTM4 (NetCDF4)
+
+== Overview
+This application takes XYZ file(s) as input and will export it (or them) as DTM file(s) in
+the new netcdf format.
+Coordinates are assumed to be in degrees (longitudes and latitudes)
+
+
+[WARNING]
+The output file name is the same as the input file name with a ".nc" added at the end its name.

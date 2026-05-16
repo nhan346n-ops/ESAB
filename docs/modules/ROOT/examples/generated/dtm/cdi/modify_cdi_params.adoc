@@ -1,0 +1,10 @@
+// Generated documentation from source $dtm\cdi\modify_cdi.json
+== Parameters
+
+[cols="1,1,3",options="header"]
+|===
+| Name | Type | Description
+| i_paths | infile(content_type=DTM_NETCDF_4) | Input file list (.nc)
+| cdis | cdi#modify | Cdis must be like: "$cdi_to_change $new_name"
+|===
+

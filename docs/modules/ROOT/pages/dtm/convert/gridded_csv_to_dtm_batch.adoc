@@ -1,0 +1,8 @@
+= Gridded CSV -> DTM (batch)
+
+== Overview
+
+This application takes gridded CSV file(s) as input and will export it (or them) as DTM file(s) in
+the new netcdf format. Geoboxes and spatial resolutions are evaluated automatically.
+
+include::example$generated/dtm/convert/batch_gridded_csv_to_dtm_params.adoc[]

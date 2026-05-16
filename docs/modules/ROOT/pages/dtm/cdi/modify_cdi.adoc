@@ -1,0 +1,7 @@
+= Modify CDI
+
+== Overview
+
+Change value of an existing CDI entry.
+
+include::example$generated/dtm/cdi/modify_cdi_params.adoc[]

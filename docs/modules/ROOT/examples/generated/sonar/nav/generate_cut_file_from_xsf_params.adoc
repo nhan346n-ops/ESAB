@@ -1,0 +1,11 @@
+// Generated documentation from source $sonar\nav\generate_cut_file_from_xsf.json
+== Parameters
+
+[cols="1,1,3",options="header"]
+|===
+| Name | Type | Description
+| i_paths | infile(content_type=XSF_NETCDF_4) | Input file list (.xsf.nc)
+| o_path | outfile(extension=cut) | cut file (.cut)
+| overwrite | outfile#overwrite | Allow overwrite output file if already exists.
+|===
+

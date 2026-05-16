@@ -1,0 +1,7 @@
+= Triangulation Filtering
+
+== Overview
+
+This process filters bathymetry detections in XSF files using a triangulation method.
+
+include::example$generated/sonar/bathy/triangulation_filtering_xsf_params.adoc[]

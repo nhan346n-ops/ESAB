@@ -1,0 +1,129 @@
+{
+    "name": "Horizontal Slicer (g3d)",
+    "function": "pyat.wc.horizontal_section.HorizontalSection",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/wc/horizontal_section.html",
+    "pages": [
+        {
+            "title": "Grids parameters",
+            "description": "Complete arguments to configure slices",
+            "parameters": [
+                "grid_count",
+                "delta_elevation",
+                "vertical_offset",
+                "vertical_reference"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-in",
+            "long_key": "--i_paths",
+            "help": "Input file list (.xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-out",
+            "long_key": "--o_paths",
+            "help": "Output file list (.g3d.nc)",
+            "nargs": "*|1",
+            "type": "outfile(suffix=WCHorizontalEcho,extension=g3d.nc)"
+        },
+        {
+            "name": "coord",
+            "key": "-c",
+            "long_key": "--coord",
+            "help": "Coordinates of geographic bounds",
+            "type": "geobox#coords"
+        },
+        {
+            "name": "target_resolution",
+            "type": "geobox#resolution",
+            "key": "-tr",
+            "long_key": "--target_resolution",
+            "help": "Set output file resolution (in target georeferenced units).",
+            "default": "0.000277778",
+            "function": "functions/evaluate_sounder_spatial_resolution.json"
+        },
+        {
+            "name": "delta_elevation",
+            "key": "-del",
+            "long_key": "--delta_elevation",
+            "help": "Vertical spacing (m) : distance between slices / slice thickness",
+            "nargs": "1",
+            "type": "float",
+            "function": "functions/evaluate_longitudinal_section_arguments.json"
+        },
+        {
+            "name": "grid_count",
+            "key": "-g",
+            "long_key": "--grid_count",
+            "help": "    and/or Grid count : number of slices (0 = auto)",
+            "nargs": "1",
+            "type": "int"
+        },
+        {
+            "name": "vertical_offset",
+            "key": "-vo",
+            "long_key": "--vertical_offset",
+            "help": "Vertical offset (m) : shift slices upward/downward",
+            "nargs": "1",
+            "type": "float",
+            "default": "0"
+        },
+        {
+            "name": "vertical_reference",
+            "key": "-vr",
+            "long_key": "--vertical_reference",
+            "help": "Vertical reference : origin elevation surface used to generate slices",
+            "nargs": "1",
+            "type": "string",
+            "choices": [
+                "chart_datum",
+                "sea_floor"
+            ],
+            "default": "chart_datum"
+        },
+        {
+            "name": "filters",
+            "key": "-filters",
+            "long_key": "--filters",
+            "help": "Optional WC filters configuration",
+            "type": "wc_filters"
+        },
+        {
+            "name": "layers",
+            "key": "-l",
+            "long_key": "--layers",
+            "help": "Select layers to export",
+            "type": "checklist",
+            "choices": [
+                "backscatter_mean",
+                "backscatter_max",
+                "backscatter_comp_mean",
+                "backscatter_comp_max"
+            ],
+            "default": [
+                "backscatter_mean"
+            ]
+        },
+        {
+            "name": "normalization_offset",
+            "key": "-no",
+            "long_key": "--normalization_offset",
+            "help": "Range normalization offset (dB) : ref level for compensated layer",
+            "nargs": "1",
+            "type": "float",
+            "default": "0"
+        },
+        {
+            "name": "overwrite",
+            "key": "-o",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

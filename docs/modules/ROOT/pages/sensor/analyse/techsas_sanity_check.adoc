@@ -1,0 +1,23 @@
+= Sanity Check
+
+== Overview
+
+This tool processes TECHSAS files to detect anomalies.
+
+=== Check operations
+
+The following anomalies are checked:
+
+* *duplicate* : an anomaly for each duplicated time index.
+
+* *leap back* : an anomaly for each time index which is before the previous time index.
+
+* *interruption* : an anomaly when the duration between two time index is over the specified threshold.
+
+* *invalid position* : an anomaly when position (latitude/longitude) is invalid (not between [-90;90]/[-180;180]).
+
+=== Output
+
+This tool produces a CSV file (.csv) filled with found anomalies.
+
+include::example$generated/sensor/process/techsas_sanity_check_params.adoc[]

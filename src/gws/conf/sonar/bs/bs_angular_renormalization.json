@@ -1,0 +1,70 @@
+{
+    "name": "Angular Renormalization",
+    "function": "pyat.sonarscope.bs_correction.angular_renormalization.xsf_constant_process",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/bs/bs_angular_renormalization.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (.xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o_paths",
+            "help": "Output file (.xsf.nc)",
+            "nargs": "+",
+            "type": "outfile(content_type=XSF_NETCDF_4,suffix=bs_renorm,extension=xsf.nc)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow overwrite output file if already exists.",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "mean_model_file",
+            "key": "-model",
+            "long_key": "--mean_model_file",
+            "help": "Computed mean model file",
+            "nargs": "1",
+            "type": "file(content_type=BSAR_NETCDF_4)"
+        },
+        {
+            "name": "apply_compensation",
+            "key": "-comp",
+            "long_key": "--apply_compensation",
+            "help": "Apply compensation. Remove incidence angular dependency",
+            "type": "bool",
+            "default": true
+        },
+        {
+            "name": "reference_level",
+            "key": "-ref",
+            "long_key": "--reference_level",
+            "help": "Mean backscatter reference level (dB)",
+            "type": "float",
+            "default": -20,
+            "function": "sonar/bs/evaluate_mean_bs_level.json"
+        },
+        {
+            "name": "use_snippets",
+            "key": "-snippets",
+            "long_key": "--use_snippets",
+            "help": "Use snippets to recompute mean backscatter value per detection",
+            "type": "bool",
+            "default": false
+        },
+        {
+            "name": "i_dtm",
+            "key": "-i_dtm",
+            "long_key": "--i_dtm",
+            "help": "Input reference DTM file (leave empty to ignore incidence angle corrections)",
+            "nargs": "?",
+            "type": "file(content_type=DTM_NETCDF_4)"
+        }
+    ]
+}

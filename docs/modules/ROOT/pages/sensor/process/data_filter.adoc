@@ -1,0 +1,9 @@
+= Data Filter
+
+=== Overview
+The **Reset Data** process is designed to clean and preprocess Sensor-netCDF files.
+Its main function is to apply a series of **filters** that identify specific conditions in the data and **reset** (i.e., replace with `NaN`) the values of selected variables where those conditions are met.
+
+This process is typically used to remove invalid, corrupted, or physically impossible measurements before further analysis or modeling.
+
+include::example$generated/sensor/process/data_filter_params.adoc[]

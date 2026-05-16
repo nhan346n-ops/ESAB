@@ -1,0 +1,12 @@
+// Generated documentation from source $utils\sbe21_to_csv.json
+== Parameters
+
+[cols="1,1,3",options="header"]
+|===
+| Name | Type | Description
+| i_paths | infile(content_type=UNDEFINED) | input file list
+| navigation_file | file(content_type=NVI_NETCDF_4\|NVI_V2_NETCDF_4) | Nvi reference file (.nvi)
+| o_paths | outfile(extension=csv,suffix=geoloc) | Output file list (.csv)
+| overwrite | outfile#overwrite | Allow to overwrite file if already exists.
+|===
+

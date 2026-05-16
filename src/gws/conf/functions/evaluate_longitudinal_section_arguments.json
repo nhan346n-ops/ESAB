@@ -1,0 +1,14 @@
+{
+    "name": "Used to configure XSF longitudinal section process. Computes delta across and elevation",
+    "function": "pyat.function.evaluate_longitudinal_section_arguments.LongitudinalSectionArgumentsEvaluator",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (.xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        }
+    ]
+}

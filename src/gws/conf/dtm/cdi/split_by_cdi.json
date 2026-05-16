@@ -1,0 +1,22 @@
+{
+    "name": "Split by CDI",
+    "function": "pyat.dtm.cdi.split_by_cdi_process.SplitByCdiProcess",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/cdi/split_by_cdi.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "help": "Input file list (.nc)",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

@@ -1,0 +1,30 @@
+{
+    "name": "Upgrade NVI format",
+    "function": "pynvi.version_2.upgrade_nvi.upgrades",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/navigation/upgrade_nvi.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "help": "Input file(s) (.nvi)",
+            "type": "infile(content_type=NVI_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_path",
+            "help": "Output file (.nvi.nc)",
+            "nargs": "+",
+            "type": "outfile(extension=nvi.nc)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

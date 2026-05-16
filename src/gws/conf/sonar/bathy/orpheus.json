@@ -1,0 +1,166 @@
+{
+    "name": "Orpheus",
+    "function": "pyat.xsf.bathy.orpheus.Orpheus",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/bathy/orpheus.html",
+    "parameters": [
+        {
+            "name": "sounder_files",
+            "key": "-i",
+            "nargs": "+",
+            "long_key": "--sounder-files",
+            "help": "Netcdf file (.xsf.nc)",
+            "type": "infile(content_type=XSF_NETCDF_4|MBG_NETCDF_3)"
+        },
+        {
+            "name": "ref_file",
+            "key": "-r",
+            "nargs": "1",
+            "long_key": "--ref-file",
+            "help": "Input reference file",
+            "type": "file(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "out_dir",
+            "key": "-o",
+            "long_key": "--out-dir",
+            "help": "Directory in which all output data will be written",
+            "type": "folder"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "bool"
+        },
+        {
+            "name": "scope",
+            "type": "string",
+            "choices": [
+                "GLOBAL",
+                "PER_FILE"
+            ],
+            "default": "GLOBAL",
+            "key": "-s",
+            "long_key": "--scope",
+            "help": "Scope of calculations"
+        },
+        {
+            "name": "sounder_criteria",
+            "type": "string",
+            "choices": [
+                "DETECTION_TYPE",
+                "EMISSION_SECTOR",
+                "EMISSION_PLAN",
+                "PING_FREQUENCY",
+                "NOT"
+            ],
+            "default": null,
+            "key": "-sc",
+            "long_key": "--sounder-criteria",
+            "help": "Which criteria to use to divide the sounders"
+        },
+        {
+            "name": "viz_x",
+            "type": "string",
+            "choices": [
+                "BEAM",
+                "ANGLE"
+            ],
+            "default": "ANGLE",
+            "key": "-vx",
+            "long_key": "--viz-x-axis",
+            "help": "X axis to use for plots"
+        },
+        {
+            "name": "viz_y",
+            "type": "string",
+            "choices": [
+                "BIAS",
+                "QUALITY_FACTOR"
+            ],
+            "default": "BIAS",
+            "key": "-vy",
+            "long_key": "--viz-y-axis",
+            "help": "Y axis to use for plots"
+        },
+        {
+            "name": "metrics_names",
+            "key": "-m",
+            "long_key": "--metrics_names",
+            "help": "Select optional metrics to plot and export",
+            "type": "checklist",
+            "choices": [
+                "mean",
+                "std",
+                "count",
+                "confidence level"
+            ],
+            "default": []
+        },
+        {
+            "name": "unit_y",
+            "type": "string",
+            "choices": [
+                "METER",
+                "PERCENT"
+            ],
+            "default": "METER",
+            "key": "-u",
+            "long_key": "--unit",
+            "help": "Which unit to use when Y axis is an elevation/depth (BIAS)"
+        },
+        {
+            "name": "angle_bin_width",
+            "type": "int",
+            "default": 1,
+            "key": "-w",
+            "long_key": "--angle_bin_width",
+            "help": "Width of angle bins (degrees)"
+        },
+        {
+            "name": "confidence_level",
+            "type": "int",
+            "default": 95,
+            "key": "-cl",
+            "long_key": "--confidence-level",
+            "help": "Confidence level (%)"
+        },
+        {
+            "name": "survey_orders",
+            "type": "checklist",
+            "choices": [
+                "ORDER_1A",
+                "ORDER_1B",
+                "ORDER_2",
+                "SPECIAL_ORDER",
+                "EXCLUSIVE_ORDER"
+            ],
+            "help": "Survey order to compute the maximum allowable vertical measurement uncertainty"
+        },
+        {
+            "name": "count_threshold",
+            "type": "int",
+            "default": 0,
+            "key": "-ct",
+            "long_key": "--count-threshold",
+            "help": "Conditional data with less than Threshold(%) of samples wrt total number of samples are ignored"
+        },
+        {
+            "name": "export_csv",
+            "type": "bool",
+            "default": true,
+            "key": "-csv",
+            "long_key": "--export_csv",
+            "help": "export metrics as csv"
+        },
+        {
+            "name": "plot_width",
+            "type": "int",
+            "default": 6,
+            "key": "-w",
+            "long_key": "--plot-width",
+            "help": "Matplotlib width unit deciding the width of plots"
+        }
+    ]
+}

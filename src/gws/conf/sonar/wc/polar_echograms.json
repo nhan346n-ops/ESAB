@@ -1,0 +1,100 @@
+{
+    "name": "Polar Echograms (g3d)",
+    "function": "pyat.wc.polar_echograms.PolarEchograms",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/wc/polar_echograms.html",
+    "pages": [
+        {
+            "title": "Grids parameters",
+            "description": "Optional arguments to configure echograms",
+            "parameters": [
+                "sample_resolution",
+                "height",
+                "interpolate"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-in",
+            "long_key": "--i_paths",
+            "help": "Input file list (.xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-out",
+            "long_key": "--o_paths",
+            "help": "Output file list (.g3d.nc)",
+            "nargs": "*|1",
+            "type": "outfile(suffix=PolarEchograms,extension=g3d.nc)"
+        },
+        {
+            "name": "sample_resolution",
+            "key": "-sr",
+            "long_key": "--sample_resolution",
+            "help": "Sample resolution (m) : (0 = auto)",
+            "nargs": "1",
+            "type": "float",
+            "function": "functions/evaluate_polar_echograms_arguments.json"
+        },
+        {
+            "name": "height",
+            "key": "-height",
+            "long_key": "--height",
+            "help": "   Indicative height for default resolution (pixels)",
+            "nargs": "1",
+            "type": "float",
+            "function": "functions/evaluate_polar_echograms_arguments.json"
+        },
+        {
+            "name": "interpolate",
+            "key": "-interpolate",
+            "long_key": "--interpolate",
+            "help": "Use linear interpolation to fill gaps",
+            "nargs": "1",
+            "type": "bool",
+            "default": true
+        },
+        {
+            "name": "filters",
+            "key": "-filters",
+            "long_key": "--filters",
+            "help": "Optional WC filters configuration",
+            "type": "wc_filters"
+        },
+        {
+            "name": "layers",
+            "key": "-l",
+            "long_key": "--layers",
+            "help": "Select layers to export",
+            "type": "checklist",
+            "choices": [
+                "backscatter_mean",
+                "backscatter_max",
+                "backscatter_comp_mean",
+                "backscatter_comp_max"
+            ],
+            "default": [
+                "backscatter_mean"
+            ]
+        },
+        {
+            "name": "normalization_offset",
+            "key": "-no",
+            "long_key": "--normalization_offset",
+            "help": "Range normalization offset (dB) : ref level for compensated layer",
+            "nargs": "1",
+            "type": "float",
+            "default": "0"
+        },
+        {
+            "name": "overwrite",
+            "key": "-o",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

@@ -1,0 +1,30 @@
+{
+    "name": "Convert XYZ to DTM",
+    "function": "pyat.xyz.xyz2dtm.Xyz2Dtm",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/_deprecated/xyz_exporter.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (*.xyz)",
+            "nargs": "+",
+            "type": "infile(content_type=BATHIMETRIC_CSV,extensions=xyz|txt|asc)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "Output file list (*.dtm.nc)",
+            "nargs": "+",
+            "type": "outfile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

@@ -1,0 +1,25 @@
+== Filtering algorithm
+
+* *Step 1 : Change of reference surface*
++
+Navigation data are extracted from GPS information. This information is relative to the ellipsoid (WGS84). To get tide values with the reference of your choice : LAT or ZeroHydro
+
+* *Step 2 (predictive_mode ON) : Compute of surge relative to FES2014 prediction*
++
+In order to obtain a smoother filtering and a better interpolation of missing data, the predictive_mode computes the tide prediction in every point of the navigation using the FES2014 prediction model. The predicted model is then subtracted to the unfiltered tide values. The resulting data can be seen as the surge relative to FES2014 tide.
+
+* *Step 3 (positioning_type_filter ON) : Filtering out non-RTK values*
++
+GPS data can be very noisy and even loose satellite fix. At this step, low quality data are removed from dataset.
+
+* *Step 4 : Resampling and interpolation*
++
+This step first resamples data with a 1 sec period. Then a moving average is applied and finally a simple linear interpolation is used to fill missing or removed data.
+
+* *Step 5 : Low pass filtering*
++
+Applies a Chebyshev type II filter (order = 2, frequency_cut = 1/300, attenuation=40dB )
+
+* *Step 6 (predictive_mode ON) : Reapply of FES2014 prediction on filtered data*
++
+The predicted model is added to filtered surge values to get back tide values relative to the desired surface reference

@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=61.0", "cython", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyat"
+version = "0.1.40"
+authors = [
+    { name = "Cyrille Poncelet", email = "cyrille.poncelet@ifremer.fr" },
+]
+description = "Set of the French Oceanographic Fleet processing algorithms"
+readme = "README.md"
+license = "LGPL-3.0-or-later"
+license-files = ["LICENSE"]
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "netcdf4",
+    "dask",
+    "cftime>=1.6.1",
+    "xarray",
+    "rioxarray",
+    "pyigrf",
+    "scikit-image",
+    "scikit-learn",
+    "scikit-spatial",
+    "opencv-python",
+    "scipy",
+    "numba",
+    "progress",
+    "pandas",
+    "pyproj>=3.3",
+    "haversine",
+    "geopy",
+    "seaborn",
+    "requests",
+    "geopandas>=1.0.1",
+    "fiona",
+    "dataclasses-json",
+    "mhkit",
+    "rsocket==0.4.*",
+    "sonarnative",
+    "pynvi",
+    "pytechsas",
+    "pygws",
+    "sonar-netcdf",
+    "heightmap-interpolation"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.urls]
+"Homepage" = "https://gitlab.ifremer.fr/fleet/pyat"
+"Bug Tracker" = "https://gitlab.ifremer.fr/fleet/pyat/issues"
+
+[tool.black]
+line-length = 120
+target-version = ['py310']
+
+
+[tool.pytest.ini_options]
+minversion = "6.2"
+log_cli = true
+console_output_style = 'progress'
+filterwarnings = ['ignore::DeprecationWarning', 'ignore::FutureWarning']
+addopts = "--log-cli-level=INFO"
+testpaths = ["tests"]

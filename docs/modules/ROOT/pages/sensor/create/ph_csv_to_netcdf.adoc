@@ -1,0 +1,26 @@
+= CTD pH data (.csv) -> Sensor-netCDF
+
+== Overview
+This converter is designed to convert CTD sensor pH from CSV files (.asc) into the NetCDF format.
+
+== NetCDF File Structure
+**Dimensions**
+
+- `time`: Timestamp index
+
+**Coordinates**
+
+- `time`: Nanoseconds since 1970-01-01 (calendar: gregorian)
+- `latitude`: Decimal degrees north `[-90, 90]`
+- `longitude`: Decimal degrees east `[-180, 180]`
+
+**Data Variables**
+
+- `depth` — Depth below sea surface [m]
+- `ph` — pH
+
+**Metadata Variables**
+
+ - `crs` — Coordinate reference system
+
+include::example$generated/sensor/create/ph_csv_to_netcdf_params.adoc[]

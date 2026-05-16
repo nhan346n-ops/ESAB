@@ -1,0 +1,38 @@
+{
+    "name": "Compute expected STDEV by Beam Angle",
+    "function": "pyat.dtm.analyse.dtm_expected_stdev.computes",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/analyse/compute_expected_stdev.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (*.dtm.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "Output file list (.tif)",
+            "nargs": "+",
+            "type": "outfile(extension=tif,suffix=stdev)"
+        },
+        {
+            "name": "stdev_csv_path",
+            "nargs": "1",
+            "type": "file(extension=csv)",
+            "key": "-scp",
+            "long_key": "--stdev_csv_path",
+            "help": "CSV file to compute expected STDEV by beam angle (tif file)."
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

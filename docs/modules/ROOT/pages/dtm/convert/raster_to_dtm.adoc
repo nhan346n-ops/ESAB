@@ -1,0 +1,7 @@
+= Raster (TIFF...) -> DTM
+
+== Overview
+
+This application takes GDAL raster file(s) as input and will export it (or them) to the NetCDF DTM file (.dtm.nc).
+
+include::example$generated/dtm/convert/gdal_raster_to_dtm_params.adoc[]

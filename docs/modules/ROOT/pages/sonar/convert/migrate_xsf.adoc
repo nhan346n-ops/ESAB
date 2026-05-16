@@ -1,0 +1,9 @@
+= Migrates XSF files
+
+== Overview
+
+This application reports validity flags and bias corrections on a set of xsf files.
+
+Flags and corrections are retrieved in xsf files of same name from the reference folder.
+
+include::example$generated/sonar/convert/migrate_xsf_params.adoc[]

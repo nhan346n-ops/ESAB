@@ -1,0 +1,13 @@
+= Gap Filling
+
+== Overview
+
+This application takes DTM file(s) in new format, and fill the gap by bilinear
+interpolation in new DTM file(s).
+
+By default, the output file(s) is the input path with the suffix "-interpolated".
+
+The size of the smoothed window is 3 and the algorithm process all cells except them that are
+on the edge of the layer.
+
+include::example$generated/dtm/transform/interpolation/gap_filling_params.adoc[]

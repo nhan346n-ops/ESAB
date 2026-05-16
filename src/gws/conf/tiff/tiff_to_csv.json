@@ -1,0 +1,30 @@
+{
+    "name": "Export TIFF to CSV",
+    "function": "pyat.tiff.tiff_to_csv.convert_tiff_to_csv",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/tiff/tiff_to_csv.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (Any raster file accepted by GDAL)",
+            "nargs": "+",
+            "type": "infile(content_type=RASTER_GDAL)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "Output file list (.csv)",
+            "nargs": "+",
+            "type": "outfile(extension=csv)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

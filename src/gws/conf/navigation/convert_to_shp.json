@@ -1,0 +1,69 @@
+{
+    "name": "Export MBG/XSF/NVI to shapefile",
+    "function": "pyat.navigation.convert_to_shp_app.Convert2ShpApp",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/navigation/convert_to_shp.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "help": "Input file(s) (.mbg,.nvi,.nvi.nc,.xsf.nc)",
+            "type": "infile(content_type=NVI_NETCDF_4|NVI_V2_NETCDF_4|MBG_NETCDF_3|XSF_NETCDF_4)"
+        },
+        {
+            "name": "o_path",
+            "key": "-o",
+            "long_key": "--o_path",
+            "help": "Output file (.shp)",
+            "type": "outfile(content_type=SHAPEFILE)"
+        },
+        {
+            "name": "campaign",
+            "key": "-ca",
+            "long_key": "--campaign",
+            "help": "Campaign",
+            "type": "string"
+        },
+        {
+            "name": "campNum",
+            "key": "-cn",
+            "long_key": "--campNum",
+            "help": "CampNum",
+            "type": "string"
+        },
+        {
+            "name": "navigation",
+            "key": "-n",
+            "long_key": "--navigation",
+            "help": "Navigation",
+            "type": "string"
+        },
+        {
+            "name": "tool",
+            "key": "-t",
+            "long_key": "--tool",
+            "help": "Tool",
+            "type": "string"
+        },
+        {
+            "name": "export_type",
+            "type": "string",
+            "key": "-export_type",
+            "long_key": "--export_type",
+            "choices": [
+                "points",
+                "polyline"
+            ],
+            "help": "export type",
+            "default": "polyline"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

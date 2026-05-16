@@ -1,0 +1,7 @@
+= Automatic Filtering
+
+== Overview
+
+This process automatically filters bathymetry detections in XSF files using the Isolation Forest algorithm.
+
+include::example$generated/sonar/bathy/automatic_filtering_raw_files_params.adoc[]

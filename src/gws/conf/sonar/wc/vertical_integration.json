@@ -1,0 +1,70 @@
+{
+    "name": "Vertical Integration (tiff)",
+    "function": "pyat.wc.vertical_integration.VerticalIntegration",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/wc/vertical_integration.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (.xsf.nc)",
+            "nargs": "*",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-out",
+            "long_key": "--o_paths",
+            "help": "Output file list (.tiff)",
+            "nargs": "*|1",
+            "type": "outfile(suffix=WCVerticalEcho,extension=tiff)"
+        },
+        {
+            "name": "coord",
+            "key": "-c",
+            "long_key": "--coord",
+            "help": "Coordinates of geographic bounds",
+            "type": "geobox#coords"
+        },
+        {
+            "name": "target_resolution",
+            "type": "geobox#resolution",
+            "key": "-tr",
+            "long_key": "--target_resolution",
+            "help": "Set output file resolution (in target georeferenced units).",
+            "default": "0.000277778",
+            "function": "functions/evaluate_sounder_spatial_resolution.json"
+        },
+        {
+            "name": "filters",
+            "key": "-filters",
+            "long_key": "--filters",
+            "help": "Optional WC filters configuration",
+            "type": "wc_filters"
+        },
+        {
+            "name": "enable_normalization",
+            "key": "-n",
+            "long_key": "--enable_normalization",
+            "help": "Enable normalization by range (compensation).",
+            "default": false,
+            "type": "bool"
+        },
+        {
+            "name": "normalization_offset",
+            "key": "-no",
+            "long_key": "--normalization_offset",
+            "help": "Range normalization offset (dB) : ref level for compensation",
+            "nargs": "1",
+            "type": "float",
+            "default": "0.0"
+        },
+        {
+            "name": "overwrite",
+            "key": "-o",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

@@ -1,0 +1,7 @@
+= Split BSAR File
+
+== Overview
+
+Split BSAR file into a multiple BSAR file. This is usefull to isolate specific modes from a BSAR file.
+
+include::example$generated/sonar/bs/calibration/split_bsar_params.adoc[]

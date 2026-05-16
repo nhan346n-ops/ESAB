@@ -1,0 +1,135 @@
+{
+    "name": "Compute Statistics",
+    "function": "pyat.dtm.analyse.dtm_statistics.computes",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/analyse/compute_statistics.html",
+    "pages": [
+        {
+            "title": "Scope of computations",
+            "description": "Computes the statistics on all the files or for each of them",
+            "parameters": [
+                "scope"
+            ]
+        },
+        {
+            "title": "Filtering",
+            "description": "Ignores cells that do not meet the following criteria",
+            "parameters": [
+                "min_valid_sounds"
+            ]
+        },
+        {
+            "title": "Data distribution histograms",
+            "description": "Characteristics of data distribution histograms",
+            "parameters": [
+                "histogram_bins",
+                "histogram_stat",
+                "show_histogram"
+            ]
+        },
+        {
+            "title": "Confidence level",
+            "description": "Confidence level from a % level or an interval. Not calculated for elevation",
+            "parameters": [
+                "confidence_level",
+                "confidence_interval_min",
+                "confidence_interval_max"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (*.dtm.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "output_dir",
+            "key": "-o",
+            "long_key": "--output_dir",
+            "nargs": "+",
+            "help": "Output directory",
+            "type": "folder"
+        },
+        {
+            "name": "scope",
+            "type": "string",
+            "choices": [
+                "GLOBAL",
+                "PER_FILE"
+            ],
+            "default": "PER_FILE",
+            "key": "-s",
+            "long_key": "--scope",
+            "help": "Scope of computations"
+        },
+        {
+            "name": "layers",
+            "key": "-l",
+            "long_key": "--layers",
+            "help": "Select layers to process",
+            "type": "checklist",
+            "nargs": "+",
+            "choices": [
+                "elevation",
+                "elevation_min",
+                "elevation_max",
+                "stdev",
+                "backscatter",
+                "min_across_distance",
+                "max_across_distance",
+                "max_across_angle",
+                "value_count",
+                "filtered_sounding"
+            ],
+            "default": "elevation"
+        },
+        {
+            "name": "min_valid_sounds",
+            "help": "Mininum number of valid sounds",
+            "type": "int"
+        },
+        {
+            "name": "histogram_bins",
+            "help": "Number of equal-width bins on histogram",
+            "type": "int",
+            "default": 10
+        },
+        {
+            "name": "histogram_stat",
+            "help": "Aggregate statistic to compute in each bin",
+            "type": "string",
+            "choices": [
+                "count",
+                "frequency",
+                "probability",
+                "percent",
+                "density"
+            ],
+            "default": "count"
+        },
+        {
+            "name": "show_histogram",
+            "help": "Display histograms",
+            "type": "bool",
+            "default": false
+        },
+        {
+            "name": "confidence_level",
+            "type": "float",
+            "help": "Confidence interval level (%)"
+        },
+        {
+            "name": "confidence_interval_min",
+            "type": "float",
+            "help": "Min value of confidence interval (overrides 'level' parameter)"
+        },
+        {
+            "name": "confidence_interval_max",
+            "type": "float",
+            "help": "Max value of confidence interval (overrides 'level' parameter):"
+        }
+    ]
+}

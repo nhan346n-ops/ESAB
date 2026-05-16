@@ -1,0 +1,122 @@
+{
+    "name": "Sliding Angular Renormalization",
+    "function": "pyat.sonarscope.bs_correction.sliding_angular_renormalization.xsf_sliding_process",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/bs/bs_sliding_angular_renormalization.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (.xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o_paths",
+            "help": "Output file (.xsf.nc)",
+            "nargs": "+",
+            "type": "outfile(content_type=XSF_NETCDF_4,suffix=bs_sliding,extension=xsf.nc)"
+        },
+        {
+            "name": "sounder_type",
+            "type": "string",
+            "key": "-sounder_type",
+            "choices": [
+                "AUTO",
+                "EM1002_ALL",
+                "EM2040_ALL",
+                "EM120_ALL",
+                "EM122_ALL",
+                "EM302_ALL",
+                "EM710_ALL",
+                "ME70_ALL",
+                "EM2040_KMALL",
+                "EM124_KMALL",
+                "EM304_KMALL",
+                "EM712_KMALL",
+                "7150_S7K",
+                "7125_S7K",
+                "7111_S7K"
+            ],
+            "help": "Sounder type for all datafiles",
+            "default": "AUTO"
+        },
+        {
+            "name": "sliding_window",
+            "type": "int",
+            "key": "-sliding_window",
+            "help": "Sliding window centered on current swath (in minutes)",
+            "default": 10
+        },
+        {
+            "name": "ref_angle_min",
+            "type": "float",
+            "key": "-ref_angle_min",
+            "help": "Lower bound of reference incidence angles range (degree)",
+            "default": 30
+        },
+        {
+            "name": "ref_angle_max",
+            "type": "float",
+            "key": "-ref_angle_max",
+            "help": "Upper bound of reference incidence angles range (degree)",
+            "default": 60
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow overwrite output file if already exists.",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "i_dtm",
+            "key": "-i_dtm",
+            "long_key": "--i_dtm",
+            "help": "Input reference DTM file (leave empty to ignore incidence angle corrections)",
+            "nargs": "?",
+            "type": "file(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "use_snippets",
+            "key": "-snippets",
+            "long_key": "--use_snippets",
+            "help": "Use snippets to recompute mean backscatter value per detection",
+            "type": "bool",
+            "default": false
+        },
+        {
+            "name": "use_svp",
+            "key": "-svp",
+            "long_key": "--use_svp",
+            "help": "Use embedded sound velocity profiles for incidence angles correction",
+            "type": "bool",
+            "default": true
+        },
+        {
+            "name": "use_insonified_area",
+            "key": "-ia",
+            "long_key": "--use_insonified_area",
+            "help": "Recompute insonified area from seafloor incidence angles",
+            "type": "bool",
+            "default": true
+        },
+        {
+            "name": "remove_calibration",
+            "key": "-c",
+            "long_key": "--remove_calibration",
+            "help": "Remove calibration (BScorr)",
+            "type": "bool",
+            "default": true
+        },
+        {
+            "name": "o_bsar",
+            "key": "-o_bsar",
+            "long_key": "--o_bsar",
+            "help": "Output Backscatter angular response file (optional)",
+            "nargs": "?",
+            "type": "file(content_type=BSAR_NETCDF_4)"
+        }
+    ]
+}

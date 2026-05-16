@@ -1,0 +1,73 @@
+{
+    "name": "Evaluates geobox and spatial resolution of a CSV file",
+    "function": "pyat.function.evaluate_csv_grid.ExtentEvaluator",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input CSV file list. Only first one is concidered",
+            "nargs": "+",
+            "type": "infile"
+        },
+        {
+            "name": "indexes",
+            "type": "csv#indexes",
+            "nargs": "+",
+            "key": "-i",
+            "long_key": "--indexes",
+            "help": "indexes in the CSV file of each column header",
+            "default": {
+                "Longitude/X": "0",
+                "Latitude/Y": "1"
+            }
+        },
+        {
+            "name": "delimiter",
+            "type": "csv#delimiter",
+            "key": "-d",
+            "long_key": "--delimiter",
+            "help": "Column delimiter",
+            "default": ";"
+        },
+        {
+            "name": "decimal_point",
+            "type": "csv#decimalpoint",
+            "key": "-dp",
+            "long_key": "--decimal_point",
+            "help": "Decimal point",
+            "default": "."
+        },
+        {
+            "name": "skip_rows",
+            "type": "csv#skiprows",
+            "key": "-sk",
+            "long_key": "--skiprows",
+            "help": "Number of lines to skip at the start of the file",
+            "default": 0
+        },
+        {
+            "name": "spatial_reference",
+            "type": "projection",
+            "key": "-s_srs",
+            "long_key": "--spatial_reference",
+            "help": "Set spatial reference as a PROJ.4 declarations",
+            "default": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+        },
+        {
+            "name": "pos_in_cell",
+            "type": "string",
+            "key": "-pic",
+            "long_key": "--position_in_cell",
+            "choices": [
+                "center",
+                "upper-left",
+                "upper-right",
+                "lower-left",
+                "lower-right"
+            ],
+            "help": "Position of values in the cells of the source grid",
+            "default": "center"
+        }
+    ]
+}

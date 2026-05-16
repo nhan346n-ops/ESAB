@@ -1,0 +1,28 @@
+// Generated documentation from source $dtm\transform\interpolation\coronis\ccst_interpolation.json
+== Parameters
+
+[cols="1,1,3",options="header"]
+|===
+| Name | Type | Description
+| i_paths | infile(content_type=DTM_NETCDF_4) | Input file list (*.nc)
+| o_paths | outfile(content_type=DTM_NETCDF_4,suffix=ccst_interpolated) | Output file list (*.nc)
+| overwrite | outfile#overwrite | Allow to overwrite file if already exists.
+| areas | file(content_type=KML_XML) | KML file containing the areas that will be interpolated
+| cdi_interpolation_algo | string | CDI filling algorithm
+| update_step_size | float | Update step size.
+| term_thres | float | If the relative change between the inpainted elevations in the current and a previous step is smaller than this value, the optimization will stop.
+| term_crit | string | The termination criteria to use.
+| term_check_iters | int[1,2147483647] | Number of iterations in the optimization after which we will check if the relative tolerance is below the threshold
+| max_iters | int[1,2147483647] | Maximum number of iterations in the optimization
+| relaxation | float | Set to >1 to perform over-relaxation at each iteration
+| print_progress_iters | int[1,2147483647] | If '--print_progress True', the optimization progress will be shown after this number of iterations
+| mgs_levels | int[1,2147483647] | Levels of the Multi-grid solver. I.e., number of levels of detail used in the solving pyramid
+| mgs_min_res | int[1,2147483647] | If during the construction of the pyramid of the Multi-Grid Solver one of the dimensions of the grid drops below this size, the pyramid construction will stop at that level
+| init_with | string | Initialize the unknown values to inpaint using a simple interpolation function. If using a MGS, this will be used with the lowest level on the pyramid.
+| convolver | string | The convolution method to use.
+| tension | float[0.0, 1.0] | Tension parameter weighting the contribution between a harmonic and a biharmonic interpolation (see the docs and the original reference for more details)
+| backend | string | The desired backend where computations should take place.
+| verbose | bool | Verbosity flag, activate it to have feedback of the current steps of the process in the command line.
+| show | bool | Show interpolation problem and results on screen.
+|===
+

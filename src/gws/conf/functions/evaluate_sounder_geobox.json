@@ -1,0 +1,20 @@
+{
+    "name": "Evaluates geobox of sounding files",
+    "function": "pyat.function.evaluate_sounder_geobox.GeoboxEvaluator",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (.xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        },
+        {
+            "name": "target_spatial_reference",
+            "type": "projection",
+            "help": "Set spatial reference as a PROJ.4 declarations",
+            "default": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+        }
+    ]
+}

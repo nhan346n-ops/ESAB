@@ -1,0 +1,7 @@
+= Merge TECHSAS files
+
+== Overview
+
+This application takes two (or more) TECHSAS files as input and merge them into one (or several) TECHSAS file.
+
+include::example$generated/sensor/process/techsas_merge_params.adoc[]

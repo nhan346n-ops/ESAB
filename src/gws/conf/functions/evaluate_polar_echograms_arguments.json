@@ -1,0 +1,14 @@
+{
+    "name": "Used to configure XSF polar echograms process. Computes sample resolution and image height",
+    "function": "pyat.function.evaluate_polar_echograms_arguments.PolarEchogramsArgumentsEvaluator",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (.xsf.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=XSF_NETCDF_4)"
+        }
+    ]
+}

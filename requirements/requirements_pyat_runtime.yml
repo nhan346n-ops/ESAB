@@ -1,0 +1,60 @@
+#This will is intend to upgrade an existing runtime environment and add libraries used for unit tests
+channels:
+    - conda-forge
+    - nodefaults
+dependencies:
+    - python=3.10
+    - conda
+    - conda-pack
+    - gdal
+    - libgdal-netcdf #netcdf is now a driver plugin
+    - libssh2
+    - hdf5
+    - netcdf4
+    - dask
+    - distributed
+    - cftime>=1.6.1
+    - xarray
+    - rioxarray
+    - pyfes>=2026.2.0
+    - pyigrf
+    - scikit-image
+    - scikit-learn
+    - scikit-spatial
+    - scipy
+    - numba
+    - progress
+    - pandas
+    - geopandas>=1.0.1
+    - pyproj>=3.3
+    - haversine
+    - geopy
+    - seaborn
+    - requests
+    - fiona
+    - pyogrio
+    - dataclasses-json
+    - mhkit
+
+    # dependencies of pygws
+    - httpx=0.25.2
+    - result>=0.15.0
+    - pydantic=2.5.*
+
+    - pip
+    -   pip:
+        - opencv-python # OpenCV from conda does not support relocation (conda pack without unpack)
+        - heightmap-interpolation==1.0.*
+        - rsocket==0.4.15
+        - --extra-index-url https://gitlab.ifremer.fr/api/v4/projects/4849/packages/pypi/simple
+        - pytide==0.0.7
+        - --extra-index-url https://gitlab.ifremer.fr/api/v4/projects/2108/packages/pypi/simple
+        - sonarnative==2.0.5
+        - --extra-index-url https://gitlab.ifremer.fr/api/v4/projects/2736/packages/pypi/simple
+        - pynvi
+        - --extra-index-url https://gitlab.ifremer.fr/api/v4/projects/2127/packages/pypi/simple
+        - pytechsas
+        - --extra-index-url https://gitlab.ifremer.fr/api/v4/projects/3478/packages/pypi/simple
+        - pygws>=0.3
+        - --extra-index-url https://gitlab.ifremer.fr/api/v4/projects/1480/packages/pypi/simple
+        - sonar-netcdf==0.2.*

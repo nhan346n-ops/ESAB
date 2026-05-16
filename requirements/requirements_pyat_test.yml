@@ -1,0 +1,8 @@
+#This will is intend to upgrade an existing runtime environment and add libraries used for unit tests
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - pytest
+  - pytest-randomly
+  - pylint

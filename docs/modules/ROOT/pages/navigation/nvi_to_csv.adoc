@@ -1,0 +1,7 @@
+= NVI (.nvi.nc) -> CSV
+
+== Overview
+
+This application takes NVI (V2 format) as input and will export it (or them) as CSV file(s).
+
+include::example$generated/navigation/nvi_to_csv_params.adoc[]

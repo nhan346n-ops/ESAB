@@ -1,0 +1,13 @@
+= Create Default Layers
+
+== Overview
+
+This application takes DTM file(s) in new format, and create default layers for each missing
+layer. List of layers which can be created:
+
+* elevation / elevation_min / elevation_max / elevation_smoothed
+* stdev
+* cdi_index
+* interpolation_flag
+
+include::example$generated/dtm/transform/default_layers_params.adoc[]

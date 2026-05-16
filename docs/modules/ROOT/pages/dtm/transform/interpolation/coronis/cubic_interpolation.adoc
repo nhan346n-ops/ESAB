@@ -1,0 +1,13 @@
+= Cubic Interpolation
+
+== Overview
+
+Interpolation function for heightmaps developed within the EMODnet Bathymetry (High Resolution Seabed Mapping) project.
+
+This toolbox implements a piecewise cubic, C1 smooth, curvature-minimizing (Clough-Tocher) interpolants on elevation data
+
+The algorithm used here is a fork of https://github.com/coronis-computing/heightmap_interpolation
+done for integration purpose in Globe and pyat project
+
+
+If you want to use interpolation as a fill hole method, consider to set the missing value flag

@@ -1,0 +1,15 @@
+= Smoother
+
+== Overview
+This script applies various smoothing filters to numerical data stored in netCDF files.
+
+== Supported Filters
+
+The script supports four filtering algorithms:
+
+- **Savitzky-Golay (`savgol`)** - Polynomial-based smoothing filter
+- **Butterworth (`butter`)** - Low-pass frequency filter
+- **Bessel (`bessel`)** - Low-pass filter with linear phase response
+- **Qtinars Bessel (`bessel_q`)** - Custom Bessel implementation
+
+include::example$generated/sensor/process/smoother_params.adoc[]

@@ -1,0 +1,29 @@
+{
+    "name": "Convert CSV to BSAR Model",
+    "function": "pyat.sonarscope.bs_correction.mean_bs_processes.csv_to_bsar_process",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sonar/bs/calibration/csv_to_bsar.html",
+    "parameters": [
+        {
+            "name": "i_path",
+            "key": "-in",
+            "long_key": "--i_path",
+            "help": "Input file",
+            "nargs": "1",
+            "type": "infile(extensions=csv|txt)"
+        },
+        {
+            "name": "o_path",
+            "key": "-o",
+            "long_key": "--o_path",
+            "help": "Backscatter angular response file",
+            "type": "outfile(content_type=BSAR_NETCDF_4)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow overwrite output file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

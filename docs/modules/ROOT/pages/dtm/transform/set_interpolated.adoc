@@ -1,0 +1,13 @@
+= Set Interpolated
+
+== Overview
+
+This application takes DTM file(s) as input and will return new DTM file(s) with valid cells flagged as interpolated.
+
+By default, the name of the output file is i_path with the suffix "-set_interpolated".
+
+The interpolation_flag layer is created if not found in input.
+
+Only valid flags inside mask are set to interpolated (Sanity check process can be used to fill interpolation_flag layer in all valid cells).
+
+include::example$generated/dtm/transform/set_interpolated_params.adoc[]

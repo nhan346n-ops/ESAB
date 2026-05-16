@@ -1,0 +1,44 @@
+{
+    "name": "Compute Navigation Shift",
+    "function": "pyat.xsf.navshift.compute_nav_shift.compute_nav_shift",
+    "parameters": [
+        {
+            "name": "start_period",
+            "type": "datetime"
+        },
+        {
+            "name": "end_period",
+            "type": "datetime"
+        },
+        {
+            "name": "lat_file_path",
+            "nargs": "1",
+            "type": "infile()"
+        },
+        {
+            "name": "lon_file_path",
+            "nargs": "1",
+            "type": "infile()"
+        },
+        {
+            "name": "datetime_file_path",
+            "nargs": "1",
+            "type": "infile()"
+        },
+        {
+            "name": "ref_contour_shp_path",
+            "nargs": "+",
+            "type": "infile()"
+        },
+        {
+            "name": "profiles",
+            "nargs": "1",
+            "type": "string"
+        },
+        {
+            "name": "o_path",
+            "nargs": "1",
+            "type": "file()"
+        }
+    ]
+}

@@ -1,0 +1,40 @@
+{
+    "name": "Export DTM to GXF",
+    "function": "pyat.dtm.export.dtm_to_gxf.Dtm2GXF",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/export/dtm_to_gxf.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (*.dtm.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "Output file list (*.gxf)",
+            "nargs": "+",
+            "type": "outfile(extension=gxf)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        },        
+        {
+            "name": "file_type",
+            "type": "string",
+            "choices": [
+                "kingdom",
+                "uncompressed"
+            ],
+            "default": "kingdom",
+            "help": "GXF file format"
+        }
+    ]
+}

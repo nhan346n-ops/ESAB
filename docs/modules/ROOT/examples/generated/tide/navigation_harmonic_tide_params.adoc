@@ -1,0 +1,13 @@
+// Generated documentation from source $tide\navigation_harmonic_tide.json
+== Parameters
+
+[cols="1,1,3",options="header"]
+|===
+| Name | Type | Description
+| input_files | infile(content_type=XSF_NETCDF_4\|NVI_NETCDF_4\|NVI_V2_NETCDF_4\|MBG_NETCDF_3, extensions=nc\|nvi\|gps\|mbg\|nav\|subnav) | Any files with navigation data (.xsf.nc/.nvi.nc/.gps...)
+| output_files | outfile(extensions=ttb\|tide.nc) | Output file (.ttb, .tide.nc)
+| overwrite | outfile#overwrite | Allow to overwrite file if already exists.
+| model_dir | folder | tide models input directory file (containing /reference_surfaces/LAT_MSL_World_model_2003_2020.nc, /BATHYELLI_ZH_ell_V1_1/* and /fes2014/* folders)
+| tide_server | string | Tide server URL
+|===
+

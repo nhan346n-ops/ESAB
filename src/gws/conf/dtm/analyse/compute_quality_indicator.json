@@ -1,0 +1,48 @@
+{
+    "name": "Compute Quality Indicators",
+    "function": "pyat.dtm.analyse.dtm_quality_indicator.computes",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/analyse/compute_quality_indicator.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (*.dtm.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "Output file list (.tif)",
+            "nargs": "+",
+            "type": "outfile(extension=tif,suffix=qi)"
+        },
+        {
+            "name": "across_angle_max_threshold",
+            "type": "float",
+            "default": 65.0,
+            "help": "Check across angle, maximun (degrees)"
+        },
+        {
+            "name": "minimum_detection_count",
+            "type": "int",
+            "default": 5,
+            "help": "Check density, minimum detection count"
+        },
+        {
+            "name": "invalid_rate_max_threshold",
+            "type": "float",
+            "default": 1.5,
+            "help": "Check invalid detection rate, check if : cell_rate / mean_rate >"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

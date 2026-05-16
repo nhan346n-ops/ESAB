@@ -1,0 +1,7 @@
+= Merge NVI (.nvi.nc)
+
+== Overview
+
+This application takes several NVI files (V2 format) as input and merge them into one (or several) NVI file.
+
+include::example$generated/navigation/merge_nvi_params.adoc[]

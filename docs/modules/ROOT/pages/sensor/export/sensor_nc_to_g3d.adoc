@@ -1,0 +1,11 @@
+= Sensor-netCDF -> G3D
+
+== Overview
+
+This process export data from one or multiple Sensor-netCDF files into a single G3D file.
+
+- Projects scattered measurements onto a regular **distance × depth** grid
+- Averages values falling into the same grid cells
+- Interpolates missing values along the horizontal axis
+
+include::example$generated/sensor/export/export_to_g3d_params.adoc[]

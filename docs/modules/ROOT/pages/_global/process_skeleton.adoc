@@ -1,0 +1,11 @@
+:last-update-label!:
+
+== Empty process
+
+=== Overview
+This application is an empty python process doing almost nothing.
+
+Its purpose is to serve as an entry point for people wishing to develop their own scripts
+
+The python code is located in "app/example/process_skeleton.py"
+

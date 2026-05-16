@@ -1,0 +1,14 @@
+{
+    "name": "Evaluates spatial resolution of sounding files",
+    "function": "pyat.function.evaluate_sounder_spatial_resolution.SpatialResolutionEvaluator",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (.mbg)",
+            "nargs": "+",
+            "type": "infile(content_type=MBG_NETCDF_3)"
+        }
+    ]
+}

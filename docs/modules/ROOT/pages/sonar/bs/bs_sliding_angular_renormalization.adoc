@@ -1,0 +1,97 @@
+= Sliding backscatter angular renormalization
+
+== Overview
+Compute a seafloor backscatter renormalization to remove angular dependency.
+Based on time dependant statistic curves computed with a sliding window, backscatter offsets are estimated and applied to file inputs in order to have a continuous mean response.
+
+== Algorithm parameters
+
+The computation parameters are :
+
+* _Sounder type_ defines the sounder model and the format of the source raw file.
+
+* _Sliding window_ specifies the size in minutes of the sliding window centered on the current swath.
+
+* _Lower and Upper bounds of reference incidence angles range (ref_angle_min, ref_angle_max)_ specify the angle range used to determine the target mean response to reach during the normalization step. For each swath, the target level is the mean of all backscatter values reaching the seafloor with the specified incidence angle in the current window (yellow hatches in the following schema). This mean is also limited by swath of the same mode.
+A good practice is to choose a wide enough range centered on half of the opening angle, excluding the central zone sensible to specular effect.
+
+image::img/incidence_angle_range.png[]
+
+* _Use snippets_ to recompute mean backscatter value by detection. Mean backscatter values by detection are stored in Sonar/BeamGroup1/Bathymetry/detection_backscatter_r variable in XSF file. This variable contains precomputed data and will be used to store corrected bs values. The raw snippets bs values can be used with this option to relaunch process from uncorrected values.
+
+* _Use embedded sound velocity profile (use_svp)_ should be always cheked. Deactivate this parameter can be usefull in case of corrupted or wrong profiles. Ray bending is no more used to compute seafloor incidence angle.
+
+* _Recompute insonified area from seafloor incidence angle (use_insonified_area)_ applies correction depending on the effective incidence angle on the seafloor. A DTM is mandatory to properly achieve this step.
+
+* _Remove calibration_ specifies if the embedded calibration (BSCorr, only for kmall) should be removed from raw values. Use this option in case of suspicious calibration.
+
+* _Reference Dtm (i_dtm)_ specifies the .dtm.nc file used to estimate incidence angle with the seafloor by detection.
+
+
+== Algorithm steps
+
+The full processing pipeline is fully detailed in the article "Acoustic backscatter processing in GLOBE: an open-source software for echo sounder data analysis" (https://doi.org/10.3389/frsen.2025.1574129)
+
+=== Step 1 : Pre processing
+
+Data must be prepared before statistics computation. We need to know which treatments have been applied on raw data (Lambert compensation, area correction, etc...) to work on uncorrected data and be able to apply our own corrections. These treatments are very dependent on sounder model. That's why we need to know the source of the XSF files.
+
+Each detection is also flagged and classified to be able to generate stats by mode, by sector, by antenna.
+
+If we consider that the BS response is the sum of a term depending of the seafloor and a term depending of the transmission chain, we will try to differentiate these two terms by estimating first the response dependant of the seafloor, then deduced the part due to the transmission chain.
+
+=== Step 2 : Mean backscatter curve by incidence angle by swath
+
+The goal of this step is to obtain a characterization of the kind of seafloor along the navigation.
+
+A first pass on all files is done to get curves of backscatter mean by incidence angle with the seafloor by swath. Then a sliding window is applied to filter these data.
+
+For each swath, we have then a mean bs response by incidence angle computed from all data (of the same mode) falling in the sliding window.
+
+
+=== Step 3 : Residual mean backscatter curve by transmission angle by swath
+
+The goal of this step is to obtain a characterization of Tx/Rx chain to be able to compensate differences across transmission sectors and antennas.
+
+A second pass on all files is done to get curves of backscatter residual mean by transmission angle by antenna by sector by swath. The "residual" mean is the mean of the difference between the current BS level and the mean BS level by incidence angle.
+
+For each swath, we have then a mean residual bs response by transmission angle, by tx sector and by rx antenna computed from all data (of the same mode) falling in the sliding window.
+
+=== Step 4 : Reference levels
+
+The goal of this step is to compute a target reference level by swath for normalization.
+
+For each swath the target reference level is obtain by meaning the backscatter curve by incidence angle using data falling in the reference angle range.
+
+These levels are although computed by mode. It is then possible to observe discontinuities
+between modes. A last operation is then done to estimate the mean level offsets between modes, keeping the most present mode as reference.
+
+=== Step 5 : Renormalization
+
+The final step recomputes a new backscatter value by detection.
+
+[source,python]
+bs_correction = bs_ref_level - mean_bs_incidence - mean_bs_transmission - bs_mode_offset
+bs_normalized = bs_source + bs_correction
+
+
+== What is a good sliding window size ?
+
+The sliding window should be chosen depending of the variation of the seafloor.
+A short window will quickly adapt to changes and well normalize specular effect everywhere, but if it is too short, it behaves like a simple backscatter mean along swaths. A long window will generate uniform picture, but will not adapt perfectly to seafloor variation and not correct properly specular effect everywhere.
+
+Example of uncorrected backscatter :
+
+image::img/raw_bs_view.png[]
+
+Exemple of a too short window (100 seconds) :
+
+image::img/short_bs_view.png[]
+
+Exemple of a (too?) long window (2 hours) :
+
+image::img/long_bs_view.png[]
+
+Exemple of a balanced window (30 min) :
+
+image::img/medium_bs_view.png[]

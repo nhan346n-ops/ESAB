@@ -1,0 +1,26 @@
+{
+  "configuration_file": "sonar/bs/avg_backscatter_model.json",
+  "i_paths": [
+    "D:/WorkSpace3/Cdata/0000_20190724_071809_TecnopescaII.xsf.nc",
+    "D:/WorkSpace3/Cdata/0001_20190724_072738_TecnopescaII.xsf.nc",
+    "D:/WorkSpace3/Cdata/0002_20190724_073726_TecnopescaII.xsf.nc",
+    "D:/WorkSpace3/Cdata/0003_20190724_074706_TecnopescaII.xsf.nc",
+    "D:/WorkSpace3/Cdata/0004_20190724_075649_TecnopescaII.xsf.nc",
+    "D:/WorkSpace3/Cdata/0005_20190724_080632_TecnopescaII.xsf.nc",
+    "D:/WorkSpace3/Cdata/0006_20190724_081639_TecnopescaII.xsf.nc",
+    "D:/WorkSpace3/Cdata/0007_20190724_082632_TecnopescaII.xsf.nc",
+    "D:/WorkSpace3/Cdata/0008_20190724_083621_TecnopescaII.xsf.nc",
+    "D:/WorkSpace3/Cdata/0009_20190724_084602_TecnopescaII.xsf.nc"
+  ],
+  "sounder_type": "AUTO",
+  "use_snippets": false,
+  "use_svp": true,
+  "use_insonified_area": true,
+  "remove_compensation": true,
+  "remove_calibration": true,
+  "projection": "Auto Detect",
+  "resolution": "1.0",
+  "gap_fill": "Bilinear",
+  "elevation_max": 11999.0,
+  "o_dir": "C:/Users/GUO/Desktop"
+}

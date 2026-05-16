@@ -1,0 +1,38 @@
+{
+    "name": "Export DTM to EMO",
+    "function": "pyat.dtm.export.dtm_to_emo.Dtm2Emo",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/export/dtm_to_emo.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (*.dtm.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "Output file list (*.emo)",
+            "nargs": "+",
+            "type": "outfile(content_type=EMO_CSV)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "export_missing_values",
+            "key": "-miss",
+            "long_key": "--export_missing_values",
+            "help": "Export missing values, if true export data even when bathymetry is invalid",
+            "type": "bool",
+            "default": "False"
+        }
+    ]
+}

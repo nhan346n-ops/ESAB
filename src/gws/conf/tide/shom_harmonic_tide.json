@@ -1,0 +1,32 @@
+{
+    "name": "Shom harmonic tide predictor",
+    "function": "pyat.tide.tide_app.ShomTide",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/tide/shom_harmonic_tide.html",
+    "parameters": [
+        {
+            "name": "harmonic_file",
+            "key": "-h",
+            "long_key": "--harmonic_file",
+            "nargs": "1",
+            "help": "Harmonic constant file (.har)",
+            "type": "infile(content_type=UNDEFINED)"
+        },
+        {
+            "name": "data_file",
+            "key": "-d",
+            "long_key": "--data_file",
+            "help": "Input data file file (.csv)",
+            "nargs": "1",
+            "type": "infile(content_type=UNDEFINED)"
+        },
+        {
+            "name": "output_file",
+            "key": "-o",
+            "long_key": "--output_file",
+            "nargs": "1",
+            "help": "Output file (.csv)",
+            "default": "tide_prediction.csv",
+            "type": "outfile(content_type=TIDE_CSV)"
+        }
+    ]
+}

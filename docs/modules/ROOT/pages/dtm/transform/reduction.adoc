@@ -1,0 +1,11 @@
+= Reduction
+
+== Overview
+
+This application takes DTM file(s) in new format as input and will return a reduced copy of it (or them) depending
+of the factor of reduction.
+
+By default, the name of the ouput file will be the input name with "-reduced_" and the factor of
+reduction. The factor of reduction is 4.
+
+include::example$generated/dtm/transform/reduction_params.adoc[]

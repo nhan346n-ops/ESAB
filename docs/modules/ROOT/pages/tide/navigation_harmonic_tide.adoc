@@ -1,0 +1,11 @@
+= FES harmonic tide prediction for navigation files
+
+== Overview
+
+This processus compute a tide prediction on a navigation points
+
+include::example$generated/tide/navigation_harmonic_tide_params.adoc[]
+
+include::tide_file_format.adoc[]
+
+include::tide_processing.adoc[]

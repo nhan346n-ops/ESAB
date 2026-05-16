@@ -1,0 +1,46 @@
+{
+    "name": "Geometric Translation",
+    "function": "pyat.dtm.experimental.geometric_translation.GeometricTranslationProcess",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/experimental/geometric_translation.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "help": "Input file list (*.nc)",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "nargs": "+",
+            "help": "Output file list (*.nc)",
+            "type": "outfile(content_type=DTM_NETCDF_4,suffix=geometric_translation)"
+        },
+        {
+            "name": "rows",
+            "type": "float",
+            "key": "-r",
+            "long_key": "--row",
+            "help": "Number of rows shift applied to the data (unit is a cell size)",
+            "default": 0.0
+        },
+        {
+            "name": "columns",
+            "type": "float",
+            "key": "-c",
+            "long_key": "--col",
+            "help": "Number of columns shift applied to the data (unit is a cell size)",
+            "default": 0.0
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

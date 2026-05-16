@@ -1,0 +1,91 @@
+{
+    "name": "Linear interpolation (Coronis)",
+    "function": "pyat.dtm.transform.interpolation.coronis.linear_interpolation.LinearInterpolationProcessAdapter",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/transform/interpolation/coronis/linear_interpolation.html",
+    "pages": [
+        {
+            "title": "Linear interpolation parameters",
+            "parameters": [
+                "areas",
+                "cdi_interpolation_algo",
+                "fill_value",
+                "rescale"
+            ]
+        },
+        {
+            "title": "Feedback parameters",
+            "parameters": [
+                "verbose",
+                "show"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "nargs": "+",
+            "help": "Input file list (*.nc)",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "nargs": "+",
+            "help": "Output file list (*.nc)",
+            "type": "outfile(content_type=DTM_NETCDF_4,suffix=linear_interpolated)"
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        },
+        {
+            "name": "areas",
+            "key": "-areas",
+            "help": "KML file containing the areas that will be interpolated",
+            "type": "file(content_type=KML_XML)"
+        },
+        {
+            "name": "cdi_interpolation_algo",
+            "key": "-cdi",
+            "help": "CDI filling algorithm",
+            "type": "string",
+            "choices": [
+                "closest_neighbor",
+                "most_common_neighbor"
+            ],
+            "default": "closest_neighbor"
+        },
+        {
+            "name": "fill_value",
+            "type": "float",
+            "key": "-fill_value",
+            "help": "Value used to fill in for requested points outside of the convex hull of the input points. If not provided, the default is NaN"
+        },
+        {
+            "name": "rescale",
+            "type": "bool",
+            "key": "-rescale",
+            "help": "Rescale points to unit cube before performing interpolation. This is useful if some of the input dimensions have incommensurable units and differ by many orders of magnitude."
+        },
+        {
+            "name": "verbose",
+            "type": "bool",
+            "key": "-verbose",
+            "help": "Verbosity flag, activate it to have feedback of the current steps of the process in the command line.",
+            "default": false
+        },
+        {
+            "name": "show",
+            "type": "bool",
+            "key": "-show",
+            "help": "Show interpolation problem and results on screen.",
+            "default": false
+        }
+    ]
+}

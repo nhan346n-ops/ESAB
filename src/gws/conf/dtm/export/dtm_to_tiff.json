@@ -1,0 +1,73 @@
+{
+    "name": "Export DTM to GeoTIFF",
+    "function": "pyat.dtm.export.dtm_to_tiff.Dtm2Tiff",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/dtm/export/dtm_to_tiff.html",
+    "pages": [
+        {
+            "title": "GTiff driver parameters",
+            "description": "Optional parameters passed to GTiff driver",
+            "visible": true,
+            "parameters": [
+                "target_fillvalue",
+                "nan_fillvalue",
+                "target_compression"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input file list (*.dtm.nc)",
+            "nargs": "+",
+            "type": "infile(content_type=DTM_NETCDF_4)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "Output file list (.tif)",
+            "nargs": "+",
+            "type": "outfile(extension=tif)"
+        },
+        {
+            "name": "layers",
+            "key": "-l",
+            "long_key": "--layers",
+            "help": "Layers to export.",
+            "type": "layers"
+        },
+        {
+            "name": "target_fillvalue",
+            "type": "float",
+            "key": "-tfv",
+            "long_key": "--target_fillvalue",
+            "help": "Missing data value for float layers",
+            "default": 32767
+        },
+        {
+            "name": "nan_fillvalue",
+            "type": "bool",
+            "key": "-nfv",
+            "long_key": "--nan_fillvalue",
+            "help": "  Or use NaN as missing data value (not supported by arcgis)",
+            "default": false
+        },
+        {
+            "name": "target_compression",
+            "type": "bool",
+            "key": "-tcomp",
+            "long_key": "--target_compression",
+            "help": "Apply compression",
+            "default": true
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

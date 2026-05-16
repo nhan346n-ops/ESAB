@@ -1,0 +1,20 @@
+channels:
+  - conda-forge
+  - msys2
+  - nodefaults
+dependencies:
+  - black
+  - cython
+  - hvplot
+  - jupyter
+  - jupyterlab
+  - ipywidgets
+  - jupyter_bokeh
+  - graphviz
+  - python-graphviz
+  - panel
+  - twine
+  - pip
+  -   pip:
+          - build
+    

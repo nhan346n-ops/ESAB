@@ -1,0 +1,150 @@
+{
+    "name": "Export CSV to TIFF",
+    "function": "pyat.csv.csv_to_tiff_exporter.CsvToTiffExporter",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/tiff/csv_to_tiff.html",
+    "pages": [
+        {
+            "title": "GTiff driver parameters",
+            "description": "Optional parameters passed to GTiff driver",
+            "visible": true,
+            "parameters": [
+                "target_fillvalue",
+                "target_compression"
+            ]
+        }
+    ],
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i",
+            "long_key": "--i_paths",
+            "help": "Input CSV file list",
+            "nargs": "+",
+            "type": "infile(content_type=BATHIMETRIC_CSV|EMO_CSV,extensions=txt|asc)"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o",
+            "long_key": "--o_paths",
+            "help": "Output file list (.tif)",
+            "nargs": "+",
+            "type": "outfile(extension=tif)"
+        },
+        {
+            "name": "mandatory_headers",
+            "type": "csv#mandatory_headers",
+            "nargs": "+",
+            "default": [
+                "Longitude/X",
+                "Latitude/Y"
+            ]
+        },
+        {
+            "name": "optional_headers",
+            "type": "csv#optional_headers",
+            "nargs": "+",
+            "default": [
+                "Value"
+            ]
+        },
+        {
+            "name": "headers_types",
+            "type": "csv#headers_types",
+            "nargs": "+",
+            "default": {
+                "Longitude/X": "float",
+                "Latitude/Y": "float",
+                "Value": "float"
+            }
+        },
+        {
+            "name": "indexes",
+            "type": "csv#indexes",
+            "nargs": "+",
+            "key": "-i",
+            "long_key": "--indexes",
+            "help": "indexes in the CSV file of each column header",
+            "default": {
+                "Longitude/X": "0",
+                "Latitude/Y": "1"
+            }
+        },
+        {
+            "name": "delimiter",
+            "type": "csv#delimiter",
+            "key": "-d",
+            "long_key": "--delimiter",
+            "help": "Column delimiter",
+            "default": ";"
+        },
+        {
+            "name": "decimal_point",
+            "type": "csv#decimalpoint",
+            "key": "-dp",
+            "long_key": "--decimal_point",
+            "help": "Decimal point",
+            "default": "."
+        },
+        {
+            "name": "skip_rows",
+            "type": "csv#skiprows",
+            "key": "-sk",
+            "long_key": "--skiprows",
+            "help": "Number of lines to skip at the start of the file",
+            "default": 0
+        },
+        {
+            "name": "depth_sign",
+            "type": "csv#depthsign",
+            "key": "-ds",
+            "long_key": "--depthsign",
+            "help": "-1 for elevation values and 1 for depth",
+            "default": 1
+        },
+        {
+            "name": "spatial_reference",
+            "type": "projection(restore=false)",
+            "key": "-s_srs",
+            "long_key": "--spatial_reference",
+            "help": "Set spatial reference as a PROJ.4 declarations"
+        },
+        {
+            "name": "coord",
+            "key": "-c",
+            "long_key": "--coord",
+            "help": "Coordinates of geographic bounds",
+            "type": "geobox#coords(restore=false)",
+            "function": "functions/evaluate_csv_geobox.json"
+        },
+        {
+            "name": "target_resolution",
+            "type": "geobox#resolution(restore=false)",
+            "key": "-tr",
+            "long_key": "--target_resolution",
+            "help": "Set output file resolution (in target georeferenced units)."
+        },
+        {
+            "name": "target_fillvalue",
+            "type": "float",
+            "key": "-tfv",
+            "long_key": "--target_fillvalue",
+            "help": "Output missing data value for float layers.\nLeave empty to use Nan (not supported by arcgis)",
+            "default": 32767
+        },
+        {
+            "name": "target_compression",
+            "type": "bool",
+            "key": "-tcomp",
+            "long_key": "--target_compression",
+            "help": "Activate tiff compression",
+            "default": true
+        },
+        {
+            "name": "overwrite",
+            "key": "-ow",
+            "long_key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}

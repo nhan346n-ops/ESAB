@@ -1,0 +1,20 @@
+= DTM -> COG
+
+== Overview
+This tool creates Cloud Optimized GeoTIFF (.tif) from NetCDF Digital Terrain Model (.dtm.nc) using GDAL capabilities.
+
+The conversion is done with the following parameters :
+
+* TARGET_SRS : web mercator (ESPG 3857)
+* COMPRESS : DEFLATE
+
+COG files can be served by an HTTP server and displayed in various tools (OpenLayer, QGIS...).
+
+include::example$generated/dtm/export/dtm_to_cog_params.adoc[]
+
+== Links
+
+Cloud Optimized GeoTIFF : https://www.cogeo.org/
+
+GDAL COG Driver : https://gdal.org/drivers/raster/cog.html
+

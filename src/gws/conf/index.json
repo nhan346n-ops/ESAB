@@ -1,0 +1,344 @@
+[
+    {
+        "help_root_folder": "@PYAT_ROOT@",
+        "conf_root_folder": "@CONF_DIR@",
+        "python_module": "gws.drivers.adcp_driver",
+        "services": {
+            "children": {
+                "driver_services": {
+                    "apps": [
+                        "drivers/driver_adcp.json"
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "help_root_folder": "@PYAT_ROOT@",
+        "conf_root_folder": "@CONF_DIR@",
+        "python_module": "gws.drivers.xsf_driver",
+        "services": {
+            "children": {
+                "driver_services": {
+                    "apps": [
+                        "drivers/driver_xsf.json"
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "help_root_folder": "@PYAT_ROOT@",
+        "conf_root_folder": "@CONF_DIR@",
+        "python_module": "gws.service.deferred_service_executor",
+        "process_pool_size": 4,
+        "services": {
+            "children": {
+                "wizard_functions": {
+                    "apps": [
+                        "functions/mask_mbg_to_cut.json",
+                        "functions/evaluate_csv_geobox.json",
+                        "functions/evaluate_csv_geobox_and_spatial_resolution.json",
+                        "functions/evaluate_sounder_spatial_resolution.json",
+                        "functions/evaluate_sounder_geobox.json",
+                        "functions/evaluate_longitudinal_section_arguments.json",
+                        "functions/evaluate_polar_echograms_arguments.json",
+                        "sonar/bs/evaluate_mean_bs_level.json",
+                        "functions/compute_nav_shift.json",
+                        "functions/dtm_layer_supplier.json",
+                        "sensor/functions/toolbox_smoother.json"
+                    ]
+                },
+                "specific_services": {
+                    "apps": [
+                        "navigation/raw_files_to_nvi.json",
+                        "sonar/bathy/automatic_filtering_raw_files.json",
+                        "tide/binary_files_to_tide.json"
+                    ]
+                },
+                "toolbox_services": {
+                    "SONAR-netCDF (.xsf.nc)": {
+                        "icon": "XSF",
+                        "apps": [
+                            "sonar/merge_xsf.json",
+                            "sonar/merge_nc.json"
+                        ],
+                        "children": {
+                            "Create from": {
+                                "icon": "IMPORT",
+                                "apps": [
+                                    "sonar/convert/migrate_xsf.json",
+                                    "sonar/convert/upgrade_xsf_from_mbg.json",
+                                    "sonar/convert/mbg_to_xsf.json"
+                                ]
+                            },
+                            "Export to": {
+                                "icon": "EXPORT",
+                                "apps": [
+                                    "dtm/convert/sounder_to_dtm.json"
+                                ]
+                            },
+                            "Bathymetry": {
+                                "icon": "BATHYMETRY",
+                                "apps": [
+                                    "sonar/bathy/triangulation_filtering.json",
+                                    "sonar/bathy/automatic_filtering.json",
+                                    "sonar/bathy/relaunch.json",
+                                    "sonar/bathy/relaunch_with_attitude.json",
+                                    "sonar/bathy/orpheus.json"
+                                ]
+                            },
+                            "Navigation": {
+                                "icon": "NAV",
+                                "apps": [
+                                    "sonar/nav/isobath_registration.json",
+                                    "sonar/nav/generate_cut_file_from_xsf.json"
+                                ]
+                            },
+                            "Seafloor Backscatter": {
+                                "icon": "BACKSCATTER",
+                                "apps": [
+                                    "sonar/bs/avg_backscatter_model.json",
+                                    "sonar/bs/bs_angular_renormalization.json",
+                                    "sonar/bs/bs_sliding_angular_renormalization.json"
+                                ],
+                                "children": {
+                                    "Calibration": {
+                                        "apps": [
+                                            "sonar/bs/calibration/csv_to_bsar.json",
+                                            "sonar/bs/calibration/xsf_to_bscorr.json",
+                                            "sonar/bs/calibration/export_summary_lines.json",
+                                            "sonar/bs/calibration/split_bsar.json",
+                                            "sonar/bs/calibration/merge_bsar.json",
+                                            "sonar/bs/calibration/merge_bsar_incidence.json",
+                                            "sonar/bs/calibration/bsar_to_bscorr.json"
+                                        ]
+                                    }
+                                }
+                            },
+                            "Tide": {
+                                "icon": "TIDE",
+                                "apps": [
+                                    "sonar/tide/depth_correction.json"
+                                ]
+                            },
+                            "Water Column": {
+                                "icon": "WC",
+                                "apps": [
+                                    "sonar/wc/longitudinal_section.json",
+                                    "sonar/wc/horizontal_section.json",
+                                    "sonar/wc/polar_echograms.json",
+                                    "sonar/wc/vertical_integration.json"
+                                ]
+                            }
+                        }
+                    },
+                    "Navigation": {
+                        "icon": "NAV",
+                        "apps": [
+                            "navigation/merge_nvi.json"
+                        ],
+                        "children": {
+                            "Create": {
+                                "apps": [
+                                    "navigation/upgrade_nvi.json"
+                                ]
+                            },
+                            "Export": {
+                                "apps": [
+                                    "navigation/nvi_to_csv.json",
+                                    "navigation/convert_to_shp.json"
+                                ]
+                            }
+                        }
+                    },
+                    "Digital Terrain Model (.dtm.nc)": {
+                        "icon": "DTM",
+                        "children": {
+                            "Create from": {
+                                "icon": "IMPORT",
+                                "apps": [
+                                    "dtm/convert/sounder_to_dtm.json",
+                                    "dtm/convert/csv_to_dtm.json",
+                                    "dtm/convert/csv_to_dtm_batch.json",
+                                    "dtm/convert/gridded_csv_to_dtm.json",
+                                    "dtm/convert/gridded_csv_to_dtm_batch.json",
+                                    "dtm/convert/raster_to_dtm.json",
+                                    "dtm/convert/migrate_dtm.json"
+                                ]
+                            },
+                            "Export to": {
+                                "icon": "EXPORT",
+                                "apps": [
+                                    "dtm/export/dtm_to_emo.json",
+                                    "dtm/export/dtm_to_xyz.json",
+                                    "dtm/export/dtm_to_tiff.json",
+                                    "dtm/export/dtm_to_tiff_rgba.json",
+                                    "dtm/export/dtm_to_gxf.json",
+                                    "dtm/export/dtm_to_mbtiles.json",
+                                    "dtm/export/dtm_to_isobath.json"
+
+                                ]
+                            },
+                            "Transform": {
+                                "apps": [
+                                    "dtm/transform/update_boundingbox.json",
+                                    "dtm/transform/reduction.json",
+                                    "dtm/transform/geobox_shrink.json",
+                                    "dtm/transform/linear_transform.json",
+                                    "dtm/transform/reset_cell.json",
+                                    "dtm/transform/kernel_smoothing.json",
+                                    "dtm/transform/add_default_layers.json",
+                                    "dtm/transform/set_interpolated.json"
+                                ]
+                            },
+                            "Merge": {
+                                "apps": [
+                                    "dtm/merge/merge_simple.json",
+                                    "dtm/merge/merge_fill.json",
+                                    "dtm/merge/merge_with_slope.json"
+                                ]
+                            },
+                            "Interpolation": {
+                                "apps": [
+                                    "dtm/transform/interpolation/gap_filling.json",
+                                    "dtm/transform/interpolation/xarray_interpolation.json",
+                                    "dtm/transform/interpolation/coronis/cubic_interpolation.json",
+                                    "dtm/transform/interpolation/coronis/nearest_interpolation.json",
+                                    "dtm/transform/interpolation/coronis/linear_interpolation.json",
+                                    "dtm/transform/interpolation/coronis/rbf_interpolation.json",
+                                    "dtm/transform/interpolation/coronis/purbf_interpolation.json",
+                                    "dtm/transform/interpolation/coronis/harmonic_interpolation.json",
+                                    "dtm/transform/interpolation/coronis/tv_interpolation.json",
+                                    "dtm/transform/interpolation/coronis/ccst_interpolation.json",
+                                    "dtm/transform/interpolation/coronis/amle_interpolation.json",
+                                    "dtm/transform/interpolation/coronis/navier_stokes_interpolation.json",
+                                    "dtm/transform/interpolation/coronis/telea_interpolation.json"
+                                ]
+                            },
+                            "EMODnet CDI": {
+                                "apps": [
+                                    "dtm/cdi/split_by_cdi.json",
+                                    "dtm/cdi/set_cdi.json",
+                                    "dtm/cdi/modify_cdi.json"
+                                ]
+                            },
+                            "Statistics and Analyse": {
+                                "apps": [
+                                    "dtm/analyse/compute_statistics.json",
+                                    "dtm/analyse/compute_quality_indicator.json",
+                                    "dtm/analyse/compute_expected_stdev.json",
+                                    "dtm/analyse/sanity_check.json",
+                                    "dtm/analyse/peak_finder.json",
+                                    "dtm/analyse/compute_isobaths.json",
+                                    "dtm/analyse/dtm_diff.json"
+                                ]
+                            },
+                            "Experimental": {
+                                "apps": [
+                                    "dtm/experimental/norway_autoprocess.json",
+                                    "dtm/export/dtm_to_cog.json"
+                                ]
+                            }
+                        }
+                    },
+                    "Sensor Time Series (.nc)": {
+                        "icon": "SENSOR_NC",
+                        "children": {
+                            "Create from": {
+                                "icon": "IMPORT",
+                                "apps": [
+                                    "sensor/create/csv_to_netcdf.json",
+                                    "sensor/create/ctd_asc_to_netcdf.json",
+                                    "sensor/create/ctd_cnv_to_netcdf.json",
+                                    "sensor/create/ctdhov_asc_to_netcdf.json",
+                                    "sensor/create/ctdhov_cnv_to_netcdf.json",
+                                    "sensor/create/ph_csv_to_netcdf.json",
+                                    "sensor/create/redox_csv_to_netcdf.json",
+                                    "sensor/create/turbidimeter_csv_to_netcdf.json"
+                                ]
+                            },
+                            "Export to": {
+                                "icon": "EXPORT",
+                                "apps": [
+                                    "sensor/export/sensor_nc_to_csv.json",
+                                    "sensor/export/techsas_to_csv.json",
+                                    "sensor/export/techsas_to_mgd77.json"
+                                ]
+                            },
+                            "Transform": {
+                                "apps": [
+                                    "sensor/process/techsas_apply_navigation.json",
+                                    "sensor/process/techsas_merge.json",
+                                    "sensor/process/linear_transform.json",
+                                    "sensor/process/sensor_smoother.json"
+                                ]
+                            },
+                            "Validate / Invalidate Data": {
+                                "apps": [
+                                    "sensor/process/data_filter.json",
+                                    "sensor/process/turn_filter.json",
+                                    "sensor/process/remove_invalid_data.json"
+                                ]
+                            },
+                            "Analyse": {
+                                "apps": [
+                                    "sensor/process/techsas_sanity_check.json",
+                                    "sensor/process/techsas_cross_compare.json"
+                                ]
+                            },
+                            "Interpolated Slices": {
+                                "icon": "WC_SLICE",
+                                "apps": [
+                                    "sensor/slices/longitudinal_slicer.json",
+                                    "sensor/slices/slicer_along_path.json",
+                                    "sensor/slices/horizontal_slicer.json"
+                                ]
+                            },
+                            "Gravimetry and Magnetics": {
+                                "apps": [
+                                    "sensor/process/techsas_gravi_2.json",
+                                    "sensor/process/techsas_gravi_recompute_grav_faa.json",
+                                    "sensor/process/techsas_gravi.json",
+                                    "sensor/process/techsas_mag.json"
+                                ]
+                            }
+                        }
+                    },
+                    "Tide": {
+                        "apps": [
+                            "tide/fes_harmonic_tide.json",
+                            "tide/nav_tide.json",
+                            "tide/navigation_harmonic_tide.json",
+                            "tide/shom_harmonic_tide.json",
+                            "tide/xsf_gnss_tide.json"
+                        ]
+                    },
+                    "Utils": {
+                        "icon": "TOOLBOX",
+                        "children": {
+                            "Convert": {
+                                "apps": [
+                                    "utils/laloxy.json",
+                                    "tiff/csv_to_tiff.json",
+                                    "tiff/tiff_to_csv.json",
+                                    "sonar/wc/marker_to_shp.json",
+                                    "utils/sbe21_to_csv.json",
+                                    "utils/parse_usbl.json"
+                                ]
+                            }
+                        }
+                    },
+                    "_Deprecated": {
+                        "apps": [
+                            "dtm/_deprecated/xyz_exporter.json",
+                            "dtm/_deprecated/emo_exporter.json",
+                            "dtm/_deprecated/xyz_with_cdi_importer.json",
+                            "navigation/mbg_to_nmea.json"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]

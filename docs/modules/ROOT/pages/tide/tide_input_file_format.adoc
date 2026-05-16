@@ -1,0 +1,10 @@
+=== Tide input file format
+
+Datapoint list are given as a csv file in the format below. Times are UTC time
+
+....
+date;longitude;latitude
+2012-06-07 07:47:32;-1.567549058290946;43.665100169125125
+2012-06-07 07:57:32;-1.5356841095435685;43.66557546659751
+2012-06-07 08:07:32;-1.5038904946815495;43.665526306598814
+....

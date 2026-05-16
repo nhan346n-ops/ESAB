@@ -1,0 +1,25 @@
+= Getting Started
+
+== Overview
+
+PyAT (Python Acoustic Toolbox) is an open-source library designed for processing and analyzing underwater acoustic data. The set of processes focus mainly but not exclusively on data processing of single and multibeam echo sounders.
+
+== Install
+
+Install PyAT using the package installer https://pypi.org/project/pip/[pip] :
+
+[source,pyhton]
+----
+pip install pyat --index-url https://gitlab.ifremer.fr/api/v4/projects/343/packages/pypi/simple
+----
+
+== Usage
+
+Import PyAT module in your Python script:
+
+[source,python]
+----
+import pyat
+
+# TODO : add example code
+----

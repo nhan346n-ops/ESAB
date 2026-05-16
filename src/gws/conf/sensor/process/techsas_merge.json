@@ -1,0 +1,55 @@
+{
+    "name": "Cut / Merge",
+    "function": "pyat.sensor.techsas_merger.TechsasMerger",
+    "help": "https://fleet.gitlab-pages.ifremer.fr/data-processing/globe/globe-documentation/pyat/sensor/techsas_merge.html",
+    "parameters": [
+        {
+            "name": "i_paths",
+            "key": "-i_paths",
+            "help": "Input file list",
+            "nargs": "+",
+            "type": "infile(content_type=TECHSAS)"
+        },
+        {
+            "name": "cut_file",
+            "key": "-cut_file",
+            "help": "Select the cut file with time intervals",
+            "type": "time_interval#cut_file"
+        },
+        {
+            "name": "geo_mask_file",
+            "key": "-geo_mask_file",
+            "help": "Select a geographic mask (.shp)",
+            "type": "time_interval#geo_mask_file"
+        },
+        {
+            "name": "reverse_geo_mask",
+            "key": "-reverse_geo_mask",
+            "help": "Reverse geographic mask (keep data outside areas)",
+            "type": "time_interval#reverse_geo_mask"
+        },
+        {
+            "name": "start_date",
+            "key": "-start_date",
+            "type": "time_interval#start_date"
+        },
+        {
+            "name": "end_date",
+            "key": "-end_date",
+            "type": "time_interval#end_date"
+        },
+        {
+            "name": "o_paths",
+            "key": "-o_paths",
+            "help": "Output file (.nc)",
+            "nargs": "+",
+            "type": "outfile(content_type=TECHSAS)"
+        },
+        {
+            "name": "overwrite",
+            "key": "--overwrite",
+            "help": "Allow to overwrite file if already exists.",
+            "type": "outfile#overwrite"
+        }
+    ]
+}
