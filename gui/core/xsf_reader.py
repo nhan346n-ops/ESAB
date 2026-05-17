@@ -101,41 +101,48 @@ def _try_read_nav_bounds(ds, metadata: XsfMetadata) -> None:
         if "Sonar" not in ds.groups:
             return
         sonar = ds.groups["Sonar"]
-        nav_group = None
-        for gname in sonar.groups:
-            if gname.lower().startswith("beam_group"):
-                bg = sonar.groups[gname]
-                if "Navigation" in bg.groups:
-                    nav_group = bg.groups["Navigation"]
-                    break
-
-        if nav_group is None:
-            return
-
-        # Read longitude/latitude arrays
         lon_var = None
         lat_var = None
-        for vname in nav_group.variables:
-            vlow = vname.lower()
-            if "longitude" in vlow and lon_var is None:
-                lon_var = nav_group.variables[vname]
-            if "latitude" in vlow and lat_var is None:
-                lat_var = nav_group.variables[vname]
 
-        if lon_var is not None and lat_var is not None:
-            lon_data = lon_var[:].ravel()
-            lat_data = lat_var[:].ravel()
-            # Remove fill values
-            mask = np.isfinite(lon_data) & np.isfinite(lat_data)
-            if mask.any():
-                metadata.nav_bounds = {
-                    "lon_min": float(np.min(lon_data[mask])),
-                    "lon_max": float(np.max(lon_data[mask])),
-                    "lat_min": float(np.min(lat_data[mask])),
-                    "lat_max": float(np.max(lat_data[mask])),
-                }
+        for gname in sonar.groups:
+            if not gname.lower().startswith("beam_group"):
+                continue
+            bg = sonar.groups[gname]
+            # First try: Navigation sub-group (SONAR-netCDF4 standard)
+            if "Navigation" in bg.groups:
+                nav_group = bg.groups["Navigation"]
+                for vname in nav_group.variables:
+                    vlow = vname.lower()
+                    if "longitude" in vlow and lon_var is None:
+                        lon_var = nav_group.variables[vname]
+                    if "latitude" in vlow and lat_var is None:
+                        lat_var = nav_group.variables[vname]
+                if lon_var is not None and lat_var is not None:
+                    break
+
+            # Second try: platform_lat/lon variables directly in beam_group
+            if lon_var is None and "platform_longitude" in bg.variables:
+                lon_var = bg.variables["platform_longitude"]
+            if lat_var is None and "platform_latitude" in bg.variables:
+                lat_var = bg.variables["platform_latitude"]
+            if lon_var is not None and lat_var is not None:
+                break
+
+        if lon_var is None or lat_var is None:
+            return
+
+        lon_data = lon_var[:].ravel()
+        lat_data = lat_var[:].ravel()
+        mask = np.isfinite(lon_data) & np.isfinite(lat_data)
+        if mask.any():
+            metadata.nav_bounds = {
+                "lon_min": float(np.min(lon_data[mask])),
+                "lon_max": float(np.max(lon_data[mask])),
+                "lat_min": float(np.min(lat_data[mask])),
+                "lat_max": float(np.max(lat_data[mask])),
+            }
     except Exception:
-        pass  # Navigation bounds are optional
+        pass
 
 
 def scan_directory(directory: str) -> List[XsfMetadata]:

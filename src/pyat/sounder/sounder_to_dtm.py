@@ -97,6 +97,8 @@ class SounderToDtmExporter:
             self.geobox = arg_util.parse_geobox("coord", coord)
             self.geobox.spatial_reference = osr.SpatialReference()
             self.geobox.spatial_reference.ImportFromProj4(self.target_spatial_reference)
+        else:
+            self.geobox = None
 
         self.overwrite = overwrite
         self.valid_sounds_only = valid_sounds_only

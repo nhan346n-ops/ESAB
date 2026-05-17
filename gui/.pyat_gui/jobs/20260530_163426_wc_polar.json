@@ -1,0 +1,17 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\sonar\\wc\\polar_echograms.json",
+  "i_paths": [
+    "D:/Software/test2/0007_20190724_082632_TecnopescaII.xsf.nc"
+  ],
+  "o_paths": [
+    "D:/Software/test2\\wc_0007_20190724_082632_TecnopescaII.xsf_PolarEchograms.g3d.nc"
+  ],
+  "overwrite": true,
+  "layers": [
+    "backscatter_mean"
+  ],
+  "normalization_offset": 0.0,
+  "sample_resolution": 0.6507,
+  "height": 500,
+  "interpolate": true
+}

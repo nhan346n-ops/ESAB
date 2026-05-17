@@ -1,0 +1,18 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\sonar\\wc\\polar_echograms.json",
+  "i_paths": [
+    "D:/Software/test2/20260416_124412_2_bs.xsf.nc"
+  ],
+  "o_paths": [
+    "D:/Software/test2\\wc_20260416_124412_2_bs.xsf_PolarEchograms.g3d.nc"
+  ],
+  "overwrite": true,
+  "layers": [
+    "backscatter_mean"
+  ],
+  "normalization_offset": 0.0,
+  "filters": "C:\\Users\\GUO\\AppData\\Local\\Temp\\wc_filt_f0adb335.json",
+  "sample_resolution": 0.0378,
+  "height": 2152,
+  "interpolate": true
+}

@@ -1,0 +1,26 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\dtm\\convert\\sounder_to_dtm.json",
+  "i_paths": [
+    "D:\\WorkSpace3\\Cdata\\0001_20190724_072738_TecnopescaII.xsf.nc"
+  ],
+  "o_paths": [
+    "C:/Users/GUO/Desktop\\bathy1_combined.dtm.nc"
+  ],
+  "overwrite": false,
+  "target_resolution": "3.9e-05",
+  "target_spatial_reference": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
+  "gap_filling": true,
+  "mask_size": 3,
+  "valid_sounds_only": true,
+  "spatial_antialiasing": true,
+  "coord": {
+    "west": 14.329020595958236,
+    "south": 43.593128859747885,
+    "east": 14.329215595958235,
+    "north": 43.607090859747885
+  },
+  "layers": [
+    "elevation",
+    "backscatter"
+  ]
+}

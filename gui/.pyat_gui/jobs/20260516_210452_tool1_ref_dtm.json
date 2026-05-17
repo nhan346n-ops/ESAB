@@ -1,0 +1,15 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\sonar\\bs\\avg_backscatter_model.json",
+  "i_paths": [
+    "D:\\WorkSpace3\\Cdata\\0000_20190724_071809_TecnopescaII.xsf.nc"
+  ],
+  "sounder_type": "AUTO",
+  "use_snippets": false,
+  "use_svp": true,
+  "use_insonified_area": true,
+  "remove_compensation": true,
+  "remove_calibration": true,
+  "projection": "Auto Detect",
+  "resolution": "2.0",
+  "gap_fill": "None"
+}

@@ -1,0 +1,20 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\sonar\\bs\\bs_angular_renormalization.json",
+  "i_paths": [
+    "D:/Software/test/0008_20250704_080013.xsf.nc",
+    "D:/Software/test/0005_20250704_064148.xsf.nc",
+    "D:/Software/test/0007_20250704_073013.xsf.nc",
+    "D:/Software/test/0006_20250704_071148.xsf.nc"
+  ],
+  "o_paths": [
+    "D:/Software/test\\0008_20250704_080013.xsf_bs_renorm.nc",
+    "D:/Software/test\\0005_20250704_064148.xsf_bs_renorm.nc",
+    "D:/Software/test\\0007_20250704_073013.xsf_bs_renorm.nc",
+    "D:/Software/test\\0006_20250704_071148.xsf_bs_renorm.nc"
+  ],
+  "mean_model_file": "D:/Software/test/bsar_model.bsar.nc",
+  "reference_level": -15.0,
+  "apply_compensation": true,
+  "use_snippets": false,
+  "i_dtm": "D:/Software/test/5678_combined.dtm.nc"
+}

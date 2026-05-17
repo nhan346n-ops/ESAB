@@ -1,0 +1,21 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\sonar\\bs\\bs_sliding_angular_renormalization.json",
+  "i_paths": [
+    "D:/workspace11/Cdata/0024_20250704_144858.xsf.nc",
+    "D:/workspace11/Cdata/0025_20250704_151433.xsf.nc",
+    "D:/workspace11/Cdata/0026_20250704_154009.xsf.nc"
+  ],
+  "o_paths": [
+    "D:/Software/BSAR\\0024_20250704_144858.xsf_bs_sliding.nc",
+    "D:/Software/BSAR\\0025_20250704_151433.xsf_bs_sliding.nc",
+    "D:/Software/BSAR\\0026_20250704_154009.xsf_bs_sliding.nc"
+  ],
+  "sounder_type": "AUTO",
+  "sliding_window": 10,
+  "ref_angle_min": 30.0,
+  "ref_angle_max": 60.0,
+  "use_snippets": false,
+  "use_svp": true,
+  "use_insonified_area": true,
+  "remove_calibration": true
+}

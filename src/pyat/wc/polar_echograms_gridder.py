@@ -386,6 +386,10 @@ class PolarEchogramsGridder:
 
     def flush_dataset(self):
         if self.dataset is not None:
+            self.dataset.sync()
+
+    def close_dataset(self):
+        if self.dataset is not None:
             self.dataset.close()
             self.dataset = None
 

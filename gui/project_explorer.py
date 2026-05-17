@@ -7,12 +7,13 @@ Left-side panel with QTabWidget:
 import os
 from typing import Optional, List
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QItemSelectionModel
 from PySide6.QtGui import QColor, QBrush
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QTabWidget,
     QTreeWidget, QTreeWidgetItem, QPushButton, QLabel,
-    QFileDialog, QMessageBox, QMenu, QToolBar,
+    QFileDialog, QMessageBox, QMenu, QToolBar, QGroupBox,
+    QHBoxLayout, QCheckBox, QSlider,
 )
 
 from .core.xsf_reader import XsfMetadata, read_xsf_metadata, scan_directory
@@ -24,6 +25,44 @@ ITEM_CATEGORY = 1
 ITEM_FILE = 2
 
 
+class _SelectionPreservingTreeWidget(QTreeWidget):
+    """QTreeWidget that prevents right-click from visually changing the current multi-selection."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._right_click_saved = set()
+        self._right_click_in_progress = False
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.RightButton:
+            self._right_click_saved = set()
+            for it in self.selectedItems():
+                if it.data(0, Qt.UserRole + 1) is not None:
+                    self._right_click_saved.add(it)
+            self._right_click_in_progress = True
+        super().mousePressEvent(event)
+        if event.button() == Qt.RightButton and self._right_click_saved:
+            self._restore_saved()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.RightButton:
+            pass
+        super().mouseReleaseEvent(event)
+        if event.button() == Qt.RightButton and self._right_click_saved:
+            self._restore_saved()
+            self._right_click_in_progress = False
+
+    def _restore_saved(self):
+        sel_model = self.selectionModel()
+        if not sel_model or not self._right_click_saved:
+            return
+        sel_model.clearSelection()
+        for item in self._right_click_saved:
+            idx = self.indexFromItem(item)
+            if idx.isValid():
+                sel_model.select(idx, QItemSelectionModel.Select)
+
+
 class ProjectExplorer(QWidget):
     """Left panel: XSF file browser + Toolbox."""
 
@@ -33,34 +72,38 @@ class ProjectExplorer(QWidget):
     files_added = Signal(list)  # list of XsfMetadata
     go_to_location = Signal(str)  # filepath
     file_toggled = Signal(str, bool)  # filepath, visible
+    file_removed = Signal(str)  # filepath (removed from list)
+    dtm_layer_changed = Signal(str)  # 'elevation', 'backscatter', or '' for none
+    product_action = Signal(str, str)  # action, filepath  (e.g., 'goto_dtm', 'geotiff_dtm')
+    dtm_gamma_changed = Signal(float)  # gamma value
+    dtm_shoulder_changed = Signal(float)  # shoulder compression strength [0, 1]
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self._metadata_cache: dict = {}  # filepath -> XsfMetadata
         self._populating = False
+        self._last_right_click_files: List[str] = []  # fallback for context menu
         self._setup_ui()
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        # Toolbar
         toolbar = QToolBar()
-        toolbar.addWidget(QLabel("Project Explorer"))
-        add_btn = QPushButton("+ Add Files")
+        toolbar.addWidget(QLabel("\u9879\u76ee\u6d4f\u89c8\u5668"))
+        add_btn = QPushButton("+ \u6dfb\u52a0\u6587\u4ef6")
         add_btn.clicked.connect(self._add_files)
         toolbar.addWidget(add_btn)
-        add_dir_btn = QPushButton("+ Add Folder")
+        add_dir_btn = QPushButton("+ \u6dfb\u52a0\u6587\u4ef6\u5939")
         add_dir_btn.clicked.connect(self._add_folder)
         toolbar.addWidget(add_dir_btn)
         layout.addWidget(toolbar)
 
-        # Tab widget
         self._tabs = QTabWidget()
 
-        # Tab 1: Files
-        self._file_tree = QTreeWidget()
-        self._file_tree.setHeaderLabels(["Name", "Size", "Status"])
+        # Tab 1
+        self._file_tree = _SelectionPreservingTreeWidget()
+        self._file_tree.setHeaderLabels(["\u540d\u79f0", "\u5927\u5c0f", "\u72b6\u6001"])
         self._file_tree.setColumnWidth(0, 250)
         self._file_tree.setColumnWidth(1, 80)
         self._file_tree.setColumnWidth(2, 80)
@@ -73,87 +116,159 @@ class ProjectExplorer(QWidget):
         self._file_tree.itemChanged.connect(self._on_item_changed)
         self._file_tree.itemDoubleClicked.connect(self._on_double_click)
 
-        # Root items
-        self._root_xsf = QTreeWidgetItem(self._file_tree, ["XSF Files", "", ""])
+        self._root_xsf = QTreeWidgetItem(self._file_tree, ["XSF \u6587\u4ef6", "", ""])
         self._root_xsf.setData(0, Qt.UserRole, ITEM_ROOT)
 
-        self._cat_processed = QTreeWidgetItem(self._root_xsf, ["Processed (green)", "", ""])
+        self._cat_processed = QTreeWidgetItem(self._root_xsf, ["\u5df2\u5904\u7406 (\u7eff\u8272)", "", ""])
         self._cat_processed.setData(0, Qt.UserRole, ITEM_CATEGORY)
         self._cat_processed.setForeground(0, QBrush(QColor("#4ec94e")))
 
-        self._cat_unprocessed = QTreeWidgetItem(self._root_xsf, ["Unprocessed (gray)", "", ""])
+        self._cat_unprocessed = QTreeWidgetItem(self._root_xsf, ["\u672a\u5904\u7406 (\u7070\u8272)", "", ""])
         self._cat_unprocessed.setData(0, Qt.UserRole, ITEM_CATEGORY)
         self._cat_unprocessed.setForeground(0, QBrush(QColor("#808080")))
 
-        self._root_dtm = QTreeWidgetItem(self._file_tree, ["Reference DTM", "", ""])
+        self._root_dtm = QTreeWidgetItem(self._file_tree, ["\u53c2\u8003 DTM", "", ""])
         self._root_dtm.setData(0, Qt.UserRole, ITEM_ROOT)
 
-        self._root_bsar = QTreeWidgetItem(self._file_tree, ["BSAR Models", "", ""])
+        self._root_bsar = QTreeWidgetItem(self._file_tree, ["BSAR \u6a21\u578b", "", ""])
         self._root_bsar.setData(0, Qt.UserRole, ITEM_ROOT)
 
-        self._root_products = QTreeWidgetItem(self._file_tree, ["Products", "", ""])
+        self._root_products = QTreeWidgetItem(self._file_tree, ["\u4ea7\u54c1", "", ""])
         self._root_products.setData(0, Qt.UserRole, ITEM_ROOT)
 
         self._file_tree.expandAll()
-        self._tabs.addTab(self._file_tree, "Files")
+        self._tabs.addTab(self._file_tree, "\u6587\u4ef6")
 
-        # Tab 2: Toolbox
+        # Tab 2
         self._toolbox_widget = QWidget()
         toolbox_layout = QVBoxLayout(self._toolbox_widget)
 
-        # Phase 1 tools
-        toolbox_layout.addWidget(QLabel("Phase 1 — Data Preparation"))
-        btn_t1 = QPushButton("Tool 1: Export Reference DTM")
+        toolbox_layout.addWidget(QLabel("\u9636\u6bb5 1 \u2014 \u6570\u636e\u51c6\u5907"))
+        btn_t1 = QPushButton("\u5de5\u5177 1: \u5bfc\u51fa\u53c2\u8003 DTM")
         btn_t1.clicked.connect(lambda: self.tool_requested.emit("tool1"))
         btn_t1.setStyleSheet("QPushButton { text-align: left; padding: 6px; }")
         toolbox_layout.addWidget(btn_t1)
 
-        toolbox_layout.addWidget(QLabel("Phase 2 — Angle Response Compensation"))
-        btn_t2a = QPushButton("Tool 2A: Sliding Renormalization")
+        toolbox_layout.addWidget(QLabel("\u9636\u6bb5 2 \u2014 \u89d2\u5ea6\u54cd\u5e94\u8865\u507f"))
+        btn_stats = QPushButton("\u9759\u6001\u89d2\u5ea6\u91cd\u89c4\u8303\u5316")
+        btn_stats.clicked.connect(lambda: self.tool_requested.emit("tool2b_step1"))
+        btn_stats.setStyleSheet("QPushButton { text-align: left; padding: 6px; }")
+        toolbox_layout.addWidget(btn_stats)
+
+        btn_t2a = QPushButton("\u6ed1\u52a8\u89d2\u5ea6\u91cd\u89c4\u8303\u5316")
         btn_t2a.clicked.connect(lambda: self.tool_requested.emit("tool2a"))
         btn_t2a.setStyleSheet("QPushButton { text-align: left; padding: 6px; }")
         toolbox_layout.addWidget(btn_t2a)
 
-        btn_t2b_s1 = QPushButton("Tool 2B ①: Statistical BSAR")
-        btn_t2b_s1.clicked.connect(lambda: self.tool_requested.emit("tool2b_step1"))
-        btn_t2b_s1.setStyleSheet("QPushButton { text-align: left; padding: 6px; }")
-        toolbox_layout.addWidget(btn_t2b_s1)
-
-        btn_t2b_s2 = QPushButton("Tool 2B ②: Apply BSAR Renormalization")
+        btn_t2b_s2 = QPushButton("\u7edf\u8ba1\u89d2\u54cd\u5e94\uff08BSAR\uff09")
         btn_t2b_s2.clicked.connect(lambda: self.tool_requested.emit("tool2b_step2"))
         btn_t2b_s2.setStyleSheet("QPushButton { text-align: left; padding: 6px; }")
         toolbox_layout.addWidget(btn_t2b_s2)
 
-        toolbox_layout.addWidget(QLabel("Phase 4 — Mosaic Output"))
-        btn_t3 = QPushButton("Tool 3: Grid Backscatter Mosaic")
-        btn_t3.clicked.connect(lambda: self.tool_requested.emit("tool3"))
-        btn_t3.setStyleSheet("QPushButton { text-align: left; padding: 6px; }")
-        toolbox_layout.addWidget(btn_t3)
-
         toolbox_layout.addStretch()
-        self._tabs.addTab(self._toolbox_widget, "Toolbox")
+        self._tabs.addTab(self._toolbox_widget, "\u5de5\u5177\u7bb1")
 
         layout.addWidget(self._tabs)
 
+        dtm_grp = QGroupBox("DTM \u56fe\u5c42")
+        dtm_layout = QVBoxLayout(dtm_grp)
+        dtm_layout.setContentsMargins(4, 4, 4, 4)
+        self._dtm_none = QCheckBox("\u65e0")
+        self._dtm_none.setChecked(True)
+        self._dtm_bs = QCheckBox("\u540e\u5411\u6563\u5c04")
+        self._dtm_elev = QCheckBox("\u6d77\u62d4")
+        self._dtm_none.toggled.connect(lambda: self._on_dtm_toggle(""))
+        self._dtm_bs.toggled.connect(lambda: self._on_dtm_toggle("backscatter"))
+        self._dtm_elev.toggled.connect(lambda: self._on_dtm_toggle("elevation"))
+        dtm_layout.addWidget(self._dtm_none)
+        dtm_layout.addWidget(self._dtm_bs)
+        dtm_layout.addWidget(self._dtm_elev)
+        dtm_layout.addWidget(QLabel("Gamma \u8c03\u8282:"))
+        gamma_row = QHBoxLayout()
+        self._gamma_slider = QSlider(Qt.Horizontal)
+        self._gamma_slider.setRange(-100, 100)
+        self._gamma_slider.setValue(0)
+        self._gamma_slider.setTickInterval(10)
+        self._gamma_slider.setToolTip("\u5de6\u6697\u53f3\u4eae\uff0c\u4e2d\u95f4=\u539f\u59cb")
+        self._gamma_label = QLabel("1.0")
+        self._gamma_label.setMinimumWidth(30)
+        gamma_row.addWidget(self._gamma_slider)
+        gamma_row.addWidget(self._gamma_label)
+        dtm_layout.addLayout(gamma_row)
+        self._gamma_slider.valueChanged.connect(self._on_gamma_changed)
+
+        dtm_layout.addWidget(QLabel("\u80a9\u90e8\u538b\u7f29 (\u538b\u6697\u4eae\u5e26):"))
+        shoulder_row = QHBoxLayout()
+        self._shoulder_slider = QSlider(Qt.Horizontal)
+        self._shoulder_slider.setRange(0, 100)
+        self._shoulder_slider.setValue(0)
+        self._shoulder_slider.setTickInterval(10)
+        self._shoulder_slider.setToolTip("\u503c\u8d8a\u5927\u4eae\u5e26\u538b\u8d8a\u6697\uff0c0=\u5173\u95ed")
+        self._shoulder_label = QLabel("0%")
+        self._shoulder_label.setMinimumWidth(30)
+        shoulder_row.addWidget(self._shoulder_slider)
+        shoulder_row.addWidget(self._shoulder_label)
+        dtm_layout.addLayout(shoulder_row)
+        self._shoulder_slider.valueChanged.connect(self._on_shoulder_changed)
+        layout.addWidget(dtm_grp)
+
+    def _on_gamma_changed(self, value: int) -> None:
+        """Map -100..100 → gamma 0.33..3.0, center 0 → 1.0."""
+        gamma = 3.0 ** (value / 100.0)
+        self._gamma_label.setText(f"{gamma:.2f}")
+        self.dtm_gamma_changed.emit(gamma)
+
+    def _on_shoulder_changed(self, value: int) -> None:
+        """Map 0..100 → shoulder strength 0.0..1.0."""
+        strength = value / 100.0
+        self._shoulder_label.setText(f"{value}%")
+        self.dtm_shoulder_changed.emit(strength)
+
+    def _on_dtm_toggle(self, layer: str) -> None:
+        """Uncheck others when one is selected."""
+        for cb in (self._dtm_none, self._dtm_bs, self._dtm_elev):
+            cb.blockSignals(True)
+        if layer == "":
+            self._dtm_none.setChecked(True)
+            self._dtm_bs.setChecked(False)
+            self._dtm_elev.setChecked(False)
+            self._gamma_slider.setEnabled(False)
+            self._shoulder_slider.setEnabled(False)
+        elif layer == "backscatter":
+            self._dtm_none.setChecked(False)
+            self._dtm_bs.setChecked(True)
+            self._dtm_elev.setChecked(False)
+            self._gamma_slider.setEnabled(True)
+            self._shoulder_slider.setEnabled(True)
+        elif layer == "elevation":
+            self._dtm_none.setChecked(False)
+            self._dtm_bs.setChecked(False)
+            self._dtm_elev.setChecked(True)
+            self._gamma_slider.setEnabled(True)
+            self._shoulder_slider.setEnabled(True)
+        for cb in (self._dtm_none, self._dtm_bs, self._dtm_elev):
+            cb.blockSignals(False)
+        self.dtm_layer_changed.emit(layer)
+
     def _add_files(self) -> None:
-        """Open file dialog to add XSF files."""
+        """\u6253\u5f00\u6587\u4ef6\u5bf9\u8bdd\u6846\u6dfb\u52a0 XSF \u6587\u4ef6\u3002"""
         files, _ = QFileDialog.getOpenFileNames(
-            self, "Add XSF Files", "",
-            "XSF Files (*.xsf.nc *.nc);;All Files (*.*)"
+            self, "\u6dfb\u52a0 XSF \u6587\u4ef6", "",
+            "XSF \u6587\u4ef6 (*.xsf.nc *.nc);;\u6240\u6709\u6587\u4ef6 (*.*)"
         )
         if files:
             self._load_files(files)
 
     def _add_folder(self) -> None:
-        """Open folder dialog to scan for XSF files."""
-        folder = QFileDialog.getExistingDirectory(self, "Select Folder with XSF Files")
+        """\u6253\u5f00\u6587\u4ef6\u5939\u5bf9\u8bdd\u6846\u626b\u63cf XSF \u6587\u4ef6\u3002"""
+        folder = QFileDialog.getExistingDirectory(self, "\u9009\u62e9\u542b\u6709 XSF \u6587\u4ef6\u7684\u6587\u4ef6\u5939")
         if folder:
             results = scan_directory(folder)
             if results:
                 self._add_to_tree(results)
                 self.files_added.emit(results)
             else:
-                QMessageBox.information(self, "No Files", "No XSF files found in the selected folder.")
+                QMessageBox.information(self, "\u65e0\u6587\u4ef6", "\u5728\u6240\u9009\u6587\u4ef6\u5939\u4e2d\u672a\u627e\u5230 XSF \u6587\u4ef6\u3002")
 
     def _load_files(self, filepaths: List[str]) -> None:
         """Load metadata from a list of file paths."""
@@ -164,7 +279,7 @@ class ProjectExplorer(QWidget):
                     meta = read_xsf_metadata(fp)
                     self._metadata_cache[fp] = meta
                 except Exception as e:
-                    QMessageBox.warning(self, "Read Error", f"Failed to read {os.path.basename(fp)}:\n{e}")
+                    QMessageBox.warning(self, "\u8bfb\u53d6\u9519\u8bef", f"\u65e0\u6cd5\u8bfb\u53d6 {os.path.basename(fp)}:\n{e}")
                     continue
             results.append(self._metadata_cache[fp])
 
@@ -176,6 +291,7 @@ class ProjectExplorer(QWidget):
         """Add metadata items to the file tree with checkboxes for nav toggle."""
         self._populating = True  # block itemChanged signals during population
         for meta in metadata_list:
+            self._metadata_cache[meta.filepath] = meta  # populate cache for _selected_metadata()
             item = QTreeWidgetItem()
             item.setText(0, meta.filename)
             item.setText(1, f"{meta.filesize_mb:.0f} MB")
@@ -197,45 +313,76 @@ class ProjectExplorer(QWidget):
         self._populating = False  # re-enable signals
 
     def _context_menu(self, pos) -> None:
-        """Show right-click context menu on file items."""
+        """\u663e\u793a\u53f3\u952e\u4e0a\u4e0b\u6587\u83dc\u5355\u3002"""
         item = self._file_tree.itemAt(pos)
         if not item:
             return
         filepath = item.data(0, Qt.UserRole + 1)
         if not filepath:
-            return  # Not a file node (root, category, etc.)
+            return
+        is_product = filepath.endswith(".dtm.nc")
+
+        saved_selection = set()
+        for si in self._file_tree.selectedItems():
+            fp = si.data(0, Qt.UserRole + 1)
+            if fp:
+                saved_selection.add(fp)
+        if filepath not in saved_selection:
+            saved_selection = {filepath}
 
         menu = QMenu(self)
 
-        action_go = menu.addAction("Go to Location")
+        action_go = menu.addAction("\u5b9a\u4f4d\u5230\u4f4d\u7f6e")
         action_go.triggered.connect(lambda: self.go_to_location.emit(filepath))
 
-        menu.addSeparator()
-
-        # Select this item so tool handlers can find it via get_selected_files()
-        item.setSelected(True)
-        # Also emit file_selected so map highlights this track
-        if filepath in self._metadata_cache:
-            self.file_selected.emit([self._metadata_cache[filepath]])
-
-        action_t1 = menu.addAction("Tool 1: Export Reference DTM")
-        action_t1.triggered.connect(lambda: self.tool_requested.emit("tool1"))
-
-        action_t2a = menu.addAction("Tool 2A: Sliding Renormalization")
-        action_t2a.triggered.connect(lambda: self.tool_requested.emit("tool2a"))
-
-        action_t2b = menu.addAction("Tool 2B: Static Renormalization")
-        action_t2b.triggered.connect(lambda: self.tool_requested.emit("tool2b_step1"))
+        if is_product:
+            menu.addSeparator()
+            action_tiff = menu.addAction("\u5bfc\u51fa GeoTIFF")
+            action_tiff.triggered.connect(lambda: self.product_action.emit("geotiff_dtm", filepath))
 
         menu.addSeparator()
+        action_remove = menu.addAction("\u4ece\u5217\u8868\u4e2d\u79fb\u9664")
+        action_remove.triggered.connect(
+            lambda checked, fp_list=list(saved_selection): self._remove_files_from_list(fp_list))
 
-        action_t3 = menu.addAction("Tool 3: Grid Backscatter Mosaic")
-        action_t3.triggered.connect(lambda: self.tool_requested.emit("tool3"))
+        if not is_product:
+            menu.addSeparator()
+            self._last_right_click_files = list(saved_selection)
+            self._file_tree.setCurrentItem(item, 0, QItemSelectionModel.Current)
+            if filepath in self._metadata_cache:
+                self.file_selected.emit([self._metadata_cache[filepath]])
+
+            action_t1 = menu.addAction("\u5de5\u5177 1: \u5bfc\u51fa\u53c2\u8003 DTM")
+            action_t1.triggered.connect(lambda: self.tool_requested.emit("tool1"))
+
+            angle_menu = menu.addMenu("\u89d2\u5ea6\u54cd\u5e94")
+            action_stats = angle_menu.addAction("\u9759\u6001\u89d2\u5ea6\u91cd\u89c4\u8303\u5316")
+            action_stats.triggered.connect(lambda: self.tool_requested.emit("tool2b_step1"))
+            action_sliding = angle_menu.addAction("\u6ed1\u52a8\u89d2\u5ea6\u91cd\u89c4\u8303\u5316")
+            action_sliding.triggered.connect(lambda: self.tool_requested.emit("tool2a"))
+            action_static = angle_menu.addAction("\u7edf\u8ba1\u89d2\u54cd\u5e94\uff08BSAR\uff09")
+            action_static.triggered.connect(lambda: self.tool_requested.emit("tool2b_step2"))
 
         menu.exec(self._file_tree.viewport().mapToGlobal(pos))
 
+    @staticmethod
+    def _find_item_by_filepath(parent_item, filepath):
+        """Recursively search tree for an item with the given filepath."""
+        for i in range(parent_item.childCount()):
+            child = parent_item.child(i)
+            if child.data(0, Qt.UserRole + 1) == filepath:
+                return child
+            found = ProjectExplorer._find_item_by_filepath(child, filepath)
+            if found:
+                return found
+        return None
+
     def _on_file_clicked(self, item: QTreeWidgetItem, column: int) -> None:
-        """Emit file_selected when user clicks a file in the tree."""
+        """Emit file_selected when user LEFT-clicks a file in the tree."""
+        # Skip right-clicks (itemClicked fires for all buttons; check widget flag)
+        if getattr(self._file_tree, '_right_click_in_progress', False):
+            return
+        self._last_right_click_files = []
         filepath = item.data(0, Qt.UserRole + 1)
         if filepath and filepath in self._metadata_cache:
             self.file_selected.emit([self._metadata_cache[filepath]])
@@ -272,21 +419,100 @@ class ProjectExplorer(QWidget):
                 )
             QMessageBox.information(self, "XSF Metadata", info)
 
+    def _remove_files_from_list(self, filepaths: List[str], is_product: bool = False) -> None:
+        """Remove one or more files from the tree list after confirmation."""
+        if not filepaths:
+            return
+        from PySide6.QtWidgets import QMessageBox, QCheckBox as QCBox
+
+        # ── Confirmation dialog ──
+        if len(filepaths) == 1:
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Remove file from list")
+            msg.setText(f"Remove {os.path.basename(filepaths[0])} from the project?")
+            cb = QCBox("Also delete file from disk (cannot be undone)")
+            cb.setChecked(False)
+            msg.setCheckBox(cb)
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            msg.setDefaultButton(QMessageBox.No)
+            if msg.exec() != QMessageBox.Yes:
+                return
+            delete_from_disk = cb.isChecked()
+        else:
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Remove files from list")
+            msg.setText(f"Remove {len(filepaths)} files from the project?")
+            cb = QCBox("Also delete files from disk (cannot be undone)")
+            cb.setChecked(False)
+            msg.setCheckBox(cb)
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            msg.setDefaultButton(QMessageBox.No)
+            if msg.exec() != QMessageBox.Yes:
+                return
+            delete_from_disk = cb.isChecked()
+
+        for filepath in filepaths:
+            # Find and remove the item from the tree (any depth)
+            removed = False
+            for i in range(self._file_tree.topLevelItemCount()):
+                root = self._file_tree.topLevelItem(i)
+                for j in range(root.childCount()):
+                    cat = root.child(j)
+                    # Direct child of root (e.g. DTM, BSAR, Products)
+                    if cat.data(0, Qt.UserRole + 1) == filepath:
+                        root.removeChild(cat)
+                        removed = True
+                        break
+                    # Grand-children under a category (e.g. XSF files)
+                    for k in range(cat.childCount()):
+                        child = cat.child(k)
+                        if child.data(0, Qt.UserRole + 1) == filepath:
+                            cat.removeChild(child)
+                            removed = True
+                            break
+                    if removed:
+                        break
+                if removed:
+                    break
+            # Also remove from metadata cache if present
+            self._metadata_cache.pop(filepath, None)
+            # Delete from disk if checked
+            if delete_from_disk and os.path.exists(filepath):
+                try:
+                    os.remove(filepath)
+                except Exception:
+                    pass
+            self._last_right_click_files = [f for f in self._last_right_click_files if f != filepath]
+            self.file_removed.emit(filepath)
+
     def _selected_metadata(self) -> List[XsfMetadata]:
-        """Get metadata for selected items."""
+        """Get metadata for selected items. Falls back to filepath-only entries."""
         results = []
         for item in self._file_tree.selectedItems():
             filepath = item.data(0, Qt.UserRole + 1)
-            if filepath and filepath in self._metadata_cache:
+            if not filepath:
+                continue
+            if filepath in self._metadata_cache:
                 results.append(self._metadata_cache[filepath])
+            else:
+                # Create a minimal entry with just the filepath
+                from .core.xsf_reader import XsfMetadata
+                meta = XsfMetadata(filepath=filepath, filename=os.path.basename(filepath))
+                results.append(meta)
         return results
 
     def get_selected_files(self) -> List[str]:
-        """Get file paths of selected XSF files."""
+        """Get file paths of selected XSF files.
+        
+        After right-click, uses the context menu's stored file list
+        (immune to menu.exec() event loop side effects).
+        """
+        if self._last_right_click_files:
+            return list(self._last_right_click_files)
         return [m.filepath for m in self._selected_metadata()]
 
     def add_external_file(self, filepath: str, category: str = "") -> None:
-        """Add an external file (DTM, BSAR, product) to the tree."""
+        """Add an external file (DTM, BSAR, product) to the tree with checkbox."""
         if not os.path.exists(filepath):
             return
         fname = os.path.basename(filepath)
@@ -299,3 +525,6 @@ class ProjectExplorer(QWidget):
         item = QTreeWidgetItem(parent, [fname, "", ""])
         item.setData(0, Qt.UserRole + 1, filepath)
         item.setToolTip(0, filepath)
+        # Add checkbox (default checked)
+        item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+        item.setCheckState(0, Qt.Checked)

@@ -1,0 +1,15 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\sonar\\wc\\longitudinal_section.json",
+  "i_paths": [
+    "D:\\Software\\test2\\0007_20190724_082632_TecnopescaII.xsf.nc"
+  ],
+  "o_paths": [
+    "D:\\Software\\test2\\wc_0007_20190724_082632_TecnopescaII.xsf_WCLongitudinalEcho.g3d.nc"
+  ],
+  "overwrite": true,
+  "layers": [
+    "backscatter_mean"
+  ],
+  "normalization_offset": 0.0,
+  "interpolate": false
+}

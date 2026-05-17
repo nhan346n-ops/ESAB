@@ -1,0 +1,11 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\sonar\\wc\\polar_echograms.json",
+  "i_paths": "已选 1 个文件",
+  "o_paths": "D:/Software/test2",
+  "overwrite": true,
+  "interpolate": true,
+  "layers": [
+    "backscatter_mean"
+  ],
+  "filters": "C:\\Users\\GUO\\AppData\\Local\\Temp\\wc_filters_8ffec212.json"
+}

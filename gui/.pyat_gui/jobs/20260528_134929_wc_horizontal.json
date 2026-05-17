@@ -1,0 +1,15 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\sonar\\wc\\horizontal_section.json",
+  "i_paths": [
+    "D:/Software/test2/0007_20190724_082632_TecnopescaII.xsf.nc"
+  ],
+  "o_paths": [
+    "C:\\Users\\GUO\\AppData\\Local\\Temp\\wc_0007_20190724_082632_TecnopescaII.xsf_WCHorizontalEcho.g3d.nc"
+  ],
+  "overwrite": true,
+  "delta_elevation": 1.0,
+  "vertical_reference": "chart_datum",
+  "layers": [
+    "backscatter_mean"
+  ]
+}

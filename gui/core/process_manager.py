@@ -51,18 +51,32 @@ class ProcessManager(QObject):
 
         if working_dir is None:
             working_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            # gui/core/ -> gui/ -> project root
-            working_dir = os.path.dirname(os.path.dirname(working_dir))
+            # gui/core/ -> gui/
+            # gui/ -> project root
+            working_dir = os.path.dirname(working_dir)
 
         self._process = QProcess(self)
         self._process.setWorkingDirectory(working_dir)
         self._process.setProcessChannelMode(QProcess.SeparateChannels)
 
-        # Ensure PYTHONPATH includes src/ for pyat imports
+        # Ensure PYTHONPATH includes src/ for pyat imports (replace any existing)
         env = QProcess.systemEnvironment()
+        env = [e for e in env if not e.startswith("PYTHONPATH=")]
         src_path = os.path.join(working_dir, "src")
-        if src_path not in os.environ.get("PYTHONPATH", ""):
-            env.append(f"PYTHONPATH={src_path}")
+        env.append(f"PYTHONPATH={src_path}")
+        # Ensure GDAL can find netCDF plugin and data files on Windows
+        conda_lib_bin = r"C:\Users\GUO\AppData\Local\anaconda3\Library\bin"
+        if os.path.isdir(conda_lib_bin):
+            env.append(f"PATH={conda_lib_bin};{os.environ.get('PATH', '')}")
+        gdal_plugin = os.path.join(conda_lib_bin, "..", "lib", "gdalplugins")
+        if os.path.isdir(gdal_plugin):
+            env.append(f"GDAL_DRIVER_PATH={os.path.normpath(gdal_plugin)}")
+        gdal_data = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\gdal"
+        if os.path.isdir(gdal_data):
+            env.append(f"GDAL_DATA={gdal_data}")
+        proj_lib = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\proj"
+        if os.path.isdir(proj_lib):
+            env.append(f"PROJ_LIB={proj_lib}")
         self._process.setEnvironment(env)
 
         # Connect signals
@@ -71,12 +85,26 @@ class ProcessManager(QObject):
         self._process.finished.connect(self._on_finished)
         self._process.errorOccurred.connect(self._on_error)
 
-        # Start
+        # Start — prefer pyat-py310 conda env for backend execution
         self._state = ProcessState.RUNNING
         self._stdout_buffer = ""
         self.state_changed.emit(self._state)
-        self.log_received.emit("INFO", f"Running: python -m pyat {config_json_path}")
-        self._process.start("python", ["-m", "pyat", config_json_path])
+
+        # Look for pyat-py310 conda environment Python
+        py310_exe = "python"
+        candidates = [
+            os.path.join(os.environ.get("CONDA_PREFIX", ""),
+                         "envs", "pyat-py310", "python.exe"),
+            r"C:\Users\GUO\AppData\Local\anaconda3\envs\pyat-py310\python.exe",
+        ]
+        for c in candidates:
+            if os.path.isfile(c):
+                py310_exe = c
+                break
+
+        self.log_received.emit("INFO",
+            f"Running: {py310_exe} -m pyat {config_json_path}")
+        self._process.start(py310_exe, ["-m", "pyat", config_json_path])
 
     def cancel(self) -> None:
         if self._process and self._state == ProcessState.RUNNING:
@@ -126,11 +154,18 @@ class ProcessManager(QObject):
     def _on_stderr(self) -> None:
         if not self._process:
             return
+        import re
         data = self._process.readAllStandardError().data().decode("utf-8", errors="replace")
         for line in data.splitlines():
             line = line.strip()
-            if line:
-                self.log_received.emit("ERROR", line)
+            if not line:
+                continue
+            # Detect pyat log level from: "YYYY-MM-DD HH:MM:SS - LEVEL - message"
+            m = re.search(r'- (\w+) - ', line)
+            if m and m.group(1) in ('INFO', 'WARNING', 'ERROR', 'DEBUG', 'OK'):
+                self.log_received.emit(m.group(1), line)
+            else:
+                self.log_received.emit("INFO", line)
 
     def _on_finished(self, exit_code: int, exit_status: QProcess.ExitStatus) -> None:
         if exit_status == QProcess.CrashExit:

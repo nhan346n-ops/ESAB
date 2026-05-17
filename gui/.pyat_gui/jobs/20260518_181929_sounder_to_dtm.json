@@ -1,0 +1,49 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\dtm\\convert\\sounder_to_dtm.json",
+  "i_paths": [
+    "D:/workspace11/Cdata/0021_20250704_133129.xsf.nc",
+    "D:/workspace11/Cdata/0011_20250704_090906.xsf.nc",
+    "D:/workspace11/Cdata/0023_20250704_142323.xsf.nc",
+    "D:/workspace11/Cdata/0022_20250704_135741.xsf.nc",
+    "D:/workspace11/Cdata/0006_20250704_071148.xsf.nc",
+    "D:/workspace11/Cdata/0013_20250704_095224.xsf.nc",
+    "D:/workspace11/Cdata/0008_20250704_080013.xsf.nc",
+    "D:/workspace11/Cdata/0020_20250704_130513.xsf.nc",
+    "D:/workspace11/Cdata/0015_20250704_104934.xsf.nc",
+    "D:/workspace11/Cdata/0016_20250704_111708.xsf.nc",
+    "D:/workspace11/Cdata/0014_20250704_102148.xsf.nc",
+    "D:/workspace11/Cdata/0024_20250704_144858.xsf.nc",
+    "D:/workspace11/Cdata/0005_20250704_064148.xsf.nc",
+    "D:/workspace11/Cdata/0004_20250704_062718.xsf.nc",
+    "D:/workspace11/Cdata/0017_20250704_114438.xsf.nc",
+    "D:/workspace11/Cdata/0019_20250704_123837.xsf.nc",
+    "D:/workspace11/Cdata/0025_20250704_151433.xsf.nc",
+    "D:/workspace11/Cdata/0012_20250704_093906.xsf.nc",
+    "D:/workspace11/Cdata/0009_20250704_081832.xsf.nc",
+    "D:/workspace11/Cdata/0026_20250704_154009.xsf.nc",
+    "D:/workspace11/Cdata/0010_20250704_084832.xsf.nc",
+    "D:/workspace11/Cdata/0007_20250704_073013.xsf.nc",
+    "D:/workspace11/Cdata/0003_20250704_062349.xsf.nc",
+    "D:/workspace11/Cdata/0018_20250704_121146.xsf.nc"
+  ],
+  "o_paths": [
+    "D:/Software/DTM\\bathySH_combined.dtm.nc"
+  ],
+  "overwrite": false,
+  "target_resolution": "8e-06",
+  "target_spatial_reference": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
+  "gap_filling": true,
+  "mask_size": 3,
+  "valid_sounds_only": true,
+  "spatial_antialiasing": true,
+  "coord": {
+    "west": 114.0735190068029,
+    "south": 15.984630358829529,
+    "east": 114.1157110068029,
+    "north": 15.99831035882953
+  },
+  "layers": [
+    "elevation",
+    "backscatter"
+  ]
+}

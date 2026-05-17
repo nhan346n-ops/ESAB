@@ -17,17 +17,26 @@ def get_biggest_echoes_count(in_xsfs: List[str], swaths_wanted):
         the biggest echo count found in the input files
 
     """
+    import netCDF4 as nc
     echoes_count = 0
     for input_file in in_xsfs:
         try:
-            spatializer = sonarnative.open_spatializer(input_file, -1, True)
-            swath_count = spatializer.get_swath_count()
-            swath_list = list(range(swath_count))
-            for i in swath_list[::swaths_wanted]:
-                # arg: file / swath index / number of swath
-                echoes_count = max(echoes_count, sonarnative.estimate_beam_echo_count(spatializer, i, swaths_wanted))
-        finally:
-            sonarnative.close_spatializer(spatializer)
+            with nc.Dataset(input_file, "r") as ds:
+                sonar = ds.groups.get("Sonar")
+                if sonar:
+                    bg = sonar.groups.get("Beam_group1")
+                    if bg:
+                        beams = len(bg.dimensions.get("beam", []))
+                        sc = bg.variables.get("sample_count")
+                        if sc is not None:
+                            max_samples = int(np.max(sc[:]))
+                            # A safe multiplier of 1.5 to cover all active samples/beams
+                            est = int(beams * max_samples * 1.5)
+                            echoes_count = max(echoes_count, est)
+        except Exception:
+            pass
+    if echoes_count == 0:
+        echoes_count = 2000000
     return echoes_count
 
 

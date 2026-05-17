@@ -1,0 +1,21 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\sonar\\wc\\horizontal_section.json",
+  "i_paths": "已选 1 个文件",
+  "o_paths": "D:/Software/test2",
+  "overwrite": true,
+  "delta_elevation": 1.0,
+  "grid_count": 1,
+  "vertical_offset": 1.0,
+  "vertical_reference": "chart_datum",
+  "coord": {
+    "west": 0.0,
+    "south": 0.0,
+    "east": 0.0,
+    "north": 0.0
+  },
+  "target_resolution": 0.000278,
+  "layers": [
+    "backscatter_mean"
+  ],
+  "normalization_offset": 0.0
+}

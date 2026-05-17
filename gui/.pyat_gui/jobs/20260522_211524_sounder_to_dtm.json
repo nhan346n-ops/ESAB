@@ -1,0 +1,34 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\dtm\\convert\\sounder_to_dtm.json",
+  "i_paths": [
+    "D:\\Software\\test\\0005_20250704_064148.xsf.nc",
+    "D:\\Software\\test\\0006_20250704_071148.xsf.nc",
+    "D:\\Software\\test\\0007_20250704_073013.xsf.nc",
+    "D:\\Software\\test\\0008_20250704_080013.xsf.nc"
+  ],
+  "o_paths": [
+    "C:\\Users\\GUO\\AppData\\Local\\Temp\\frontend_test_geo.dtm.nc"
+  ],
+  "overwrite": true,
+  "target_resolution": "0.000277778",
+  "target_spatial_reference": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
+  "gap_filling": true,
+  "mask_size": 5,
+  "valid_sounds_only": true,
+  "spatial_antialiasing": true,
+  "coord": {
+    "west": 114.07,
+    "south": 15.98,
+    "east": 114.12,
+    "north": 15.99
+  },
+  "layers": [
+    "elevation",
+    "backscatter"
+  ],
+  "min_elevation": -50.0,
+  "max_elevation": -10.0,
+  "min_sounds": 3,
+  "title": "Test Geo",
+  "institution": "SHOM"
+}

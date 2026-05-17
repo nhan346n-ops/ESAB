@@ -1,0 +1,23 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\dtm\\convert\\sounder_to_dtm.json",
+  "i_paths": [
+    "D:/Software/test/0006_20250704_071148.xsf.nc",
+    "D:/Software/test/0005_20250704_064148.xsf.nc",
+    "D:/Software/test/0007_20250704_073013.xsf.nc",
+    "D:/Software/test/0008_20250704_080013.xsf.nc"
+  ],
+  "o_paths": [
+    "D:/Software/test\\bathy11_combined.dtm.nc"
+  ],
+  "overwrite": false,
+  "target_resolution": "0.55",
+  "target_spatial_reference": "+proj=merc +lon_0=0 +lat_ts=16 +ellps=WGS84 +datum=WGS84 +no_defs",
+  "gap_filling": true,
+  "mask_size": 3,
+  "valid_sounds_only": true,
+  "spatial_antialiasing": true,
+  "layers": [
+    "elevation",
+    "backscatter"
+  ]
+}

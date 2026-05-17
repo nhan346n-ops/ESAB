@@ -33,11 +33,11 @@ class ConsoleView(QWidget):
 
         # Toolbar
         toolbar = QToolBar()
-        toolbar.addWidget(QLabel("Console & Job Manager"))
-        self._clear_btn = QPushButton("Clear")
+        toolbar.addWidget(QLabel("\u63a7\u5236\u53f0\u4e0e\u4efb\u52a1\u7ba1\u7406"))
+        self._clear_btn = QPushButton("\u6e05\u9664")
         self._clear_btn.clicked.connect(self._clear_log)
         toolbar.addWidget(self._clear_btn)
-        cancel_btn = QPushButton("Cancel")
+        cancel_btn = QPushButton("\u53d6\u6d88")
         cancel_btn.setStyleSheet("QPushButton { color: #f44747; }")
         cancel_btn.clicked.connect(self.cancel_requested.emit)
         toolbar.addWidget(cancel_btn)
@@ -50,10 +50,9 @@ class ConsoleView(QWidget):
         self._log_view = QTextEdit()
         self._log_view.setReadOnly(True)
         self._log_view.setFont(QFont("Consolas", 9))
+        self._log_view.setObjectName("logView")
         self._log_view.setStyleSheet("""
             QTextEdit {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
                 border: 1px solid #3c3c3c;
             }
         """)

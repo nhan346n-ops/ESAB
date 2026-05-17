@@ -1,0 +1,19 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\sonar\\bs\\avg_backscatter_model.json",
+  "i_paths": [
+    "D:/Software/test/0008_20250704_080013.xsf.nc",
+    "D:/Software/test/0005_20250704_064148.xsf.nc",
+    "D:/Software/test/0007_20250704_073013.xsf.nc",
+    "D:/Software/test/0006_20250704_071148.xsf.nc"
+  ],
+  "sounder_type": "AUTO",
+  "use_snippets": false,
+  "use_svp": true,
+  "use_insonified_area": true,
+  "remove_compensation": true,
+  "remove_calibration": true,
+  "integration_method": "MEAN",
+  "linear_scale": "AMPLITUDE",
+  "i_dtm": "D:/Software/test/bathy1_combined.dtm.nc",
+  "o_path": "D:/Software/test/bsar_model.bsar.nc"
+}

@@ -1,0 +1,23 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\dtm\\convert\\sounder_to_dtm.json",
+  "i_paths": [
+    "D:\\WorkSpace3\\Cdata\\0000.xsf.nc"
+  ],
+  "o_paths": [
+    "D:\\WorkSpace3\\Cdata\\0000_bathy.dtm.nc"
+  ],
+  "overwrite": false,
+  "target_resolution": "2.0",
+  "target_spatial_reference": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
+  "gap_filling": true,
+  "mask_size": 5,
+  "valid_sounds_only": true,
+  "spatial_antialiasing": true,
+  "layers": [
+    "elevation",
+    "backscatter"
+  ],
+  "min_elevation": -5000,
+  "max_elevation": 5000,
+  "min_sounds": 5
+}

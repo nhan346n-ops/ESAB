@@ -1,0 +1,16 @@
+{
+  "configuration_file": "sonar/bs/avg_backscatter_model.json",
+  "i_paths": [
+    "D:\\WorkSpace3\\Cdata\\0004_20190724_075649_TecnopescaII.xsf.nc"
+  ],
+  "sounder_type": "AUTO",
+  "use_snippets": false,
+  "use_svp": true,
+  "use_insonified_area": true,
+  "remove_compensation": true,
+  "remove_calibration": true,
+  "projection": "Mercator",
+  "resolution": "2.0",
+  "gap_fill": "None",
+  "o_dir": "D:/Software/DTM"
+}

@@ -1,0 +1,29 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\dtm\\convert\\sounder_to_dtm.json",
+  "i_paths": [
+    "D:\\WorkSpace3\\Cdata\\0000_20190724_071809_TecnopescaII.xsf.nc",
+    "D:\\WorkSpace3\\Cdata\\0001_20190724_072738_TecnopescaII.xsf.nc",
+    "D:\\WorkSpace3\\Cdata\\0002_20190724_073726_TecnopescaII.xsf.nc",
+    "D:\\WorkSpace3\\Cdata\\0003_20190724_074706_TecnopescaII.xsf.nc",
+    "D:\\WorkSpace3\\Cdata\\0004_20190724_075649_TecnopescaII.xsf.nc",
+    "D:\\WorkSpace3\\Cdata\\0005_20190724_080632_TecnopescaII.xsf.nc",
+    "D:\\WorkSpace3\\Cdata\\0006_20190724_081639_TecnopescaII.xsf.nc",
+    "D:\\WorkSpace3\\Cdata\\0007_20190724_082632_TecnopescaII.xsf.nc",
+    "D:\\WorkSpace3\\Cdata\\0008_20190724_083621_TecnopescaII.xsf.nc",
+    "D:\\WorkSpace3\\Cdata\\0009_20190724_084602_TecnopescaII.xsf.nc"
+  ],
+  "o_paths": [
+    "D:/Software/DTM\\bathy_combined.dtm.nc"
+  ],
+  "overwrite": false,
+  "target_resolution": "4.2e-05",
+  "target_spatial_reference": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
+  "gap_filling": true,
+  "mask_size": 3,
+  "valid_sounds_only": true,
+  "spatial_antialiasing": true,
+  "layers": [
+    "elevation",
+    "backscatter"
+  ]
+}

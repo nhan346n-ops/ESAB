@@ -1,148 +1,255 @@
-"""Tool 2B Step 2b: Static Angular Renormalization dialog.
+"""Multi-page wizard for 统计角响应（BSAR） model computation.
 
-Apply BSAR model to XSF files for BL4 normalization.
-Backend: bs_angular_renormalization.json -> angular_renormalization.xsf_constant_process
+Computes a BSAR (Backscatter Angular Response) model from XSF input files.
+Backend: sonar/bs/avg_backscatter_model.json → stats_computer.compute_mean_model_process
+
+Pages:
+  1. Input/Output  — input XSF files, output .bsar.nc path, optional reference DTM
+  2. Parameters    — sounder type, integration method, linear scale
+  3. Advanced      — SVP, insonified area, compensation, calibration
+  4. Summary       — review & execute
 """
 from typing import Optional, List
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
-    QPushButton, QCheckBox, QLabel,
-    QGroupBox, QDialogButtonBox, QListWidget,
-    QLineEdit, QFileDialog, QDoubleSpinBox, QWidget,
-    QMessageBox,
+    QWizard, QWizardPage, QVBoxLayout, QHBoxLayout, QFormLayout,
+    QLabel, QLineEdit, QComboBox, QCheckBox,
+    QPushButton, QListWidget, QFileDialog, QGroupBox,
+    QTextEdit, QWidget,
 )
 
+from ..utils.config import SOUNDER_TYPES, INTEGRATION_METHODS, LINEAR_SCALES
 
-class Tool2BS2Dialog(QDialog):
-    """Dialog for Tool 2B Step 2b: Apply BSAR Renormalization."""
 
-    def __init__(self, selected_files: List[str], parent: Optional[QWidget] = None):
+# ── Page 1: Input / Output ──────────────────────────────────────────
+
+class _InputOutputPage(QWizardPage):
+    def __init__(self, selected_files: List[str],
+                 parent: Optional[QWizard] = None):
         super().__init__(parent)
-        self._selected_files = selected_files
-        self._setup_ui()
-        self.setWindowTitle("Tool 2B \u2461: Apply BSAR Renormalization")
-        self.resize(480, 420)
+        self.setTitle("\u6b65\u9aa4 1\uff1a\u8f93\u5165 & \u8f93\u51fa")
+        self.setSubTitle("\u9009\u62e9 XSF \u6587\u4ef6\u5e76\u8bbe\u7f6e\u8f93\u51fa BSAR \u6587\u4ef6\u8def\u5f84\u3002")
 
-    def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
 
-        # Selected files
-        layout.addWidget(QLabel(f"Input XSF Files: {len(self._selected_files)} selected"))
+        layout.addWidget(QLabel(f"\u8f93\u5165 XSF \u6587\u4ef6: {len(selected_files)}"))
         fl = QListWidget()
-        for f in self._selected_files[:8]:
+        for f in selected_files[:8]:
             fl.addItem(f)
         fl.setMaximumHeight(60)
         layout.addWidget(fl)
 
-        # BSAR model (required)
-        bsar_layout = QHBoxLayout()
-        bsar_layout.addWidget(QLabel("BSAR Model (.bsar.nc):"))
-        self._bsar_edit = QLineEdit()
-        self._bsar_edit.setPlaceholderText("Select .bsar.nc from Tool 2B Step 2a")
-        bsar_layout.addWidget(self._bsar_edit)
-        bsar_btn = QPushButton("Browse...")
-        bsar_btn.clicked.connect(self._browse_bsar)
-        bsar_layout.addWidget(bsar_btn)
-        layout.addLayout(bsar_layout)
+        out_grp = QGroupBox("\u8f93\u51fa BSAR \u6a21\u578b")
+        of = QFormLayout(out_grp)
 
-        # Reference DTM
-        dtm_layout = QHBoxLayout()
-        dtm_layout.addWidget(QLabel("Reference DTM (_bathy.nc):"))
+        bsar_row = QHBoxLayout()
+        self._out_bsar = QLineEdit()
+        self._out_bsar.setPlaceholderText("\u5fc5\u586b \u2014 \u751f\u6210\u7684 .bsar.nc \u6587\u4ef6\u8def\u5f84")
+        bsar_row.addWidget(self._out_bsar)
+        bsar_btn = QPushButton("\u6d4f\u89c8\u2026")
+        bsar_btn.clicked.connect(self._browse_out_bsar)
+        bsar_row.addWidget(bsar_btn)
+        of.addRow("BSAR \u6587\u4ef6:", bsar_row)
+        self.registerField("out_bsar*", self._out_bsar)
+
+        layout.addWidget(out_grp)
+
+        dtm_grp = QGroupBox("\u53c2\u8003 DTM\uff08\u53ef\u9009\uff09")
+        dtm_form = QFormLayout(dtm_grp)
+        dtm_row = QHBoxLayout()
         self._dtm_edit = QLineEdit()
-        self._dtm_edit.setPlaceholderText("Path to _bathy.nc from Tool 1")
-        dtm_layout.addWidget(self._dtm_edit)
-        dtm_btn = QPushButton("Browse...")
+        self._dtm_edit.setPlaceholderText("\u53ef\u9009 \u2014 _bathy.nc \u7528\u4e8e\u5165\u5c04\u89d2\u6821\u6b63")
+        dtm_row.addWidget(self._dtm_edit)
+        dtm_btn = QPushButton("\u6d4f\u89c8\u2026")
         dtm_btn.clicked.connect(self._browse_dtm)
-        dtm_layout.addWidget(dtm_btn)
-        layout.addLayout(dtm_layout)
+        dtm_row.addWidget(dtm_btn)
+        dtm_form.addRow("DTM file:", dtm_row)
+        layout.addWidget(dtm_grp)
 
-        # Parameters
-        params = QGroupBox("Normalization Parameters")
-        pf = QFormLayout()
-
-        # Reference level with Evaluate button
-        ref_layout = QHBoxLayout()
-        self._ref_level = QDoubleSpinBox()
-        self._ref_level.setRange(-100, 0)
-        self._ref_level.setValue(-20)
-        self._ref_level.setSuffix(" dB")
-        self._ref_level.setDecimals(1)
-        ref_layout.addWidget(self._ref_level)
-
-        eval_btn = QPushButton("Evaluate")
-        eval_btn.setToolTip(
-            "Auto-estimate reference level from BSAR model.\n"
-            "Calls evaluate_mean_bs_level.json internally."
-        )
-        eval_btn.clicked.connect(self._on_evaluate)
-        ref_layout.addWidget(eval_btn)
-
-        pf.addRow("Reference Level:", ref_layout)
-
-        self._apply_comp = QCheckBox("Apply Incidence Angle Compensation")
-        self._apply_comp.setChecked(True)
-        self._apply_comp.setToolTip(
-            "Remove incidence angular dependency. When unchecked, only "
-            "transmission angle residual correction is applied."
-        )
-        pf.addRow(self._apply_comp)
-
-        self._use_snippets = QCheckBox("Use Snippet Mean")
-        pf.addRow(self._use_snippets)
-
-        params.setLayout(pf)
-        layout.addWidget(params)
-
-        layout.addStretch()
-
-        # Buttons
-        bb = QDialogButtonBox()
-        bb.addButton(QPushButton("Save Config"), QDialogButtonBox.ActionRole).clicked.connect(lambda: self.done(2))
-        run_btn = QPushButton("Run")
-        run_btn.setStyleSheet("QPushButton { background-color: #0e639c; color: white; }")
-        run_btn.clicked.connect(self.accept)
-        bb.addButton(run_btn, QDialogButtonBox.AcceptRole)
-        bb.addButton(QPushButton("Cancel"), QDialogButtonBox.RejectRole)
-        layout.addWidget(bb)
-
-    def _browse_bsar(self) -> None:
-        f, _ = QFileDialog.getOpenFileName(self, "Select BSAR file", "", "NC files (*.bsar.nc *.nc);;All (*.*)")
+    def _browse_out_bsar(self) -> None:
+        f, _ = QFileDialog.getSaveFileName(
+            self, "Save BSAR Model As", "bsar_model.bsar.nc",
+            "BSAR files (*.bsar.nc);;NetCDF files (*.nc);;All (*.*)")
         if f:
-            self._bsar_edit.setText(f)
+            if not f.endswith(".bsar.nc") and not f.endswith(".nc"):
+                f += ".bsar.nc"
+            self._out_bsar.setText(f)
 
     def _browse_dtm(self) -> None:
-        f, _ = QFileDialog.getOpenFileName(self, "Select DTM file", "", "NC files (*.nc);;All (*.*)")
+        f, _ = QFileDialog.getOpenFileName(
+            self, "Select DTM file", "",
+            "DTM files (*.dtm.nc *.nc);;All (*.*)")
         if f:
             self._dtm_edit.setText(f)
 
-    def _on_evaluate(self) -> None:
-        """Estimate reference level from BSAR model.
+    def getOutputBsar(self) -> str:
+        return self._out_bsar.text()
 
-        Calls evaluate_mean_bs_level.json via subprocess.
-        For now, shows a placeholder message since actual execution
-        requires pyat subprocess integration.
-        """
-        QMessageBox.information(
-            self, "Evaluate Reference Level",
-            "Auto-evaluation will call:\n\n"
-            "  python -m pyat <config_with_evaluate_function>\n\n"
-            "Using evaluate_mean_bs_level.json template.\n"
-            "Full subprocess integration pending QProcess implementation.\n\n"
-            "For now, use default value -20 dB or enter manually."
-        )
+    def getBathyNc(self) -> str:
+        return self._dtm_edit.text()
+
+
+# ── Page 2: Parameters ──────────────────────────────────────────────
+
+class _ParametersPage(QWizardPage):
+    def __init__(self, parent: Optional[QWizard] = None):
+        super().__init__(parent)
+        self.setTitle("\u6b65\u9aa4 2\uff1a\u53c2\u6570")
+        self.setSubTitle("\u58f0\u7eb3\u7c7b\u578b\u3001\u79ef\u5206\u65b9\u6cd5\u548c\u7ebf\u6027\u5c3a\u5ea6\u3002")
+
+        layout = QFormLayout(self)
+
+        self._sounder = QComboBox()
+        self._sounder.addItems(SOUNDER_TYPES)
+        self._sounder.setCurrentText("AUTO")
+        layout.addRow("\u58f0\u7eb3\u7c7b\u578b:", self._sounder)
+
+        self._integration = QComboBox()
+        self._integration.addItems(INTEGRATION_METHODS)
+        self._integration.setCurrentText("MEAN")
+        layout.addRow("\u79ef\u5206\u65b9\u6cd5:", self._integration)
+
+        self._scale = QComboBox()
+        self._scale.addItems(LINEAR_SCALES)
+        self._scale.setCurrentText("AMPLITUDE")
+        layout.addRow("\u7ebf\u6027\u5c3a\u5ea6:", self._scale)
+
+        self._snippets = QCheckBox("\u4f7f\u7528\u7c92\u5ea6\u5747\u503c")
+        self._snippets.setToolTip(
+            "\u4ece\u7c92\u5ea6\u91cd\u65b0\u8ba1\u7b97\u540e\u5411\u6563\u5c04\uff0c\u800c\u975e\u4f7f\u7528\u68c0\u6d4b\u503c\u3002")
+        layout.addRow(self._snippets)
+
+    def getParams(self) -> dict:
+        return {
+            "sounder_type": self._sounder.currentText(),
+            "integration_method": self._integration.currentText(),
+            "linear_scale": self._scale.currentText(),
+            "use_snippets": self._snippets.isChecked(),
+        }
+
+
+# ── Page 3: Advanced Options ────────────────────────────────────────
+
+class _AdvancedPage(QWizardPage):
+    def __init__(self, parent: Optional[QWizard] = None):
+        super().__init__(parent)
+        self.setTitle("\u6b65\u9aa4 3\uff1a\u9ad8\u7ea7\u9009\u9879")
+        self.setSubTitle("BL0/BL2 \u6821\u6b63\u6807\u5fd7\u3002")
+
+        layout = QFormLayout(self)
+
+        self._use_svp = QCheckBox("\u4f7f\u7528\u5d4c\u5165\u5f0f\u58f0\u901f\u5206\u5e03")
+        self._use_svp.setChecked(True)
+        layout.addRow(self._use_svp)
+
+        self._use_ia = QCheckBox("\u6839\u636e\u6d77\u5e95\u5165\u5c04\u89d2\u91cd\u65b0\u8ba1\u7b97\u7167\u5c04\u533a\u57df")
+        self._use_ia.setChecked(True)
+        layout.addRow(self._use_ia)
+
+        self._remove_comp = QCheckBox("\u79fb\u9664\u89d2\u5ea6\u8865\u507f")
+        self._remove_comp.setChecked(True)
+        layout.addRow(self._remove_comp)
+
+        self._remove_cal = QCheckBox("\u79fb\u9664\u6821\u51c6 (BScorr \u4ece kmall)")
+        self._remove_cal.setChecked(True)
+        layout.addRow(self._remove_cal)
+
+    def getParams(self) -> dict:
+        return {
+            "use_svp": self._use_svp.isChecked(),
+            "use_insonified_area": self._use_ia.isChecked(),
+            "remove_compensation": self._remove_comp.isChecked(),
+            "remove_calibration": self._remove_cal.isChecked(),
+        }
+
+
+# ── Page 4: Summary ─────────────────────────────────────────────────
+
+class _SummaryPage(QWizardPage):
+    def __init__(self, parent: Optional[QWizard] = None):
+        super().__init__(parent)
+        self.setTitle("\u6b65\u9aa4 4\uff1a\u603b\u7ed3")
+        self.setSubTitle("\u68c0\u67e5\u8bbe\u7f6e\u5e76\u8fd0\u884c\u3002")
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel("\u914d\u7f6e\u603b\u7ed3:"))
+        self._text = QTextEdit()
+        self._text.setReadOnly(True)
+        self._text.setStyleSheet(
+            "QTextEdit{background:#1e1e1e;color:#d4d4d4;font-family:Consolas}")
+        layout.addWidget(self._text)
+
+    def setSummary(self, text: str) -> None:
+        self._text.setText(text)
+
+
+# ── Main Wizard ─────────────────────────────────────────────────────
+
+class Tool2BS2Dialog(QWizard):
+    """Multi-page wizard for \u7edf\u8ba1\u89d2\u54cd\u5e94\uff08BSAR\uff09 computation."""
+
+    def __init__(self, selected_files: List[str],
+                 parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self.setWindowTitle("\u7edf\u8ba1\u89d2\u54cd\u5e94\uff08BSAR\uff09")
+        self.setMinimumSize(540, 480)
+        self.setWizardStyle(QWizard.ModernStyle)
+
+        self._selected_files = selected_files
+
+        self._page1 = _InputOutputPage(selected_files, self)
+        self._page2 = _ParametersPage(self)
+        self._page3 = _AdvancedPage(self)
+        self._page4 = _SummaryPage(self)
+
+        self.addPage(self._page1)
+        self.addPage(self._page2)
+        self.addPage(self._page3)
+        self.addPage(self._page4)
+
+        self.currentIdChanged.connect(self._on_page_changed)
+        self._on_page_changed(0)
 
     @property
     def bsar_nc(self) -> str:
-        return self._bsar_edit.text()
+        return ""
 
     @property
     def bathy_nc(self) -> str:
-        return self._dtm_edit.text()
+        return self._page1.getBathyNc()
+
+    def getOutputBsar(self) -> str:
+        return self._page1.getOutputBsar()
 
     def get_params(self) -> dict:
-        return {
-            "reference_level": self._ref_level.value(),
-            "apply_compensation": self._apply_comp.isChecked(),
-            "use_snippets": self._use_snippets.isChecked(),
-        }
+        p2 = self._page2.getParams()
+        p3 = self._page3.getParams()
+        return {**p2, **p3}
+
+    def _on_page_changed(self, page_id: int) -> None:
+        if page_id == 3:
+            self._page4.setSummary(self._build_summary())
+
+    def _build_summary(self) -> str:
+        p1 = self._page1
+        p2 = self._page2.getParams()
+        p3 = self._page3.getParams()
+        lines = [
+            "=== Input / Output ===",
+            f"  XSF files:       {len(self._selected_files)}",
+            f"  Output BSAR:     {p1.getOutputBsar()}",
+            f"  Reference DTM:   {p1.getBathyNc() or '(not set)'}",
+            "",
+            "=== Parameters ===",
+            f"  Sounder type:            {p2['sounder_type']}",
+            f"  Integration method:      {p2['integration_method']}",
+            f"  Linear scale:            {p2['linear_scale']}",
+            f"  Use snippet mean:        {p2['use_snippets']}",
+            "",
+            "=== Advanced ===",
+            f"  Use SVP:                 {p3['use_svp']}",
+            f"  Recompute insonified area: {p3['use_insonified_area']}",
+            f"  Remove compensation:     {p3['remove_compensation']}",
+            f"  Remove calibration:      {p3['remove_calibration']}",
+        ]
+        return "\n".join(lines)

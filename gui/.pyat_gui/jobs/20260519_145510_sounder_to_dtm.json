@@ -1,0 +1,26 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\dtm\\convert\\sounder_to_dtm.json",
+  "i_paths": [
+    "D:/Software/xsf/20260416_122736_1.xsf.nc"
+  ],
+  "o_paths": [
+    "C:/Users/GUO/Desktop\\bathy_combined.dtm.nc"
+  ],
+  "overwrite": false,
+  "target_resolution": "4e-06",
+  "target_spatial_reference": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
+  "gap_filling": true,
+  "mask_size": 5,
+  "valid_sounds_only": true,
+  "spatial_antialiasing": true,
+  "coord": {
+    "west": 121.17126843160403,
+    "south": 31.677898303948986,
+    "east": 121.17476843160404,
+    "north": 31.679978303948985
+  },
+  "layers": [
+    "elevation",
+    "backscatter"
+  ]
+}

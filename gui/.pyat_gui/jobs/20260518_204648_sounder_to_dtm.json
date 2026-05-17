@@ -1,0 +1,39 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\dtm\\convert\\sounder_to_dtm.json",
+  "i_paths": [
+    "D:/workspace11/Cdata/0021_20250704_133129.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0005_20250704_064148.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0020_20250704_130513.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0023_20250704_142323.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0007_20250704_073013.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0018_20250704_121146.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0006_20250704_071148.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0003_20250704_062349.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0017_20250704_114438.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0015_20250704_104934.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0025_20250704_151433.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0019_20250704_123837.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0010_20250704_084832.xsf_bs_sliding.nc",
+    "D:/workspace11/Cdata/0008_20250704_080013.xsf_bs_sliding.nc"
+  ],
+  "o_paths": [
+    "D:/Software/DTM\\SHBSAR_combined.dtm.nc"
+  ],
+  "overwrite": false,
+  "target_resolution": "4e-06",
+  "target_spatial_reference": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
+  "gap_filling": true,
+  "mask_size": 8,
+  "valid_sounds_only": true,
+  "spatial_antialiasing": true,
+  "coord": {
+    "west": 114.07389140666852,
+    "south": 15.984630358829529,
+    "east": 114.11571140666852,
+    "north": 15.99830635882953
+  },
+  "layers": [
+    "elevation",
+    "backscatter"
+  ]
+}

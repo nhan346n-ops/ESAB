@@ -1,0 +1,19 @@
+{
+  "configuration_file": "D:\\Software\\pyat-main\\src\\gws\\conf\\sonar\\wc\\vertical_integration.json",
+  "i_paths": [
+    "D:\\Software\\test2\\0007_20190724_082632_TecnopescaII.xsf.nc"
+  ],
+  "o_paths": [
+    "D:\\Software\\test2\\wc_0007_20190724_082632_TecnopescaII.xsf_WCVerticalEcho.tiff"
+  ],
+  "overwrite": true,
+  "normalization_offset": 0.0,
+  "enable_normalization": false,
+  "coord": {
+    "west": 14.34018,
+    "south": 43.5932,
+    "east": 14.34034,
+    "north": 43.60711
+  },
+  "target_resolution": 0.00027778
+}

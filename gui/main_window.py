@@ -1,10 +1,9 @@
-"""Main application window with Eclipse RCP / QGIS style layout.
+"""\u4e3b\u7a97\u53e3\uff0c\u91c7\u7528 Eclipse RCP / QGIS \u98ce\u683c\u5e03\u5c40\u3002
 
-Four-panel dock layout:
-  - Left: Project Explorer + Toolbox (QTabWidget in QDockWidget)
-  - Bottom: Console & Job Manager (QDockWidget)
-  - Center: Main Canvas (QTabWidget with Map View + BSAR Viewer)
-  - Left-bottom: Properties Panel (optional, Phase 2+)
+\u56db\u9762\u677f\u5e03\u5c40\uff1a
+  - \u5de6\u4fa7\uff1a\u9879\u76ee\u6d4f\u89c8\u5668 + \u5de5\u5177\u7bb1\uff08QTabWidget \u5728 QDockWidget \u4e2d\uff09
+  - \u5e95\u90e8\uff1a\u63a7\u5236\u53f0 + \u4efb\u52a1\u7ba1\u7406\u5668\uff08QDockWidget\uff09
+  - \u4e2d\u95f4\uff1a\u4e3b\u753b\u5e03\uff08QTabWidget \u542b\u5730\u56fe\u89c6\u56fe + BSAR \u89c6\u56fe\uff09
 """
 import json
 import os
@@ -13,37 +12,41 @@ from datetime import datetime
 from typing import Optional, List
 
 from PySide6.QtCore import Qt, QSettings
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QMainWindow, QDockWidget, QTabWidget, QWidget,
-    QStatusBar, QMessageBox,
+    QStatusBar, QMessageBox, QWizard, QFileDialog, QApplication,
 )
 
 from .project_explorer import ProjectExplorer
 from .views.console_view import ConsoleView
 from .views.map_view import MapView
 from .views.bsar_viewer import BsarViewer
+from .views.dtm_renderer import dtm_layer_to_file
 from .core.task_manager import TaskManager, TaskStatus
 from .core.process_manager import ProcessManager, ProcessState
 from .core.json_builder import (
     build_tool1_json, build_tool2a_json, build_tool2b_step2a_json,
-    build_tool2b_step2b_json, build_tool3_json,
+    build_tool2b_step2b_json, build_sounder_to_dtm_json, build_wc_json,
 )
 from .core.xsf_reader import XsfMetadata, read_xsf_metadata
 from .dialogs.tool1_dialog import Tool1Dialog
+from .dialogs.sounder_to_dtm_wizard import SounderToDtmWizard
 from .dialogs.tool2a_dialog import Tool2ADialog
 from .dialogs.tool2b_s1_dialog import Tool2BS1Dialog
 from .dialogs.tool2b_s2_dialog import Tool2BS2Dialog
 from .dialogs.bsar_tools_dialog import BsarToolsDialog
-from .dialogs.tool3_dialog import Tool3Dialog
+from .dialogs.wc_wizard import WcWizard
+from .dialogs.dtm_export_dialog import DtmExportDialog
+from .views.wc2d_viewer import Wc2dViewer
 
 
 class MainWindow(QMainWindow):
-    """pyat GUI main window."""
+    """pyat GUI \u4e3b\u7a97\u53e3\u3002"""
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
-        self.setWindowTitle("pyat GUI \u2014 Multibeam Backscatter Processing")
+        self.setWindowTitle("pyat GUI \u2014 \u591a\u675f\u56de\u58f0\u5904\u7406")
         self.resize(1400, 900)
 
         # Core services
@@ -65,6 +68,7 @@ class MainWindow(QMainWindow):
         self._console_view = ConsoleView(self._task_manager, self)
         self._map_view = MapView(self)
         self._bsar_viewer = BsarViewer(self)
+        self._wc2d_viewer = Wc2dViewer(self)
 
         # Mask storage
         self._current_kml_mask: str = ""
@@ -80,45 +84,100 @@ class MainWindow(QMainWindow):
     def _setup_menu(self) -> None:
         menu_bar = self.menuBar()
 
-        file_menu = menu_bar.addMenu("&File")
-        add_action = QAction("Add XSF Files...", self)
+        # ── File ──
+        file_menu = menu_bar.addMenu("\u6587\u4ef6(&F)")
+        add_action = QAction("\u6dfb\u52a0 XSF \u6587\u4ef6...", self)
         add_action.triggered.connect(self._project_explorer._add_files)
         file_menu.addAction(add_action)
-        add_folder_action = QAction("Add XSF Folder...", self)
+        add_folder_action = QAction("\u6dfb\u52a0 XSF \u6587\u4ef6\u5939...", self)
         add_folder_action.triggered.connect(self._project_explorer._add_folder)
         file_menu.addAction(add_folder_action)
 
         file_menu.addSeparator()
-        exit_action = QAction("E&xit", self)
+        import_dtm = QAction("\u5bfc\u5165 DTM (.dtm.nc)...", self)
+        import_dtm.triggered.connect(self._import_dtm)
+        file_menu.addAction(import_dtm)
+
+        import_g3d = QAction("打开水柱 g3d 文件...", self)
+        import_g3d.triggered.connect(lambda: self._wc2d_viewer._open_file())
+        file_menu.addAction(import_g3d)
+        file_menu.addSeparator()
+
+        exit_action = QAction("\u9000\u51fa(&X)", self)
+        exit_action.setShortcut(QKeySequence.Quit)
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
 
-        tools_menu = menu_bar.addMenu("&Tools")
-        bsar_aux = QAction("BSAR Auxiliary Tools...", self)
+        # ── Tools ──
+        tools_menu = menu_bar.addMenu("\u5de5\u5177(&T)")
+
+        # 后向散射处理
+        t1 = QAction("工具 1: 导出参考 DTM...", self)
+        t1.triggered.connect(lambda: self._dispatch_tool("tool1"))
+        tools_menu.addAction(t1)
+        tools_menu.addSeparator()
+
+        t2as2 = QAction("统计角响应 (BSAR)...", self)
+        t2as2.triggered.connect(lambda: self._dispatch_tool("tool2b_step2"))
+        tools_menu.addAction(t2as2)
+        t2as1 = QAction("静态角度重规范化...", self)
+        t2as1.triggered.connect(lambda: self._dispatch_tool("tool2b_step1"))
+        tools_menu.addAction(t2as1)
+        t2a = QAction("滑动角度重规范化...", self)
+        t2a.triggered.connect(lambda: self._dispatch_tool("tool2a"))
+        tools_menu.addAction(t2a)
+        tools_menu.addSeparator()
+
+        # 水柱分析子菜单
+        wc_menu = tools_menu.addMenu("水柱分析")
+
+        wc_h = QAction("水平切片 (Horizontal Slicer)...", self)
+        wc_h.triggered.connect(lambda: self._open_wc_wizard("horizontal"))
+        wc_menu.addAction(wc_h)
+        wc_l = QAction("纵向剖面 (Longitudinal Slicer)...", self)
+        wc_l.triggered.connect(lambda: self._open_wc_wizard("longitudinal"))
+        wc_menu.addAction(wc_l)
+        wc_p = QAction("极坐标声图 (Polar Echograms)...", self)
+        wc_p.triggered.connect(lambda: self._open_wc_wizard("polar"))
+        wc_menu.addAction(wc_p)
+        wc_v = QAction("垂直积分 (Vertical Integration)...", self)
+        wc_v.triggered.connect(lambda: self._open_wc_wizard("vertical"))
+        wc_menu.addAction(wc_v)
+        tools_menu.addSeparator()
+
+        bsar_aux = QAction("BSAR 辅助工具...", self)
         bsar_aux.triggered.connect(self._open_bsar_tools)
         tools_menu.addAction(bsar_aux)
-        refresh_status = QAction("Refresh XSF Status", self)
+        refresh_status = QAction("刷新 XSF 状态", self)
         refresh_status.triggered.connect(self._refresh_xsf_status)
         tools_menu.addAction(refresh_status)
 
-        view_menu = menu_bar.addMenu("&View")
-        reset_action = QAction("Reset Layout", self)
+        # ── View ──
+        view_menu = menu_bar.addMenu("\u89c6\u56fe(&V)")
+        reset_action = QAction("\u91cd\u7f6e\u5e03\u5c40", self)
         reset_action.triggered.connect(self._reset_layout)
         view_menu.addAction(reset_action)
+        view_menu.addSeparator()
+        self._theme_action = QAction("\u5207\u6362\u4e3b\u9898", self)
+        self._theme_action.setCheckable(True)
+        self._theme_action.setChecked(self._is_dark_theme())
+        self._theme_action.triggered.connect(self._toggle_theme)
+        view_menu.addAction(self._theme_action)
 
-        help_menu = menu_bar.addMenu("&Help")
-        about_action = QAction("About pyat GUI", self)
+        # ── Help ──
+        help_menu = menu_bar.addMenu("\u5e2e\u52a9(&H)")
+        about_action = QAction("\u5173\u4e8e pyat GUI", self)
         about_action.triggered.connect(self._show_about)
         help_menu.addAction(about_action)
 
     def _setup_docks(self) -> None:
-        self._left_dock = QDockWidget("Project Explorer", self)
+        self._left_dock = QDockWidget("\u9879\u76ee\u6d4f\u89c8\u5668", self)
         self._left_dock.setWidget(self._project_explorer)
         self._left_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self._left_dock.setMinimumWidth(300)
         self.addDockWidget(Qt.LeftDockWidgetArea, self._left_dock)
 
-        self._bottom_dock = QDockWidget("Console & Job Manager", self)
+        self._bottom_dock = QDockWidget("\u63a7\u5236\u53f0 & \u4efb\u52a1\u7ba1\u7406", self)
         self._bottom_dock.setWidget(self._console_view)
         self._bottom_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
         self._bottom_dock.setMinimumHeight(150)
@@ -126,13 +185,14 @@ class MainWindow(QMainWindow):
 
     def _setup_central(self) -> None:
         self._central_tabs = QTabWidget()
-        self._central_tabs.addTab(self._map_view, "Map View")
-        self._central_tabs.addTab(self._bsar_viewer, "BSAR Viewer")
+        self._central_tabs.addTab(self._map_view, "\u5730\u56fe\u89c6\u56fe")
+        self._central_tabs.addTab(self._bsar_viewer, "BSAR \u89c6\u56fe")
+        self._central_tabs.addTab(self._wc2d_viewer, "\u6c34\u67f1 2D")
         self.setCentralWidget(self._central_tabs)
 
     def _setup_statusbar(self) -> None:
         self._statusbar = QStatusBar()
-        self._statusbar.showMessage("Ready \u2014 Load XSF files to begin.")
+        self._statusbar.showMessage("\u5c31\u7eea \u2014 \u8bf7\u52a0\u8f7d XSF \u6587\u4ef6\u5f00\u59cb\u5904\u7406\u3002")
         self.setStatusBar(self._statusbar)
 
     def _connect_signals(self) -> None:
@@ -151,35 +211,71 @@ class MainWindow(QMainWindow):
         # Go to location
         self._project_explorer.go_to_location.connect(self._on_go_to_location)
 
-        # Toggle nav track visibility
-        self._project_explorer.file_toggled.connect(self._map_view.show_file_track)
+        # Toggle nav track / DTM layer visibility
+        self._project_explorer.file_toggled.connect(self._on_file_toggled)
+
+        # DTM layer toggle
+        self._project_explorer.dtm_layer_changed.connect(self._map_view.show_dtm_layer)
+        self._project_explorer.dtm_gamma_changed.connect(self._map_view.set_dtm_gamma)
+        self._project_explorer.dtm_shoulder_changed.connect(self._map_view.set_dtm_shoulder)
+
+        # Product actions (GoTo / Export GeoTIFF)
+        self._project_explorer.product_action.connect(self._on_product_action)
+
+        # File removal from list
+        self._project_explorer.file_removed.connect(self._on_file_removed)
 
     def _on_files_added(self, metadata_list: list) -> None:
         count = len(metadata_list)
         processed = sum(1 for m in metadata_list if m.is_processed)
         self._statusbar.showMessage(
-            f"Loaded {count} XSF file(s) \u2014 {processed} processed, "
-            f"{count - processed} unprocessed."
+            f"\u5df2\u52a0\u8f7d {count} \u4e2a XSF \u6587\u4ef6 \u2014 {processed} \u4e2a\u5df2\u5904\u7406\uff0c"
+            f"{count - processed} \u4e2a\u672a\u5904\u7406\u3002"
         )
-        # Extract and display navigation tracks
         self._show_nav_tracks(metadata_list)
 
     def _on_files_selected(self, metadata_list: list) -> None:
         if metadata_list:
             self._statusbar.showMessage(
-                f"Selected {len(metadata_list)} file(s). "
-                f"Right-click for tools or use Toolbox panel."
+                f"\u5df2\u9009\u4e2d {len(metadata_list)} \u4e2a\u6587\u4ef6\u3002"
+                f"\u53f3\u952e\u4f7f\u7528\u5de5\u5177\u6216\u4f7f\u7528\u5de5\u5177\u7bb1\u9762\u677f\u3002"
             )
 
     def _on_file_highlight(self, metadata_list: list) -> None:
-        """Highlight nav track of the first selected XSF file on the map."""
+        """Highlight nav track of the first selected XSF file on the map.
+
+        Does NOT call add_file_track() because that would corrupt _visible_tracks
+        (Qt fires itemChanged before itemClicked for checkbox toggles —
+        the checkbox handler hides the track, then this re-shows it).
+        Instead only cache nav data and draw the highlight on highlightLayer.
+        """
         if not metadata_list:
             return
         meta = metadata_list[0]
         coords = self._extract_nav_coords(meta.filepath)
         if coords:
-            self._map_view.add_file_track(meta.filepath, coords)
+            # Cache track data without altering checkbox-controlled _visible_tracks
+            if meta.filepath not in self._map_view._nav_tracks:
+                self._map_view._nav_tracks[meta.filepath] = coords
             self._map_view.draw_nav_line(coords)
+
+    def _on_file_toggled(self, filepath: str, visible: bool) -> None:
+        """Toggle nav track (XSF) or DTM layer visibility."""
+        if filepath.endswith(".dtm.nc"):
+            self._map_view.show_dtm_file(filepath, visible)
+        else:
+            self._map_view.show_file_track(filepath, visible)
+
+    def _on_file_removed(self, filepath: str) -> None:
+        """Clean up map layers when file is removed from list."""
+        if filepath.endswith(".dtm.nc"):
+            self._map_view.show_dtm_file(filepath, False)
+            self._map_view._run_js(f"delete dtmOverlays[{json.dumps(filepath)}]")
+        else:
+            # Remove nav track data and redraw
+            self._map_view._nav_tracks.pop(filepath, None)
+            self._map_view._visible_tracks.discard(filepath)
+            self._map_view._redraw_all()
 
     def _on_polygon_drawn(self, geojson_str: str) -> None:
         """Save ROI polygon as KML mask file for use in BSAR/Stats tools."""
@@ -193,10 +289,10 @@ class MainWindow(QMainWindow):
             with open(mask_path, "w") as f:
                 json.dump(geojson, f, indent=2)
             self._current_kml_mask = mask_path
-            self._statusbar.showMessage(f"ROI mask saved: {mask_path}")
-            self._console_view.append_text(f"ROI mask created: {mask_path}", "OK")
+            self._statusbar.showMessage(f"ROI \u8fb9\u754c\u5df2\u4fdd\u5b58: {mask_path}")
+            self._console_view.append_text(f"\u8fb9\u754c ROI \u5df2\u4fdd\u5b58: {mask_path}", "OK")
         except Exception as e:
-            self._console_view.append_text(f"Failed to save mask: {e}", "ERROR")
+            self._console_view.append_text(f"\u4fdd\u5b58 ROI \u5931\u8d25: {e}", "ERROR")
 
     def _show_nav_tracks(self, metadata_list: List[XsfMetadata]) -> None:
         """Extract navigation coords and add each as a named track on the map."""
@@ -264,24 +360,21 @@ class MainWindow(QMainWindow):
             self._open_tool2b_s1(selected)
         elif tool_name == "tool2b_step2":
             self._open_tool2b_s2(selected)
-        elif tool_name == "tool3":
-            self._open_tool3(selected)
+        elif tool_name in ("wc_horizontal", "wc_longitudinal", "wc_polar", "wc_vertical_integration"):
+            self._open_wc_tool(tool_name, selected)
         else:
-            QMessageBox.warning(self, "Unknown Tool", f"Unknown tool: {tool_name}")
+            QMessageBox.warning(self, "\u672a\u77e5\u5de5\u5177", f"\u672a\u77e5\u5de5\u5177: {tool_name}")
 
     def _warn_no_files(self) -> bool:
         selected = self._project_explorer.get_selected_files()
         if not selected:
-            QMessageBox.warning(self, "No Files", "Please select XSF files first.")
+            QMessageBox.warning(self, "\u65e0\u6587\u4ef6", "\u8bf7\u5148\u9009\u62e9 XSF \u6587\u4ef6\u3002")
             return True
         return False
 
-    # ── Process Execution ───────────────────────────────────────────
-
     def _execute_tool(self, tool_name: str, config_path: str) -> None:
-        """Create a task and launch the pyat subprocess."""
         if self._process_manager.is_running():
-            QMessageBox.warning(self, "Busy", "Another process is already running.")
+            QMessageBox.warning(self, "\u5fd9\u788c", "\u53e6\u4e00\u4e2a\u8fdb\u7a0b\u6b63\u5728\u8fd0\u884c\u3002")
             return
 
         task = self._task_manager.create_task(tool_name, config_path)
@@ -297,10 +390,41 @@ class MainWindow(QMainWindow):
             elif state == ProcessState.FINISHED:
                 self._task_manager.update_status(tid, TaskStatus.COMPLETED)
                 self._refresh_xsf_status()
+                self._on_dtm_created(tid)
             elif state == ProcessState.ERROR:
                 self._task_manager.update_status(tid, TaskStatus.FAILED)
             elif state == ProcessState.CANCELLED:
                 self._task_manager.update_status(tid, TaskStatus.CANCELLED)
+
+    def _on_dtm_created(self, task_id: str) -> None:
+        """Load DTM from completed Tool 1 into the map view as overlay."""
+        task = self._task_manager.get_task(task_id)
+        if not task or "sounder_to_dtm" not in task.config_json_path:
+            return
+        try:
+            import json
+            with open(task.config_json_path) as f:
+                cfg = json.load(f)
+            out_files = cfg.get("o_paths", [])
+            if not out_files:
+                return
+            dtm_path = out_files[0]  # first output file
+            if not os.path.exists(dtm_path):
+                return
+            # Generate overlays for all available layers
+            png_bs, data_url, bounds = dtm_layer_to_file(dtm_path, "backscatter", cmap="gray")
+            self._map_view.set_dtm_overlay(dtm_path, "backscatter", data_url, bounds)
+            try:
+                png_el, data_el, _ = dtm_layer_to_file(dtm_path, "elevation", cmap="terrain", hillshade=True)
+                self._map_view.set_dtm_overlay(dtm_path, "elevation", data_el, bounds)
+            except Exception:
+                pass  # elevation layer may not exist in all DTM files
+            self._map_view.show_dtm_layer("backscatter")
+            # Add to Project Explorer
+            self._project_explorer.add_external_file(dtm_path, "product")
+            self._console_view.append_text(f"DTM loaded on map: {dtm_path}", "OK")
+        except Exception as e:
+            self._console_view.append_text(f"DTM overlay failed: {e}", "ERROR")
 
     def _on_process_progress(self, percent: int, message: str) -> None:
         self._task_manager.update_progress(self._current_task_id, percent, message)
@@ -320,17 +444,103 @@ class MainWindow(QMainWindow):
         if not selected_files:
             QMessageBox.warning(self, "No Files", "Select XSF files first.")
             return
-        dlg = Tool1Dialog(selected_files, self)
-        result = dlg.exec()
-        if result in (QMessageBox.Accepted, 2):
-            params = dlg.get_params()
-            config_path = build_tool1_json(input_files=selected_files, **params)
-            if result == QMessageBox.Accepted:
-                self._execute_tool("Tool 1: Reference DTM", config_path)
+        # Compute overall bounds for grid size estimation and coord param
+        lon_min, lat_min = 180, 90
+        lon_max, lat_max = -180, -90
+        for f in selected_files:
+            c = self._extract_nav_coords(f)
+            if c:
+                lons = [pt[1] for pt in c]
+                lats = [pt[0] for pt in c]
+                lon_min = min(lon_min, min(lons))
+                lon_max = max(lon_max, max(lons))
+                lat_min = min(lat_min, min(lats))
+                lat_max = max(lat_max, max(lats))
+        bounds = None if lon_max < -180 else (lon_min, lat_min, lon_max, lat_max)
+
+        wiz = SounderToDtmWizard(selected_files, bounds, self)
+        if wiz.exec() == QWizard.Accepted:
+            p = wiz.getAllParams()
+            self._execute_tool1_with_params(p)
+
+    def _execute_tool1_with_params(self, p: dict) -> None:
+        """Execute Tool 1 with wizard parameters (shared by normal and re-run)."""
+        out_dir = p["output_dir"] or next(iter(p["input_files"]), "")
+        if not out_dir:
+            return
+        out_dir = os.path.dirname(out_dir) if os.path.isfile(out_dir) else out_dir
+        prefix = p["output_prefix"]
+
+        if p.get("separate", False):
+            out_files = []
+            for f in p["input_files"]:
+                base = os.path.splitext(os.path.basename(f))[0]
+                out_name = f"{prefix}_{base}.dtm.nc"
+                out_files.append(os.path.join(out_dir, out_name))
+            coord = None
+        else:
+            out_files = [os.path.join(out_dir, f"{prefix}_combined.dtm.nc")]
+            proj_def = p.get("proj_def", "")
+            is_geo = "longlat" in proj_def or "latlong" in proj_def
+            # coord is always in lat/lon degrees. For projected CRS (Mercator/UTM),
+            # passing degrees + meter resolution makes estimate_col(deg/m→0)→1 cell.
+            # Let the backend auto-compute bounds from data in the correct CRS.
+            if is_geo:
+                coord = p.get("coord")
+                if coord is None:
+                    l_min, la_min, l_max, la_max = 180, 90, -180, -90
+                    for f in p["input_files"]:
+                        c = self._extract_nav_coords(f)
+                        if c:
+                            for pt in c:
+                                l_min = min(l_min, pt[1])
+                                l_max = max(l_max, pt[1])
+                                la_min = min(la_min, pt[0])
+                                la_max = max(la_max, pt[0])
+                    coord = {"west": l_min, "south": la_min, "east": l_max, "north": la_max}
+                if p.get("expand", True) and p["resolution"]:
+                    try:
+                        res = float(p["resolution"])
+                        l_min = coord["west"]
+                        la_min = coord["south"]
+                        l_max = coord["east"]
+                        la_max = coord["north"]
+                        dx = l_max - l_min; dy = la_max - la_min
+                        import math
+                        cols = math.ceil(dx / res); rows = math.ceil(dy / res)
+                        coord["east"] = l_min + cols * res
+                        coord["north"] = la_min + rows * res
+                    except (ValueError, ZeroDivisionError, KeyError):
+                        pass
             else:
-                self._task_manager.create_task("Tool 1: Reference DTM (saved)", config_path)
-                self._console_view.append_text(f"Config saved: {config_path}", "INFO")
-            self._statusbar.showMessage(f"Tool 1 config saved: {config_path}")
+                coord = None
+
+        config_path = build_sounder_to_dtm_json(
+            input_files=p["input_files"],
+            output_files=out_files,
+            target_resolution=p["resolution"],
+            target_spatial_reference=p["proj_def"],
+            layers=p["layers"],
+            gap_filling=p["gap_filling"],
+            mask_size=p["mask_size"] or 3,
+            valid_sounds_only=p["valid_sounds_only"],
+            spatial_antialiasing=p["spatial_antialiasing"],
+            min_elevation=p["min_elevation"],
+            max_elevation=p["max_elevation"],
+            min_sounds=p["min_sounds"],
+            overwrite=p["overwrite"],
+            coord=coord,
+            title=p["title"],
+            institution=p["institution"],
+            source=p.get("source", ""),
+            references=p.get("references", ""),
+            comment=p.get("comment", ""),
+            quality_indicator=p["quality_indicator"],
+        )
+        task = self._task_manager.create_task("\u5de5\u5177 1: \u58f0\u7eb3\u81f3 DTM", config_path)
+        self._current_task_id = task.task_id
+        self._task_manager.update_status(task.task_id, TaskStatus.QUEUED)
+        self._process_manager.run(config_path)
 
     # ── Tool 2A ────────────────────────────────────────────────────
 
@@ -338,8 +548,16 @@ class MainWindow(QMainWindow):
         if not selected_files:
             QMessageBox.warning(self, "No Files", "Select XSF files first.")
             return
-        dlg = Tool2ADialog(selected_files, self)
-        result = dlg.exec()
+        try:
+            dlg = Tool2ADialog(selected_files, self)
+            result = dlg.exec()
+        except Exception as e:
+            self._console_view.append_text(
+                f"\u65e0\u6cd5\u6253\u5f00 BSAR \u5bf9\u8bdd\u6846: {e}", "ERROR")
+            QMessageBox.critical(
+                self, "\u5bf9\u8bdd\u6846\u9519\u8bef",
+                f"\u65e0\u6cd5\u6253\u5f00 BSAR \u5411\u5bfc:\n{e}")
+            return
         if result in (QMessageBox.Accepted, 2):
             params = dlg.get_params()
             bathy = dlg.bathy_nc
@@ -347,55 +565,79 @@ class MainWindow(QMainWindow):
                 input_files=selected_files, bathy_nc=bathy, **params,
             )
             if result == QMessageBox.Accepted:
-                self._execute_tool("Tool 2A: Sliding Renorm", config_path)
+                self._execute_tool("\u5de5\u5177 2A: \u6ed1\u52a8\u89d2\u5ea6\u91cd\u89c4\u8303\u5316", config_path)
             else:
                 self._console_view.append_text(f"Config saved: {config_path}", "INFO")
-            self._statusbar.showMessage(f"Tool 2A config saved: {config_path}")
+            self._statusbar.showMessage(f"\u5de5\u5177 2A \u914d\u7f6e\u5df2\u4fdd\u5b58: {config_path}")
 
     # ── Tool 2B Step 1 ─────────────────────────────────────────────
 
     def _open_tool2b_s1(self, selected_files: list) -> None:
         if not selected_files:
-            QMessageBox.warning(self, "No Files", "Select XSF files first.")
+            QMessageBox.warning(self, "\u65e0\u6587\u4ef6", "\u8bf7\u5148\u9009\u62e9 XSF \u6587\u4ef6\u3002")
             return
-        dlg = Tool2BS1Dialog(selected_files, self)
-        result = dlg.exec()
-        if result in (QMessageBox.Accepted, 2):
-            params = dlg.get_params()
-            bathy = dlg.bathy_nc
-            mask_files = params.pop("mask_files", None)
+        try:
+            wiz = Tool2BS1Dialog(selected_files, self)
+            result = wiz.exec()
+        except Exception as e:
+            self._console_view.append_text(
+                f"\u65e0\u6cd5\u6253\u5f00 BSAR \u5bf9\u8bdd\u6846: {e}", "ERROR")
+            QMessageBox.critical(
+                self, "\u5bf9\u8bdd\u6846\u9519\u8bef",
+                f"\u65e0\u6cd5\u6253\u5f00 BSAR \u5411\u5bfc:\n{e}")
+            return
+        if result == QWizard.Accepted:
+            if not wiz.bsar_nc:
+                QMessageBox.warning(self, "\u7f3a\u5c11 BSAR \u6a21\u578b",
+                                    "\u9700\u8981 BSAR \u6a21\u578b\u6587\u4ef6\u3002\n"
+                                    "\u8bf7\u5728\u6b65\u9aa4 1 \u4e2d\u9009\u62e9 .bsar.nc \u6587\u4ef6\u3002")
+                return
+            params = wiz.get_params()
             config_path = build_tool2b_step2a_json(
-                input_files=selected_files, bathy_nc=bathy,
-                mask_files=mask_files, **params,
+                input_files=selected_files,
+                bsar_nc=wiz.bsar_nc,
+                bathy_nc=wiz.bathy_nc,
+                output_dir=wiz.getOutputDir(),
+                overwrite=wiz.getOverwrite(),
+                **params,
             )
-            if result == QMessageBox.Accepted:
-                self._execute_tool("Tool 2B: Statistical BSAR", config_path)
-            else:
-                self._console_view.append_text(f"Config saved: {config_path}", "INFO")
-            self._statusbar.showMessage(f"Tool 2B Step 1 config saved: {config_path}")
+            self._execute_tool("\u9759\u6001\u89d2\u5ea6\u91cd\u89c4\u8303\u5316", config_path)
+            self._statusbar.showMessage(f"\u9759\u6001\u89d2\u5ea6\u91cd\u89c4\u8303\u5316\u914d\u7f6e\u5df2\u4fdd\u5b58: {config_path}")
 
     # ── Tool 2B Step 2 ─────────────────────────────────────────────
 
     def _open_tool2b_s2(self, selected_files: list) -> None:
         if not selected_files:
-            QMessageBox.warning(self, "No Files", "Select XSF files first.")
+            QMessageBox.warning(self, "\u65e0\u6587\u4ef6", "\u8bf7\u5148\u9009\u62e9 XSF \u6587\u4ef6\u3002")
             return
-        dlg = Tool2BS2Dialog(selected_files, self)
-        result = dlg.exec()
-        if result in (QMessageBox.Accepted, 2):
-            params = dlg.get_params()
+        try:
+            wiz = Tool2BS2Dialog(selected_files, self)
+            result = wiz.exec()
+        except Exception as e:
+            self._console_view.append_text(
+                f"\u6253\u5f00\u7edf\u8ba1\u89d2\u54cd\u5e94\uff08BSAR\uff09\u5bf9\u8bdd\u6846\u5931\u8d25: {e}", "ERROR"
+            )
+            QMessageBox.critical(
+                self, "\u5bf9\u8bdd\u6846\u9519\u8bef",
+                f"\u65e0\u6cd5\u6253\u5f00\u53c2\u6570\u5bf9\u8bdd\u6846:\n{e}\n\n"
+                "\u8bf7\u786e\u4fdd\u5728\u6587\u4ef6\u6811\u4e2d\u5df2\u9009\u62e9 XSF \u6587\u4ef6\u3002"
+            )
+            return
+        if result == QWizard.Accepted:
+            if not wiz.getOutputBsar():
+                QMessageBox.warning(self, "\u7f3a\u5c11\u8f93\u51fa\u8def\u5f84",
+                                    "\u9700\u8981 BSAR \u8f93\u51fa\u6587\u4ef6\u8def\u5f84\u3002\n"
+                                    "\u8bf7\u5728\u6b65\u9aa4 1 \u4e2d\u8bbe\u7f6e .bsar.nc \u6587\u4ef6\u8def\u5f84\u3002")
+                return
+            params = wiz.get_params()
             config_path = build_tool2b_step2b_json(
                 input_files=selected_files,
-                bsar_nc=dlg.bsar_nc,
-                bathy_nc=dlg.bathy_nc,
+                bathy_nc=wiz.bathy_nc,
+                output_bsar=wiz.getOutputBsar(),
                 **params,
             )
-            if result == QMessageBox.Accepted:
-                self._execute_tool("Tool 2B: Apply BSAR", config_path)
-            else:
-                self._console_view.append_text(f"Config saved: {config_path}", "INFO")
-            self._statusbar.showMessage(f"Tool 2B Step 2 config saved: {config_path}")
-            # Refresh XSF status since processing may have updated it
+            self._execute_tool("\u7edf\u8ba1\u89d2\u54cd\u5e94\uff08BSAR\uff09", config_path)
+            self._statusbar.showMessage(f"\u7edf\u8ba1\u89d2\u54cd\u5e94 (BSAR) \u914d\u7f6e\u5df2\u4fdd\u5b58: {config_path}")
             self._refresh_xsf_status()
 
     # ── BSAR Aux Tools ─────────────────────────────────────────────
@@ -408,8 +650,8 @@ class MainWindow(QMainWindow):
             task = self._task_manager.create_task(f"BSAR {tool}", "")
             self._task_manager.update_status(task.task_id, TaskStatus.COMPLETED)
             self._task_manager.append_log(task.task_id, "INFO",
-                f"BSAR {tool} config: {params}")
-            self._statusbar.showMessage(f"BSAR {tool} completed")
+                f"BSAR {tool} \u914d\u7f6e: {params}")
+            self._statusbar.showMessage(f"BSAR {tool} \u5df2\u5b8c\u6210")
 
     # ── Status Refresh ─────────────────────────────────────────────
 
@@ -421,13 +663,143 @@ class MainWindow(QMainWindow):
                 self._project_explorer._metadata_cache[fp] = updated
             except Exception:
                 pass
-        self._statusbar.showMessage("XSF status refreshed")
-        self._console_view.append_text("XSF processing status refreshed.", "INFO")
+        self._statusbar.showMessage("XSF \u72b6\u6001\u5df2\u5237\u65b0")
+        self._console_view.append_text("XSF \u5904\u7406\u72b6\u6001\u5df2\u5237\u65b0\u3002", "INFO")
+
+    # ── Import DTM ──────────────────────────────────────────────────
+
+    def _import_dtm(self) -> None:
+        """Import one or more DTM.nc files and display their layers on the map."""
+        paths, _ = QFileDialog.getOpenFileNames(
+            self, "Import DTM File(s)", "",
+            "DTM files (*.dtm.nc *.nc);;All (*.*)"
+        )
+        if not paths:
+            return
+        loaded = 0
+        errors = []
+        for path in paths:
+            try:
+                self._console_view.append_text(f"Importing DTM: {path}", "INFO")
+                # Generate overlay PNG files
+                png_bs, data_url, bounds = dtm_layer_to_file(path, "backscatter", cmap="gray")
+                self._map_view.set_dtm_overlay(path, "backscatter", data_url, bounds)
+                png_el, data_el, _ = dtm_layer_to_file(path, "elevation", cmap="terrain", hillshade=True)
+                self._map_view.set_dtm_overlay(path, "elevation", data_el, bounds)
+                self._project_explorer.add_external_file(path, "product")
+                loaded += 1
+            except Exception as e:
+                errors.append(f"{os.path.basename(path)}: {e}")
+        if loaded:
+            self._map_view.show_dtm_layer("backscatter")
+            self._project_explorer.dtm_layer_changed.emit("backscatter")
+            self._statusbar.showMessage(f"\u5df2\u5bfc\u5165 {loaded} \u4e2a DTM \u6587\u4ef6\u3002")
+        if errors:
+            QMessageBox.warning(self, "\u5bfc\u5165\u9519\u8bef",
+                                "\u4ee5\u4e0b\u6587\u4ef6\u52a0\u8f7d\u5931\u8d25:\n" + "\n".join(errors))
+
+    def _on_product_action(self, action: str, filepath: str) -> None:
+        """Handle DTM/Product right-click actions."""
+        if action == "goto_dtm":
+            self._on_go_to_dtm(filepath)
+        elif action == "geotiff_dtm":
+            self._on_export_dtm_geotiff(filepath)
+
+    def _on_go_to_dtm(self, filepath: str) -> None:
+        """Go to a DTM file's location on the map."""
+        try:
+            from netCDF4 import Dataset
+            with Dataset(filepath, "r") as ds:
+                if "lon" in ds.variables and "lat" in ds.variables:
+                    lon = ds.variables["lon"][:]
+                    lat = ds.variables["lat"][:]
+                    lons = [float(lon.min()), float(lon.max())]
+                    lats = [float(lat.min()), float(lat.max())]
+                elif "x" in ds.variables and "y" in ds.variables:
+                    x_arr = ds.variables["x"][:]
+                    y_arr = ds.variables["y"][:]
+                    crs_wkt = getattr(ds.variables.get("crs"), "crs_wkt", None)
+                    if crs_wkt:
+                        from pyproj import CRS, Transformer
+                        src = CRS.from_wkt(crs_wkt)
+                        tgt = CRS.from_epsg(4326)
+                        tr = Transformer.from_crs(src, tgt, always_xy=True)
+                        sw = tr.transform(float(x_arr[0]), float(y_arr[0]))
+                        ne = tr.transform(float(x_arr[-1]), float(y_arr[-1]))
+                        lons = [sw[0], ne[0]]
+                        lats = [sw[1], ne[1]]
+                    else:
+                        lons = [float(x_arr.min()), float(x_arr.max())]
+                        lats = [float(y_arr.min()), float(y_arr.max())]
+                else:
+                    raise KeyError("No lon/lat or x/y variables found")
+            self._map_view.fly_to_bounds(lats, lons)
+            self._statusbar.showMessage(f"\u5b9a\u4f4d\u5230 DTM: {os.path.basename(filepath)}")
+        except Exception as e:
+            QMessageBox.warning(self, "\u8bfb\u53d6\u9519\u8bef", f"\u65e0\u6cd5\u8bfb\u53d6 DTM \u8303\u56f4:\n{e}")
+
+    def _on_export_dtm_geotiff(self, filepath: str) -> None:
+        """Export DTM layers to GeoTIFF via the backend Dtm2Tiff."""
+        try:
+            from PySide6.QtWidgets import QDialog
+            dlg = DtmExportDialog(filepath, self)
+            if dlg.exec() != QDialog.Accepted:
+                return
+        except Exception as e:
+            QMessageBox.critical(self, "\u5bf9\u8bdd\u6846\u9519\u8bef",
+                                 f"\u65e0\u6cd5\u6253\u5f00\u5bfc\u51fa\u5bf9\u8bdd\u6846:\n{e}")
+            return
+
+        self._statusbar.showMessage("\u6b63\u5728\u5bfc\u51fa GeoTIFF...\u8bf7\u7a0d\u5019")
+        try:
+            import sys as _sys
+            _sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+            # GDAL netCDF plugin needs conda bin on PATH to find netcdf.dll etc.
+            _conda_bin = r"C:\Users\GUO\AppData\Local\anaconda3\Library\bin"
+            if os.path.isdir(_conda_bin):
+                if "GDAL_DRIVER_PATH" not in os.environ:
+                    os.environ["GDAL_DRIVER_PATH"] = os.path.join(
+                        _conda_bin, "..", "lib", "gdalplugins")
+                if "GDAL_DATA" not in os.environ:
+                    os.environ["GDAL_DATA"] = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\gdal"
+                os.environ["PATH"] = _conda_bin + os.pathsep + os.environ.get("PATH", "")
+            from pyat.dtm.export.dtm_to_tiff import Dtm2Tiff
+            from pygws.service.progress_monitor import DefaultMonitor
+
+            out_dir = dlg.getOutputDir()
+            name_base = dlg.getFileName()
+            o_path = os.path.join(out_dir, f"{name_base}.tif")
+
+            exporter = Dtm2Tiff(
+                i_paths=[filepath],
+                o_paths=[o_path],
+                layers=dlg.getLayers(),
+                overwrite=dlg.getOverwrite(),
+                target_compression=dlg.getCompression(),
+                nan_fillvalue=dlg.getNanFill(),
+                target_fillvalue=dlg.getFillValue() or 32767,
+                monitor=DefaultMonitor,
+            )
+            exporter()
+            result_files = exporter.resulting_files
+            for rf in result_files:
+                self._console_view.append_text(f"GeoTIFF \u5df2\u5bfc\u51fa: {rf}", "OK")
+            self._statusbar.showMessage(
+                f"\u5df2\u5bfc\u51fa {len(result_files)} \u4e2a GeoTIFF \u6587\u4ef6"
+            )
+        except Exception as e:
+            self._console_view.append_text(f"\u5bfc\u51fa\u5931\u8d25: {e}", "ERROR")
+            QMessageBox.warning(self, "\u5bfc\u51fa\u5931\u8d25",
+                                f"GeoTIFF \u5bfc\u51fa\u5931\u8d25:\n{e}")
 
     # ── Go to Location ──────────────────────────────────────────────
 
     def _on_go_to_location(self, filepath: str) -> None:
         """Extract nav from a single file, draw its track, and fly to it."""
+        # Handle DTM files: use lon/lat bounds
+        if filepath.endswith(".dtm.nc"):
+            self._on_go_to_dtm(filepath)
+            return
         # Ensure all files' tracks are loaded
         loaded = 0
         for meta in self._project_explorer._metadata_cache.values():
@@ -448,11 +820,11 @@ class MainWindow(QMainWindow):
         lats = [c[0] for c in coords]
         lons = [c[1] for c in coords]
         # Redraw all + highlight in one atomic call
-        parts = ["navLayer.clearLayers()", "highlightLayer.clearLayers()"]
+        parts = ["if(typeof navLayer !== 'undefined') { navLayer.clearLayers(); highlightLayer.clearLayers(); }"]
         for fp, c in self._map_view._nav_tracks.items():
             if fp in self._map_view._visible_tracks:
                 pts = ",".join(f"[{x[0]},{x[1]}]" for x in c)
-                parts.append(f"L.polyline([{pts}],{{color:'#4ec94e',weight:1,opacity:.5}}).addTo(navLayer)")
+                parts.append(f"L.polyline([{pts}],{{color:'#ff4444',weight:2,opacity:.7}}).addTo(navLayer)")
         hl_pts = ",".join(f"[{c[0]},{c[1]}]" for c in coords)
         parts.append(f"L.polyline([{hl_pts}],{{color:'#ffcc00',weight:3,opacity:0.9}}).addTo(highlightLayer)")
         self._map_view._run_js(";".join(parts))
@@ -461,36 +833,81 @@ class MainWindow(QMainWindow):
             f"Located: {os.path.basename(filepath)} — {len(coords)} nav pts, {len(self._map_view._visible_tracks)} tracks shown"
         )
 
-    # ── Tool 3 ──────────────────────────────────────────────────────
+    # ── WC ──────────────────────────────────────────────────────────
 
-    def _open_tool3(self, selected_files: list) -> None:
-        if not selected_files:
-            QMessageBox.warning(self, "No Files", "Select corrected XSF files (green icon) first.")
-            return
-        dlg = Tool3Dialog(selected_files, self)
-        result = dlg.exec()
-        if result in (QMessageBox.Accepted, 2):
-            params = dlg.get_params()
-            export_fmt = params.pop("export_format", "GeoTIFF")
-            config_path = build_tool3_json(
-                input_files=selected_files, **params,
-            )
-            if result == QMessageBox.Accepted:
-                self._execute_tool(f"Tool 3: Mosaic ({export_fmt})", config_path)
-            else:
-                self._console_view.append_text(f"Config saved: {config_path}", "INFO")
-            self._statusbar.showMessage(f"Tool 3 config saved — Export: {export_fmt}")
+    def _open_wc_wizard(self, mode: str = "horizontal"):
+        """打开水柱分析向导对话框"""
+        from .core.json_builder import build_wc_json
+        from .core.task_manager import TaskStatus
+
+        selected = self._project_explorer.get_selected_files()
+        wiz = WcWizard(mode, self)
+        # 如果有选中的文件，自动填入第一页
+        if selected and hasattr(wiz, '_page1'):
+            for f in selected[:10]:
+                wiz._page1._files_list.addItem(f)
+
+        if wiz.exec() == QWizard.Accepted:
+            data = wiz.get_all_params()
+            if not data["input_files"]:
+                QMessageBox.warning(self, "提示", "请至少选择一个 XSF 文件。")
+                return
+            # 构建 JSON 并执行
+            try:
+                config_path = build_wc_json(
+                    mode=data["mode"],
+                    input_files=data["input_files"],
+                    output_dir=data["output_dir"],
+                    overwrite=data["overwrite"],
+                    layers=data["layers"],
+                    normalization_offset=data["normalization_offset"],
+                    **{k: v for k, v in data.items()
+                       if k not in ("mode","input_files","output_dir",
+                                    "overwrite","layers","normalization_offset",
+                                    "gws_config","suffix")},
+                )
+                task_label = f"工具 WC: {data['mode']}"
+                task = self._task_manager.create_task(task_label, config_path)
+                self._current_task_id = task.task_id
+                self._task_manager.update_status(task.task_id, TaskStatus.QUEUED)
+                self._process_manager.run(config_path)
+            except Exception as e:
+                QMessageBox.critical(self, "运行失败", str(e))
+
+    def _open_wc_tool(self, tool_name: str, selected_files: list) -> None:
+        """从工具箱按钮调用的 WC 入口"""
+        mode_map = {
+            "wc_horizontal": "horizontal",
+            "wc_longitudinal": "longitudinal",
+            "wc_polar": "polar",
+            "wc_vertical_integration": "vertical",
+        }
+        self._open_wc_wizard(mode_map.get(tool_name, "horizontal"))
 
     # ── Misc ───────────────────────────────────────────────────────
 
     def _show_about(self) -> None:
         QMessageBox.about(
-            self, "About pyat GUI",
-            "pyat GUI \u2014 Multibeam Sonar Backscatter Processing\n\n"
-            "Phase 4: Tool 3 (Backscatter Mosaic), GeoTIFF/COG/MBTiles export,\n"
-            "Color Ramp palette, dB range slider, data probe.\n\n"
-            "Powered by PySide6 + pyat backend."
+            self, "\u5173\u4e8e pyat GUI",
+            "pyat GUI \u2014 \u591a\u675f\u56de\u58f0\u5904\u7406\n\n"
+            "\u7248\u672c 4\uff1a\u5de5\u5177 3\uff08\u56de\u58f0\u62fc\u63a5\uff09\u3001GeoTIFF/COG/MBTiles \u5bfc\u51fa\u3001"
+            "\u8272\u5f69\u7eb1\u3001\u5206\u8d1d\u8303\u56f4\u6ed1\u5757\u3001\u6570\u636e\u63a2\u9488\u3002\n\n"
+            "\u57fa\u4e8e PySide6 + pyat \u540e\u7aef\u3002"
         )
+
+    def _toggle_theme(self) -> None:
+        from .app import apply_theme
+        settings = QSettings("pyat", "gui")
+        current = settings.value("theme", "dark")
+        new_theme = "light" if current == "dark" else "dark"
+        app = QApplication.instance()
+        apply_theme(app, new_theme)
+        self._theme_action.setChecked(new_theme == "dark")
+
+    @staticmethod
+    def _is_dark_theme() -> bool:
+        settings = QSettings("pyat", "gui")
+        return settings.value("theme", "dark") != "light"
 
     def _reset_layout(self) -> None:
         self._left_dock.setFloating(False)
@@ -498,7 +915,7 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self._left_dock)
         self.addDockWidget(Qt.BottomDockWidgetArea, self._bottom_dock)
         self.resize(1400, 900)
-        self._statusbar.showMessage("Layout reset to default.")
+        self._statusbar.showMessage("\u5e03\u5c40\u5df2\u91cd\u7f6e\u4e3a\u9ed8\u8ba4\u3002")
 
     def _restore_state(self) -> None:
         settings = QSettings("pyat", "gui")
