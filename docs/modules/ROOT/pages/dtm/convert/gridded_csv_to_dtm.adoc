@@ -1,7 +1,0 @@
-= Gridded CSV -> DTM
-
-== Overview
-
-This application takes one gridded CSV file as input and will export it as DTM file in the new netcdf format.
-
-include::example$generated/dtm/convert/gridded_csv_to_dtm_params.adoc[]

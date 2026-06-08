@@ -1,6 +1,0 @@
-:last-update-label!:
-
-== Tide netcdf export
-
-=== Overview
-This application takes binary files produced by Globe to create a Tide file in netcdf format.

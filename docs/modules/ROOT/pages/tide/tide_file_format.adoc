@@ -1,5 +1,0 @@
-== Tide I/O file formats
-
-include::tide_input_file_format.adoc[]
-
-include::tide_output_file_format.adoc[]

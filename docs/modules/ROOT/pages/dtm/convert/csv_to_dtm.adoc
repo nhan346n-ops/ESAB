@@ -1,7 +1,0 @@
-= Point Cloud CSV -> DTM
-
-== Overview
-
-This application takes one point cloud CSV file as input and will export it as DTM file (.dtm.nc).
-
-include::example$generated/dtm/convert/csv_to_dtm_params.adoc[]

@@ -55,13 +55,13 @@ def _leaflet_html() -> str:
 <html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>pyat Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<style>html,body,#map{margin:0;padding:0;width:100%;height:100%}#map{background:#1e1e1e}
-.leaflet-control-zoom a{background:#2d2d2d!important;color:#d4d4d4!important}
+<style>html,body,#map{margin:0;padding:0;width:100%;height:100%}#map{background:#F7F9FC}
+.leaflet-control-zoom a{background:#FFFFFF!important;color:#1C2B3A!important;border:1px solid #D0D9E4!important}
 .leaflet-image-layer img{image-rendering:auto;-ms-interpolation-mode:bicubic}
-#coords-overlay{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(30,30,30,0.85);color:#d4d4d4;padding:4px 10px;font-family:sans-serif;font-size:12px;border-radius:4px;border:1px solid #444;pointer-events:none;min-width:420px;text-align:center;white-space:nowrap}
-#legend-container{position:absolute;bottom:15px;right:10px;z-index:1000;background:transparent;color:#ffffff;text-shadow:0 0 3px #000000;padding:8px;font-family:sans-serif;font-size:11px;display:none;width:110px}
+#coords-overlay{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(255,255,255,0.85);color:#1C2B3A;padding:4px 10px;font-family:sans-serif;font-size:12px;border-radius:4px;border:1px solid #D0D9E4;pointer-events:none;min-width:420px;text-align:center;white-space:nowrap}
+#legend-container{position:absolute;bottom:15px;right:10px;z-index:1000;background:rgba(255,255,255,0.85);border:1px solid #D0D9E4;border-radius:4px;color:#1C2B3A;padding:8px;font-family:sans-serif;font-size:11px;display:none;width:110px}
 #legend-title{font-weight:bold;margin-bottom:6px;font-size:10px;text-align:center;white-space:nowrap}
-#legend-bar{width:12px;height:100px;border:1px solid #666}
+#legend-bar{width:12px;height:100px;border:1px solid #C2D0E0}
 #legend-labels{height:100px;position:relative;width:80px;display:inline-block;vertical-align:top;margin-left:8px}
 .legend-val{position:absolute;left:0;white-space:nowrap;font-family:monospace;font-size:10px}
 #legend-val-max{top:0;transform:translateY(-50%)}
@@ -84,17 +84,17 @@ def _leaflet_html() -> str:
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
 <script>
-var map=L.map('map',{zoomControl:true}).setView([30,110],5);
+var map=L.map('map',{zoomControl:true, preferCanvas:true, wheelDebounceTime:40, wheelPxPerZoomLevel:120}).setView([30,110],5);
 var tk='351963c8b638ff7517f17374145c6115';
 var sub=['0','1','2','3','4','5','6','7'];
 var wmts='SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=';
 var tdt={};
-tdt.vec={base:L.tileLayer('https://t{s}.tianditu.gov.cn/vec_w/wmts?LAYER=vec&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',attribution:'\u5929\u5730\u56fe\u77e2\u91cf'})};
-tdt.vec.annot=L.tileLayer('https://t{s}.tianditu.gov.cn/cva_w/wmts?LAYER=cva&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',attribution:'\u5929\u5730\u56fe\u77e2\u91cf\u6ce8\u8bb0'});
-tdt.img={base:L.tileLayer('https://t{s}.tianditu.gov.cn/img_w/wmts?LAYER=img&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',attribution:'\u5929\u5730\u56fe\u5f71\u50cf'})};
-tdt.img.annot=L.tileLayer('https://t{s}.tianditu.gov.cn/cia_w/wmts?LAYER=cia&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',attribution:'\u5929\u5730\u56fe\u5f71\u50cf\u6ce8\u8bb0'});
-tdt.ter={base:L.tileLayer('https://t{s}.tianditu.gov.cn/ter_w/wmts?LAYER=ter&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',attribution:'\u5929\u5730\u56fe\u5730\u5f62'})};
-tdt.ter.annot=L.tileLayer('https://t{s}.tianditu.gov.cn/cta_w/wmts?LAYER=cta&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',attribution:'\u5929\u5730\u56fe\u5730\u5f62\u6ce8\u8bb0'});
+tdt.vec={base:L.tileLayer('https://t{s}.tianditu.gov.cn/vec_w/wmts?LAYER=vec&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',updateWhenZooming:false,keepBuffer:2,attribution:'\u5929\u5730\u56fe\u77e2\u91cf'})};
+tdt.vec.annot=L.tileLayer('https://t{s}.tianditu.gov.cn/cva_w/wmts?LAYER=cva&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',updateWhenZooming:false,keepBuffer:2,attribution:'\u5929\u5730\u56fe\u77e2\u91cf\u6ce8\u8bb0'});
+tdt.img={base:L.tileLayer('https://t{s}.tianditu.gov.cn/img_w/wmts?LAYER=img&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',updateWhenZooming:false,keepBuffer:2,attribution:'\u5929\u5730\u56fe\u5f71\u50cf'})};
+tdt.img.annot=L.tileLayer('https://t{s}.tianditu.gov.cn/cia_w/wmts?LAYER=cia&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',updateWhenZooming:false,keepBuffer:2,attribution:'\u5929\u5730\u56fe\u5f71\u50cf\u6ce8\u8bb0'});
+tdt.ter={base:L.tileLayer('https://t{s}.tianditu.gov.cn/ter_w/wmts?LAYER=ter&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',updateWhenZooming:false,keepBuffer:2,attribution:'\u5929\u5730\u56fe\u5730\u5f62'})};
+tdt.ter.annot=L.tileLayer('https://t{s}.tianditu.gov.cn/cta_w/wmts?LAYER=cta&'+wmts+tk,{subdomains:sub,maxZoom:18,crossOrigin:'anonymous',updateWhenZooming:false,keepBuffer:2,attribution:'\u5929\u5730\u56fe\u5730\u5f62\u6ce8\u8bb0'});
 var activeMap='vec';
 tdt.vec.base.addTo(map);tdt.vec.annot.addTo(map);
 function switchBaseMap(t){
@@ -203,12 +203,14 @@ class MapView(QWidget):
         self._pending_gamma: float = 1.0
         self._dtm_shoulder: float = 0.0
         self._pending_shoulder: float = 0.0
+        from PySide6.QtCore import QTimer
         self._gamma_timer = QTimer(self)
         self._gamma_timer.setSingleShot(True)
         self._gamma_timer.timeout.connect(self._do_apply_gamma)
         self._active_dtm_layer: Optional[str] = "backscatter"
         self._dtm_visible: dict = {}
         self._dtm_cache: dict = {}
+        
         self._setup_ui()
         self._bridge.page_ready.connect(self._on_page_ready)
 

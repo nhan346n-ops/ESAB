@@ -1,7 +1,0 @@
-= DTM -> GeoTIFF RGBA
-
-== Overview
-
-This application takes DTM file(s) as input and will export the elevations as TIFF file using GDAL DEM capabilities. (See https://gdal.org/programs/gdaldem.html, https://gdal.org/drivers/raster/gtiff.html#raster-gtiff)
-
-include::example$generated/dtm/export/dtm_to_tiff_rgba_params.adoc[]

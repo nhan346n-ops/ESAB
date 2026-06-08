@@ -1,7 +1,0 @@
-= Export summary lines
-
-== Overview
-
-Extract acquisition modes from a list of XSF files and for each mode, export the list of involved files to a txt file named after the mode.
-
-include::example$generated/sonar/bs/calibration/export_summary_lines_params.adoc[]

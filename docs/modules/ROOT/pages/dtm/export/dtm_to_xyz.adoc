@@ -1,7 +1,0 @@
-= DTM -> XYZ
-
-== Overview
-
-This application takes DTM file(s) as input and will export it (or them) as ASCII file in XYZ format .
-
-include::example$generated/dtm/export/dtm_to_xyz_params.adoc[]

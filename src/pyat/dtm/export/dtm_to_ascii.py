@@ -11,7 +11,10 @@ import pyat.dtm.dtm_standard_constants as DtmConstants
 import pyat.dtm.utils.process_utils as process_util
 import pyat.utils.argument_utils as arg_util
 import pyat.utils.pyat_logger as log
-from pyat.dtm.export import cython_dtm2ascii_export as p
+try:
+    from pyat.dtm.export import cython_dtm2ascii_export as p
+except ImportError:
+    from pyat.dtm.export import python_dtm2ascii_export as p
 
 
 class VariableParser:

@@ -1,7 +1,0 @@
-= DTM -> EMO
-
-== Overview
-
-This application takes DTM file(s) as input and will export it (or them) as ASCII file in EMO (EMOdnet) format .
-
-include::example$generated/dtm/export/dtm_to_emo_params.adoc[]

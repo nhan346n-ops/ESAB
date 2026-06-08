@@ -90,7 +90,6 @@ class ProjectExplorer(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         toolbar = QToolBar()
-        toolbar.addWidget(QLabel("\u9879\u76ee\u6d4f\u89c8\u5668"))
         add_btn = QPushButton("+ \u6dfb\u52a0\u6587\u4ef6")
         add_btn.clicked.connect(self._add_files)
         toolbar.addWidget(add_btn)
@@ -144,25 +143,21 @@ class ProjectExplorer(QWidget):
         toolbox_layout = QVBoxLayout(self._toolbox_widget)
 
         toolbox_layout.addWidget(QLabel("\u9636\u6bb5 1 \u2014 \u6570\u636e\u51c6\u5907"))
-        btn_t1 = QPushButton("\u5de5\u5177 1: \u5bfc\u51fa\u53c2\u8003 DTM")
+        btn_t1 = QPushButton("\u5bfc\u51fa\u53c2\u8003 DTM")
         btn_t1.clicked.connect(lambda: self.tool_requested.emit("tool1"))
-        btn_t1.setStyleSheet("QPushButton { text-align: left; padding: 6px; }")
         toolbox_layout.addWidget(btn_t1)
 
         toolbox_layout.addWidget(QLabel("\u9636\u6bb5 2 \u2014 \u89d2\u5ea6\u54cd\u5e94\u8865\u507f"))
         btn_stats = QPushButton("\u9759\u6001\u89d2\u5ea6\u91cd\u89c4\u8303\u5316")
         btn_stats.clicked.connect(lambda: self.tool_requested.emit("tool2b_step1"))
-        btn_stats.setStyleSheet("QPushButton { text-align: left; padding: 6px; }")
         toolbox_layout.addWidget(btn_stats)
 
         btn_t2a = QPushButton("\u6ed1\u52a8\u89d2\u5ea6\u91cd\u89c4\u8303\u5316")
         btn_t2a.clicked.connect(lambda: self.tool_requested.emit("tool2a"))
-        btn_t2a.setStyleSheet("QPushButton { text-align: left; padding: 6px; }")
         toolbox_layout.addWidget(btn_t2a)
 
         btn_t2b_s2 = QPushButton("\u7edf\u8ba1\u89d2\u54cd\u5e94\uff08BSAR\uff09")
         btn_t2b_s2.clicked.connect(lambda: self.tool_requested.emit("tool2b_step2"))
-        btn_t2b_s2.setStyleSheet("QPushButton { text-align: left; padding: 6px; }")
         toolbox_layout.addWidget(btn_t2b_s2)
 
         toolbox_layout.addStretch()
@@ -176,7 +171,7 @@ class ProjectExplorer(QWidget):
         self._dtm_none = QCheckBox("\u65e0")
         self._dtm_none.setChecked(True)
         self._dtm_bs = QCheckBox("\u540e\u5411\u6563\u5c04")
-        self._dtm_elev = QCheckBox("\u6d77\u62d4")
+        self._dtm_elev = QCheckBox("\u6c34\u6df1")
         self._dtm_none.toggled.connect(lambda: self._on_dtm_toggle(""))
         self._dtm_bs.toggled.connect(lambda: self._on_dtm_toggle("backscatter"))
         self._dtm_elev.toggled.connect(lambda: self._on_dtm_toggle("elevation"))
@@ -298,8 +293,8 @@ class ProjectExplorer(QWidget):
             item.setText(2, "PROC" if meta.is_processed else "RAW")
             item.setData(0, Qt.UserRole, ITEM_FILE)
             item.setData(0, Qt.UserRole + 1, meta.filepath)
-            item.setToolTip(0, f"File: {meta.filepath}\nSounder: {meta.sounder_type}\n"
-                              f"Version: {meta.xsf_version}\nCreated: {meta.date_created}")
+            item.setToolTip(0, f"文件: {meta.filepath}\n声纳类型: {meta.sounder_type}\n"
+                              f"版本: {meta.xsf_version}\n创建时间: {meta.date_created}")
             # Add checkbox in column 0 (checked = nav visible)
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
             item.setCheckState(0, Qt.Checked)
@@ -339,6 +334,8 @@ class ProjectExplorer(QWidget):
             menu.addSeparator()
             action_tiff = menu.addAction("\u5bfc\u51fa GeoTIFF")
             action_tiff.triggered.connect(lambda: self.product_action.emit("geotiff_dtm", filepath))
+            action_xyz = menu.addAction("导出到 XYZ")
+            action_xyz.triggered.connect(lambda: self.product_action.emit("xyz_dtm", filepath))
 
         menu.addSeparator()
         action_remove = menu.addAction("\u4ece\u5217\u8868\u4e2d\u79fb\u9664")
@@ -402,22 +399,22 @@ class ProjectExplorer(QWidget):
         if filepath and filepath in self._metadata_cache:
             meta = self._metadata_cache[filepath]
             info = (
-                f"File: {meta.filename}\n"
-                f"Path: {meta.filepath}\n"
-                f"Size: {meta.filesize_mb:.0f} MB\n"
-                f"Sounder Type: {meta.sounder_type}\n"
-                f"XSF Version: {meta.xsf_version}\n"
-                f"Created: {meta.date_created}\n"
-                f"Backscatter Correction: {'PROCESSED' if meta.is_processed else 'UNPROCESSED'}\n"
+                f"文件: {meta.filename}\n"
+                f"路径: {meta.filepath}\n"
+                f"大小: {meta.filesize_mb:.0f} MB\n"
+                f"声纳类型: {meta.sounder_type}\n"
+                f"XSF版本: {meta.xsf_version}\n"
+                f"创建时间: {meta.date_created}\n"
+                f"后向散射处理状态: {'已处理' if meta.is_processed else '未处理'}\n"
             )
             if meta.nav_bounds:
                 nb = meta.nav_bounds
                 info += (
-                    f"Navigation Bounds:\n"
-                    f"  Lon: [{nb['lon_min']:.4f}, {nb['lon_max']:.4f}]\n"
-                    f"  Lat: [{nb['lat_min']:.4f}, {nb['lat_max']:.4f}]\n"
+                    f"导航边界:\n"
+                    f"  经度: [{nb['lon_min']:.4f}, {nb['lon_max']:.4f}]\n"
+                    f"  纬度: [{nb['lat_min']:.4f}, {nb['lat_max']:.4f}]\n"
                 )
-            QMessageBox.information(self, "XSF Metadata", info)
+            QMessageBox.information(self, "XSF 元数据", info)
 
     def _remove_files_from_list(self, filepaths: List[str], is_product: bool = False) -> None:
         """Remove one or more files from the tree list after confirmation."""
@@ -428,9 +425,9 @@ class ProjectExplorer(QWidget):
         # ── Confirmation dialog ──
         if len(filepaths) == 1:
             msg = QMessageBox(self)
-            msg.setWindowTitle("Remove file from list")
-            msg.setText(f"Remove {os.path.basename(filepaths[0])} from the project?")
-            cb = QCBox("Also delete file from disk (cannot be undone)")
+            msg.setWindowTitle("从列表中移除文件")
+            msg.setText(f"是否从项目中移除 {os.path.basename(filepaths[0])}？")
+            cb = QCBox("同时从磁盘中删除文件（不可恢复）")
             cb.setChecked(False)
             msg.setCheckBox(cb)
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
@@ -440,9 +437,9 @@ class ProjectExplorer(QWidget):
             delete_from_disk = cb.isChecked()
         else:
             msg = QMessageBox(self)
-            msg.setWindowTitle("Remove files from list")
-            msg.setText(f"Remove {len(filepaths)} files from the project?")
-            cb = QCBox("Also delete files from disk (cannot be undone)")
+            msg.setWindowTitle("从列表中移除多个文件")
+            msg.setText(f"是否从项目中移除 {len(filepaths)} 个文件？")
+            cb = QCBox("同时从磁盘中删除文件（不可恢复）")
             cb.setChecked(False)
             msg.setCheckBox(cb)
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)

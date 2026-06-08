@@ -59,24 +59,59 @@ class ProcessManager(QObject):
         self._process.setWorkingDirectory(working_dir)
         self._process.setProcessChannelMode(QProcess.SeparateChannels)
 
+        # Determine the Python interpreter dynamically
+        import sys
+        py310_exe = sys.executable
+        is_custom_env = "envs" in sys.executable or ".venv" in sys.executable
+        if not is_custom_env:
+            # Fallback to specific envs if base Python is running the GUI
+            candidates = [
+                r"C:\Users\GUO\AppData\Local\anaconda3\envs\env_pyat_runtime\python.exe",
+                r"C:\Users\GUO\AppData\Local\anaconda3\envs\pyat-py310\python.exe",
+                os.path.join(os.environ.get("CONDA_PREFIX", ""), "envs", "env_pyat_runtime", "python.exe"),
+                os.path.join(os.environ.get("CONDA_PREFIX", ""), "envs", "pyat-py310", "python.exe"),
+            ]
+            for c in candidates:
+                if os.path.isfile(c):
+                    py310_exe = c
+                    break
+
+        # Determine environment root dynamically from py310_exe
+        env_root = os.path.dirname(py310_exe)
+        if os.path.basename(env_root).lower() == "scripts":
+            env_root = os.path.dirname(env_root)
+
         # Ensure PYTHONPATH includes src/ for pyat imports (replace any existing)
         env = QProcess.systemEnvironment()
         env = [e for e in env if not e.startswith("PYTHONPATH=")]
         src_path = os.path.join(working_dir, "src")
         env.append(f"PYTHONPATH={src_path}")
-        # Ensure GDAL can find netCDF plugin and data files on Windows
-        conda_lib_bin = r"C:\Users\GUO\AppData\Local\anaconda3\Library\bin"
+
+        # Ensure GDAL can find netCDF plugin and data files on Windows dynamically matching env_root
+        conda_lib_bin = os.path.join(env_root, "Library", "bin")
+        if not os.path.isdir(conda_lib_bin):
+            conda_lib_bin = r"C:\Users\GUO\AppData\Local\anaconda3\Library\bin" # fallback
+
         if os.path.isdir(conda_lib_bin):
+            env = [e for e in env if not e.startswith("PATH=")]
             env.append(f"PATH={conda_lib_bin};{os.environ.get('PATH', '')}")
+            
         gdal_plugin = os.path.join(conda_lib_bin, "..", "lib", "gdalplugins")
         if os.path.isdir(gdal_plugin):
             env.append(f"GDAL_DRIVER_PATH={os.path.normpath(gdal_plugin)}")
-        gdal_data = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\gdal"
+            
+        gdal_data = os.path.join(env_root, "Library", "share", "gdal")
+        if not os.path.isdir(gdal_data):
+            gdal_data = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\gdal"
         if os.path.isdir(gdal_data):
             env.append(f"GDAL_DATA={gdal_data}")
-        proj_lib = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\proj"
+            
+        proj_lib = os.path.join(env_root, "Library", "share", "proj")
+        if not os.path.isdir(proj_lib):
+            proj_lib = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\proj"
         if os.path.isdir(proj_lib):
             env.append(f"PROJ_LIB={proj_lib}")
+            
         self._process.setEnvironment(env)
 
         # Connect signals
@@ -85,22 +120,9 @@ class ProcessManager(QObject):
         self._process.finished.connect(self._on_finished)
         self._process.errorOccurred.connect(self._on_error)
 
-        # Start — prefer pyat-py310 conda env for backend execution
         self._state = ProcessState.RUNNING
         self._stdout_buffer = ""
         self.state_changed.emit(self._state)
-
-        # Look for pyat-py310 conda environment Python
-        py310_exe = "python"
-        candidates = [
-            os.path.join(os.environ.get("CONDA_PREFIX", ""),
-                         "envs", "pyat-py310", "python.exe"),
-            r"C:\Users\GUO\AppData\Local\anaconda3\envs\pyat-py310\python.exe",
-        ]
-        for c in candidates:
-            if os.path.isfile(c):
-                py310_exe = c
-                break
 
         self.log_received.emit("INFO",
             f"Running: {py310_exe} -m pyat {config_json_path}")

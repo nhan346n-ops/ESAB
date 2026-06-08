@@ -1,8 +1,0 @@
-= Remove Invalid Data
-
-== Overview
-This script removes invalid data records from NetCDF sensor files based on a status variable.
-
-The script reads a NetCDF files and filters out records where the status variable is invalid. Only valid data points are kept in the output file.
-
-include::example$generated/sensor/process/remove_invalid_data_params.adoc[]

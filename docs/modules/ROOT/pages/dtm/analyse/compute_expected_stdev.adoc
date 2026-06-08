@@ -1,7 +1,0 @@
-= Expected STDEV by Beam Angle
-
-== Overview
-
-Computation of expected STDEV by beam angle on DTM files on one or more DTMs.
-
-include::example$generated/dtm/analyse/compute_expected_stdev_params.adoc[]

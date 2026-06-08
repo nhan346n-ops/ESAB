@@ -38,6 +38,7 @@ from .dialogs.tool2b_s2_dialog import Tool2BS2Dialog
 from .dialogs.bsar_tools_dialog import BsarToolsDialog
 from .dialogs.wc_wizard import WcWizard
 from .dialogs.dtm_export_dialog import DtmExportDialog
+from .dialogs.dtm_xyz_export_dialog import DtmXyzExportDialog
 from .views.wc2d_viewer import Wc2dViewer
 
 
@@ -46,8 +47,15 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
-        self.setWindowTitle("pyat GUI \u2014 \u591a\u675f\u56de\u58f0\u5904\u7406")
+        self.setWindowTitle("pyat GUI — 多波束回声处理")
         self.resize(1400, 900)
+
+        # ── 设置窗口图标 ──
+        from PySide6.QtGui import QIcon
+        import os
+        _app_icon_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "resources", "svg", "app_logo.svg"))
+        if os.path.exists(_app_icon_path):
+            self.setWindowIcon(QIcon(_app_icon_path))
 
         # Core services
         self._task_manager = TaskManager(self)
@@ -112,7 +120,7 @@ class MainWindow(QMainWindow):
         tools_menu = menu_bar.addMenu("\u5de5\u5177(&T)")
 
         # 后向散射处理
-        t1 = QAction("工具 1: 导出参考 DTM...", self)
+        t1 = QAction("导出参考 DTM...", self)
         t1.triggered.connect(lambda: self._dispatch_tool("tool1"))
         tools_menu.addAction(t1)
         tools_menu.addSeparator()
@@ -131,16 +139,16 @@ class MainWindow(QMainWindow):
         # 水柱分析子菜单
         wc_menu = tools_menu.addMenu("水柱分析")
 
-        wc_h = QAction("水平切片 (Horizontal Slicer)...", self)
+        wc_h = QAction("水平切片...", self)
         wc_h.triggered.connect(lambda: self._open_wc_wizard("horizontal"))
         wc_menu.addAction(wc_h)
-        wc_l = QAction("纵向剖面 (Longitudinal Slicer)...", self)
+        wc_l = QAction("纵向剖面...", self)
         wc_l.triggered.connect(lambda: self._open_wc_wizard("longitudinal"))
         wc_menu.addAction(wc_l)
-        wc_p = QAction("极坐标声图 (Polar Echograms)...", self)
+        wc_p = QAction("极坐标声图...", self)
         wc_p.triggered.connect(lambda: self._open_wc_wizard("polar"))
         wc_menu.addAction(wc_p)
-        wc_v = QAction("垂直积分 (Vertical Integration)...", self)
+        wc_v = QAction("垂直积分...", self)
         wc_v.triggered.connect(lambda: self._open_wc_wizard("vertical"))
         wc_menu.addAction(wc_v)
         tools_menu.addSeparator()
@@ -153,16 +161,10 @@ class MainWindow(QMainWindow):
         tools_menu.addAction(refresh_status)
 
         # ── View ──
-        view_menu = menu_bar.addMenu("\u89c6\u56fe(&V)")
-        reset_action = QAction("\u91cd\u7f6e\u5e03\u5c40", self)
+        view_menu = menu_bar.addMenu("视图(&V)")
+        reset_action = QAction("重置布局", self)
         reset_action.triggered.connect(self._reset_layout)
         view_menu.addAction(reset_action)
-        view_menu.addSeparator()
-        self._theme_action = QAction("\u5207\u6362\u4e3b\u9898", self)
-        self._theme_action.setCheckable(True)
-        self._theme_action.setChecked(self._is_dark_theme())
-        self._theme_action.triggered.connect(self._toggle_theme)
-        view_menu.addAction(self._theme_action)
 
         # ── Help ──
         help_menu = menu_bar.addMenu("\u5e2e\u52a9(&H)")
@@ -237,8 +239,8 @@ class MainWindow(QMainWindow):
     def _on_files_selected(self, metadata_list: list) -> None:
         if metadata_list:
             self._statusbar.showMessage(
-                f"\u5df2\u9009\u4e2d {len(metadata_list)} \u4e2a\u6587\u4ef6\u3002"
-                f"\u53f3\u952e\u4f7f\u7528\u5de5\u5177\u6216\u4f7f\u7528\u5de5\u5177\u7bb1\u9762\u677f\u3002"
+                f"已选中 {len(metadata_list)} 个文件。"
+                f"右键使用工具或使用工具箱面板。"
             )
 
     def _on_file_highlight(self, metadata_list: list) -> None:
@@ -289,10 +291,10 @@ class MainWindow(QMainWindow):
             with open(mask_path, "w") as f:
                 json.dump(geojson, f, indent=2)
             self._current_kml_mask = mask_path
-            self._statusbar.showMessage(f"ROI \u8fb9\u754c\u5df2\u4fdd\u5b58: {mask_path}")
-            self._console_view.append_text(f"\u8fb9\u754c ROI \u5df2\u4fdd\u5b58: {mask_path}", "OK")
+            self._statusbar.showMessage(f"ROI 边界已保存: {mask_path}")
+            self._console_view.append_text(f"边界 ROI 已保存: {mask_path}", "OK")
         except Exception as e:
-            self._console_view.append_text(f"\u4fdd\u5b58 ROI \u5931\u8d25: {e}", "ERROR")
+            self._console_view.append_text(f"保存 ROI 失败: {e}", "ERROR")
 
     def _show_nav_tracks(self, metadata_list: List[XsfMetadata]) -> None:
         """Extract navigation coords and add each as a named track on the map."""
@@ -363,18 +365,18 @@ class MainWindow(QMainWindow):
         elif tool_name in ("wc_horizontal", "wc_longitudinal", "wc_polar", "wc_vertical_integration"):
             self._open_wc_tool(tool_name, selected)
         else:
-            QMessageBox.warning(self, "\u672a\u77e5\u5de5\u5177", f"\u672a\u77e5\u5de5\u5177: {tool_name}")
+            QMessageBox.warning(self, "未知工具", f"未知工具: {tool_name}")
 
     def _warn_no_files(self) -> bool:
         selected = self._project_explorer.get_selected_files()
         if not selected:
-            QMessageBox.warning(self, "\u65e0\u6587\u4ef6", "\u8bf7\u5148\u9009\u62e9 XSF \u6587\u4ef6\u3002")
+            QMessageBox.warning(self, "无文件", "请先选择 XSF 文件。")
             return True
         return False
 
     def _execute_tool(self, tool_name: str, config_path: str) -> None:
         if self._process_manager.is_running():
-            QMessageBox.warning(self, "\u5fd9\u788c", "\u53e6\u4e00\u4e2a\u8fdb\u7a0b\u6b63\u5728\u8fd0\u884c\u3002")
+            QMessageBox.warning(self, "繁忙", "另一个进程正在运行。")
             return
 
         task = self._task_manager.create_task(tool_name, config_path)
@@ -537,7 +539,7 @@ class MainWindow(QMainWindow):
             comment=p.get("comment", ""),
             quality_indicator=p["quality_indicator"],
         )
-        task = self._task_manager.create_task("\u5de5\u5177 1: \u58f0\u7eb3\u81f3 DTM", config_path)
+        task = self._task_manager.create_task("工具 1: 声纳至 DTM", config_path)
         self._current_task_id = task.task_id
         self._task_manager.update_status(task.task_id, TaskStatus.QUEUED)
         self._process_manager.run(config_path)
@@ -553,10 +555,10 @@ class MainWindow(QMainWindow):
             result = dlg.exec()
         except Exception as e:
             self._console_view.append_text(
-                f"\u65e0\u6cd5\u6253\u5f00 BSAR \u5bf9\u8bdd\u6846: {e}", "ERROR")
+                f"无法打开 BSAR 对话框: {e}", "ERROR")
             QMessageBox.critical(
-                self, "\u5bf9\u8bdd\u6846\u9519\u8bef",
-                f"\u65e0\u6cd5\u6253\u5f00 BSAR \u5411\u5bfc:\n{e}")
+                self, "对话框错误",
+                f"无法打开 BSAR 向导:\n{e}")
             return
         if result in (QMessageBox.Accepted, 2):
             params = dlg.get_params()
@@ -565,32 +567,32 @@ class MainWindow(QMainWindow):
                 input_files=selected_files, bathy_nc=bathy, **params,
             )
             if result == QMessageBox.Accepted:
-                self._execute_tool("\u5de5\u5177 2A: \u6ed1\u52a8\u89d2\u5ea6\u91cd\u89c4\u8303\u5316", config_path)
+                self._execute_tool("工具 2A: 滑动角度重规范化", config_path)
             else:
                 self._console_view.append_text(f"Config saved: {config_path}", "INFO")
-            self._statusbar.showMessage(f"\u5de5\u5177 2A \u914d\u7f6e\u5df2\u4fdd\u5b58: {config_path}")
+            self._statusbar.showMessage(f"工具 2A 配置已保存: {config_path}")
 
     # ── Tool 2B Step 1 ─────────────────────────────────────────────
 
     def _open_tool2b_s1(self, selected_files: list) -> None:
         if not selected_files:
-            QMessageBox.warning(self, "\u65e0\u6587\u4ef6", "\u8bf7\u5148\u9009\u62e9 XSF \u6587\u4ef6\u3002")
+            QMessageBox.warning(self, "无文件", "请先选择 XSF 文件。")
             return
         try:
             wiz = Tool2BS1Dialog(selected_files, self)
             result = wiz.exec()
         except Exception as e:
             self._console_view.append_text(
-                f"\u65e0\u6cd5\u6253\u5f00 BSAR \u5bf9\u8bdd\u6846: {e}", "ERROR")
+                f"无法打开 BSAR 对话框: {e}", "ERROR")
             QMessageBox.critical(
-                self, "\u5bf9\u8bdd\u6846\u9519\u8bef",
-                f"\u65e0\u6cd5\u6253\u5f00 BSAR \u5411\u5bfc:\n{e}")
+                self, "对话框错误",
+                f"无法打开 BSAR 向导:\n{e}")
             return
         if result == QWizard.Accepted:
             if not wiz.bsar_nc:
-                QMessageBox.warning(self, "\u7f3a\u5c11 BSAR \u6a21\u578b",
-                                    "\u9700\u8981 BSAR \u6a21\u578b\u6587\u4ef6\u3002\n"
-                                    "\u8bf7\u5728\u6b65\u9aa4 1 \u4e2d\u9009\u62e9 .bsar.nc \u6587\u4ef6\u3002")
+                QMessageBox.warning(self, "缺少 BSAR 模型",
+                                    "需要 BSAR 模型文件。\n"
+                                    "请在步骤 1 中选择 .bsar.nc 文件。")
                 return
             params = wiz.get_params()
             config_path = build_tool2b_step2a_json(
@@ -601,33 +603,33 @@ class MainWindow(QMainWindow):
                 overwrite=wiz.getOverwrite(),
                 **params,
             )
-            self._execute_tool("\u9759\u6001\u89d2\u5ea6\u91cd\u89c4\u8303\u5316", config_path)
-            self._statusbar.showMessage(f"\u9759\u6001\u89d2\u5ea6\u91cd\u89c4\u8303\u5316\u914d\u7f6e\u5df2\u4fdd\u5b58: {config_path}")
+            self._execute_tool("静态角度重规范化", config_path)
+            self._statusbar.showMessage(f"静态角度重规范化配置已保存: {config_path}")
 
     # ── Tool 2B Step 2 ─────────────────────────────────────────────
 
     def _open_tool2b_s2(self, selected_files: list) -> None:
         if not selected_files:
-            QMessageBox.warning(self, "\u65e0\u6587\u4ef6", "\u8bf7\u5148\u9009\u62e9 XSF \u6587\u4ef6\u3002")
+            QMessageBox.warning(self, "无文件", "请先选择 XSF 文件。")
             return
         try:
             wiz = Tool2BS2Dialog(selected_files, self)
             result = wiz.exec()
         except Exception as e:
             self._console_view.append_text(
-                f"\u6253\u5f00\u7edf\u8ba1\u89d2\u54cd\u5e94\uff08BSAR\uff09\u5bf9\u8bdd\u6846\u5931\u8d25: {e}", "ERROR"
+                f"打开统计角响应（BSAR）对话框失败: {e}", "ERROR"
             )
             QMessageBox.critical(
-                self, "\u5bf9\u8bdd\u6846\u9519\u8bef",
-                f"\u65e0\u6cd5\u6253\u5f00\u53c2\u6570\u5bf9\u8bdd\u6846:\n{e}\n\n"
-                "\u8bf7\u786e\u4fdd\u5728\u6587\u4ef6\u6811\u4e2d\u5df2\u9009\u62e9 XSF \u6587\u4ef6\u3002"
+                self, "对话框错误",
+                f"无法打开参数对话框:\n{e}\n\n"
+                "请确保在文件树中已选择 XSF 文件。"
             )
             return
         if result == QWizard.Accepted:
             if not wiz.getOutputBsar():
-                QMessageBox.warning(self, "\u7f3a\u5c11\u8f93\u51fa\u8def\u5f84",
-                                    "\u9700\u8981 BSAR \u8f93\u51fa\u6587\u4ef6\u8def\u5f84\u3002\n"
-                                    "\u8bf7\u5728\u6b65\u9aa4 1 \u4e2d\u8bbe\u7f6e .bsar.nc \u6587\u4ef6\u8def\u5f84\u3002")
+                QMessageBox.warning(self, "缺少输出路径",
+                                    "需要 BSAR 输出文件路径。\n"
+                                    "请在步骤 1 中设置 .bsar.nc 文件路径。")
                 return
             params = wiz.get_params()
             config_path = build_tool2b_step2b_json(
@@ -636,8 +638,8 @@ class MainWindow(QMainWindow):
                 output_bsar=wiz.getOutputBsar(),
                 **params,
             )
-            self._execute_tool("\u7edf\u8ba1\u89d2\u54cd\u5e94\uff08BSAR\uff09", config_path)
-            self._statusbar.showMessage(f"\u7edf\u8ba1\u89d2\u54cd\u5e94 (BSAR) \u914d\u7f6e\u5df2\u4fdd\u5b58: {config_path}")
+            self._execute_tool("统计角响应（BSAR）", config_path)
+            self._statusbar.showMessage(f"统计角响应 (BSAR) 配置已保存: {config_path}")
             self._refresh_xsf_status()
 
     # ── BSAR Aux Tools ─────────────────────────────────────────────
@@ -650,8 +652,8 @@ class MainWindow(QMainWindow):
             task = self._task_manager.create_task(f"BSAR {tool}", "")
             self._task_manager.update_status(task.task_id, TaskStatus.COMPLETED)
             self._task_manager.append_log(task.task_id, "INFO",
-                f"BSAR {tool} \u914d\u7f6e: {params}")
-            self._statusbar.showMessage(f"BSAR {tool} \u5df2\u5b8c\u6210")
+                f"BSAR {tool} 配置: {params}")
+            self._statusbar.showMessage(f"BSAR {tool} 已完成")
 
     # ── Status Refresh ─────────────────────────────────────────────
 
@@ -663,8 +665,8 @@ class MainWindow(QMainWindow):
                 self._project_explorer._metadata_cache[fp] = updated
             except Exception:
                 pass
-        self._statusbar.showMessage("XSF \u72b6\u6001\u5df2\u5237\u65b0")
-        self._console_view.append_text("XSF \u5904\u7406\u72b6\u6001\u5df2\u5237\u65b0\u3002", "INFO")
+        self._statusbar.showMessage("XSF 状态已刷新")
+        self._console_view.append_text("XSF 处理状态已刷新。", "INFO")
 
     # ── Import DTM ──────────────────────────────────────────────────
 
@@ -693,10 +695,10 @@ class MainWindow(QMainWindow):
         if loaded:
             self._map_view.show_dtm_layer("backscatter")
             self._project_explorer.dtm_layer_changed.emit("backscatter")
-            self._statusbar.showMessage(f"\u5df2\u5bfc\u5165 {loaded} \u4e2a DTM \u6587\u4ef6\u3002")
+            self._statusbar.showMessage(f"已导入 {loaded} 个 DTM 文件。")
         if errors:
-            QMessageBox.warning(self, "\u5bfc\u5165\u9519\u8bef",
-                                "\u4ee5\u4e0b\u6587\u4ef6\u52a0\u8f7d\u5931\u8d25:\n" + "\n".join(errors))
+            QMessageBox.warning(self, "导入错误",
+                                "以下文件加载失败:\n" + "\n".join(errors))
 
     def _on_product_action(self, action: str, filepath: str) -> None:
         """Handle DTM/Product right-click actions."""
@@ -704,6 +706,8 @@ class MainWindow(QMainWindow):
             self._on_go_to_dtm(filepath)
         elif action == "geotiff_dtm":
             self._on_export_dtm_geotiff(filepath)
+        elif action == "xyz_dtm":
+            self._on_export_dtm_xyz(filepath)
 
     def _on_go_to_dtm(self, filepath: str) -> None:
         """Go to a DTM file's location on the map."""
@@ -734,9 +738,9 @@ class MainWindow(QMainWindow):
                 else:
                     raise KeyError("No lon/lat or x/y variables found")
             self._map_view.fly_to_bounds(lats, lons)
-            self._statusbar.showMessage(f"\u5b9a\u4f4d\u5230 DTM: {os.path.basename(filepath)}")
+            self._statusbar.showMessage(f"定位到 DTM: {os.path.basename(filepath)}")
         except Exception as e:
-            QMessageBox.warning(self, "\u8bfb\u53d6\u9519\u8bef", f"\u65e0\u6cd5\u8bfb\u53d6 DTM \u8303\u56f4:\n{e}")
+            QMessageBox.warning(self, "读取错误", f"无法读取 DTM 范围:\n{e}")
 
     def _on_export_dtm_geotiff(self, filepath: str) -> None:
         """Export DTM layers to GeoTIFF via the backend Dtm2Tiff."""
@@ -746,22 +750,33 @@ class MainWindow(QMainWindow):
             if dlg.exec() != QDialog.Accepted:
                 return
         except Exception as e:
-            QMessageBox.critical(self, "\u5bf9\u8bdd\u6846\u9519\u8bef",
-                                 f"\u65e0\u6cd5\u6253\u5f00\u5bfc\u51fa\u5bf9\u8bdd\u6846:\n{e}")
+            QMessageBox.critical(self, "对话框错误",
+                                 f"无法打开导出对话框:\n{e}")
             return
 
-        self._statusbar.showMessage("\u6b63\u5728\u5bfc\u51fa GeoTIFF...\u8bf7\u7a0d\u5019")
+        self._statusbar.showMessage("正在导出 GeoTIFF...请稍候")
         try:
             import sys as _sys
             _sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
             # GDAL netCDF plugin needs conda bin on PATH to find netcdf.dll etc.
-            _conda_bin = r"C:\Users\GUO\AppData\Local\anaconda3\Library\bin"
+            env_root = os.path.dirname(_sys.executable)
+            if os.path.basename(env_root).lower() == "scripts":
+                env_root = os.path.dirname(env_root)
+            _conda_bin = os.path.join(env_root, "Library", "bin")
+            if not os.path.isdir(_conda_bin):
+                _conda_bin = r"C:\Users\GUO\AppData\Local\anaconda3\Library\bin"
+
             if os.path.isdir(_conda_bin):
+                os.environ.pop("USE_PATH_FOR_GDAL_PYTHON", None)
                 if "GDAL_DRIVER_PATH" not in os.environ:
                     os.environ["GDAL_DRIVER_PATH"] = os.path.join(
                         _conda_bin, "..", "lib", "gdalplugins")
                 if "GDAL_DATA" not in os.environ:
-                    os.environ["GDAL_DATA"] = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\gdal"
+                    _gdal_data = os.path.join(env_root, "Library", "share", "gdal")
+                    if os.path.isdir(_gdal_data):
+                        os.environ["GDAL_DATA"] = _gdal_data
+                    else:
+                        os.environ["GDAL_DATA"] = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\gdal"
                 os.environ["PATH"] = _conda_bin + os.pathsep + os.environ.get("PATH", "")
             from pyat.dtm.export.dtm_to_tiff import Dtm2Tiff
             from pygws.service.progress_monitor import DefaultMonitor
@@ -783,16 +798,62 @@ class MainWindow(QMainWindow):
             exporter()
             result_files = exporter.resulting_files
             for rf in result_files:
-                self._console_view.append_text(f"GeoTIFF \u5df2\u5bfc\u51fa: {rf}", "OK")
+                self._console_view.append_text(f"GeoTIFF 已导出: {rf}", "OK")
             self._statusbar.showMessage(
-                f"\u5df2\u5bfc\u51fa {len(result_files)} \u4e2a GeoTIFF \u6587\u4ef6"
+                f"已导出 {len(result_files)} 个 GeoTIFF 文件"
             )
         except Exception as e:
-            self._console_view.append_text(f"\u5bfc\u51fa\u5931\u8d25: {e}", "ERROR")
-            QMessageBox.warning(self, "\u5bfc\u51fa\u5931\u8d25",
-                                f"GeoTIFF \u5bfc\u51fa\u5931\u8d25:\n{e}")
+            self._console_view.append_text(f"导出失败: {e}", "ERROR")
+            QMessageBox.warning(self, "导出失败",
+                                f"GeoTIFF 导出失败:\n{e}")
 
-    # ── Go to Location ──────────────────────────────────────────────
+    # ── Map Interactions ──────────────────────────────────────────────
+
+
+    def _on_export_dtm_xyz(self, filepath: str) -> None:
+        """Export DTM to XYZ ascii format via backend Dtm2Ascii."""
+        try:
+            from PySide6.QtWidgets import QDialog
+            dlg = DtmXyzExportDialog(filepath, self)
+            if dlg.exec() != QDialog.Accepted:
+                return
+        except Exception as e:
+            QMessageBox.critical(self, "对话框错误",
+                                 f"无法打开导出对话框:\n{e}")
+            return
+
+        self._statusbar.showMessage("正在导出 XYZ...请稍候")
+        try:
+            import sys as _sys
+            _sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+            
+            from pyat.dtm.export.dtm_to_ascii import Dtm2Ascii
+            from pygws.service.progress_monitor import DefaultMonitor
+
+            out_dir = dlg.getOutputDir()
+            name_base = dlg.getFileName()
+            o_path = os.path.join(out_dir, f"{name_base}.xyz")
+
+            exporter = Dtm2Ascii(
+                i_paths=[filepath],
+                o_paths=[o_path],
+                export_missing_values=dlg.getExportMissing(),
+                overwrite=dlg.getOverwrite(),
+                column_separator=dlg.getColumnSeparator(),
+                other_separator=dlg.getOtherSeparator(),
+                decimal_separator=dlg.getDecimalSeparator(),
+                column_order=dlg.getColumnOrder(),
+                monitor=DefaultMonitor,
+            )
+            exporter()
+            
+            # Backend process finished successfully
+            self._console_view.append_text(f"XYZ 已导出: {o_path}", "OK")
+            self._statusbar.showMessage("已导出 XYZ 文件")
+        except Exception as e:
+            self._console_view.append_text(f"导出 XYZ 失败: {e}", "ERROR")
+            QMessageBox.critical(self, "导出错误", f"导出 XYZ 失败:\n{e}")
+            self._statusbar.showMessage("导出 XYZ 失败")
 
     def _on_go_to_location(self, filepath: str) -> None:
         """Extract nav from a single file, draw its track, and fly to it."""
@@ -925,9 +986,23 @@ class MainWindow(QMainWindow):
             self.restoreGeometry(geometry)
         if state:
             self.restoreState(state)
+        
+        # Restore last opened files
+        last_files = settings.value("lastFiles", [])
+        if last_files:
+            if isinstance(last_files, str):
+                last_files = [last_files]
+            valid_files = [f for f in last_files if os.path.exists(f)]
+            if valid_files:
+                self._project_explorer._load_files(valid_files)
 
     def closeEvent(self, event) -> None:
         settings = QSettings("pyat", "gui")
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
+        
+        # Save last opened files
+        files = list(self._project_explorer._metadata_cache.keys())
+        settings.setValue("lastFiles", files)
+        
         super().closeEvent(event)

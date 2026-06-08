@@ -6,6 +6,14 @@ import sonar_netcdf.sonar_groups as sg
 from pygws.service.progress_monitor import ProgressMonitor
 from scipy.spatial.transform import Rotation
 
+from pyat.xsf.bathy.raytracing.beam_intersection import (
+    ncca,
+    ncca_parallel,
+    ncta,
+    ncta_parallel,
+    vcca,
+)
+from pyat.xsf.bathy.raytracing.raytracing import compute_detection_xyz
 from pyat.utils.coordinates_system_utils import (
     rot_scs_to_fcs,
     rot_vcs_to_fcs,
@@ -16,14 +24,6 @@ from pyat.utils.netcdf_utils import get_variable
 from pyat.utils.numpy_utils import linear_interp_data
 from pyat.utils.proj_utils import lon_lat_to_utm_proj4
 from pyat.utils.time_utils import floatsecond_tonano_array
-from pyat.xsf.bathy.raytracing.beam_intersection import (
-    ncca,
-    ncca_parallel,
-    ncta,
-    ncta_parallel,
-    vcca,
-)
-from pyat.xsf.bathy.raytracing.raytracing import compute_detection_xyz
 from pyat.xsf.xsf_driver import BEAM_GROUP_NAME as BM_GRP
 from pyat.xsf.xsf_driver import XsfDriver
 
@@ -71,7 +71,7 @@ def compute_beam_pointing_vector_in_scs(
     receive_vertical_offset = get_platform_vertical_offset_at_times(xsf, receive_time, receive_rot_v2s)
 
     # computes ARF coordinate system
-    rot_arf2s, delta, tx_rot_a2s, rx_rot_a2s = get_arf_to_scs(xsf.dataset, transmit_rot_v2s, receive_rot_v2s)
+    rot_arf2s, delta = get_arf_to_scs(xsf.dataset, transmit_rot_v2s, receive_rot_v2s)
 
     # Compute draft and Tx array offsets from platform origin at transmit time
     draft, tx_scs_location = compute_draft(
@@ -79,7 +79,7 @@ def compute_beam_pointing_vector_in_scs(
     )
 
     # Get Tx and Rx steering angles
-    tx_steer, rx_steer = get_steering_angles(xsf.dataset, tx_rot_a2s, rx_rot_a2s)  # rotARF2S.inv(), delta)
+    tx_steer, rx_steer = get_steering_angles(xsf.dataset)  # rotARF2S.inv(), delta)
 
     global_monitor.worked(1)
     if algo == "vcca":
@@ -251,7 +251,7 @@ def get_arf_to_scs(
     # Initialized associated rotations
     rot_arf2s = Rotation.from_matrix([np.column_stack([x, y, z]) for x, y, z in zip(x_arf, y_arf, z_arf)])
 
-    return rot_arf2s, delta, tx_rot_a2s, rx_rot_a2s
+    return rot_arf2s, delta
 
 
 def compute_initial_focal_range(
@@ -333,7 +333,7 @@ def get_vcs_array_installation_angles(xsf: nc.Dataset) -> Tuple[Rotation, Rotati
 
     # Compute full angles rotations from ACS to VCS
     installation_rot = Rotation.from_euler(
-        "ZYX", np.column_stack([z_installation_angle, y_installation_angle, x_installation_angle]), degrees=True
+        "ZYX", list(zip(z_installation_angle, y_installation_angle, x_installation_angle)), degrees=True
     )
 
     rot_a2v_tx = installation_rot[detection_tx_transducer_index.ravel()]
@@ -530,16 +530,9 @@ def get_tx_rx_times(xsf: nc.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     :return: tuple of (tx_time, rx_time), as unix timestamp, i.e. number of nanoseconds since 1970-01-01T00:00:00Z
     """
     pingtime = xsf[sg.BeamGroup1Grp.PING_TIME(BM_GRP)][:]
+    tx_delay = xsf[sg.BeamGroup1VendorSpecificGrp.TRANSMIT_TIME_DELAY(BM_GRP)][:]  # seconds
     detection_2wtt = xsf[sg.BathymetryGrp.DETECTION_TWO_WAY_TRAVEL_TIME(BM_GRP)][:]  # seconds
-
-    tx_beam_size = xsf[sg.BeamGroup1Grp.get_group_path(BM_GRP)].dimensions[sg.BeamGroup1Grp.TX_BEAM_DIM_NAME].size
-    if tx_beam_size > 1:
-        # if there are multiple tx beams, it means that there might be sector firing delays to take into account
-        detection_tx_beam = xsf[sg.BathymetryGrp.DETECTION_TX_BEAM(BM_GRP)][:]
-        tx_delay = xsf[sg.BeamGroup1VendorSpecificGrp.TRANSMIT_TIME_DELAY(BM_GRP)][:]  # seconds
-    else:
-        detection_tx_beam = np.zeros(detection_2wtt.shape, dtype=int)
-        tx_delay = np.zeros_like(detection_2wtt)
+    detection_tx_beam = xsf[sg.BathymetryGrp.DETECTION_TX_BEAM(BM_GRP)][:]
 
     # create a ping index
     ping_number, detection_number = detection_2wtt.shape
@@ -561,79 +554,63 @@ def get_tx_rx_times(xsf: nc.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     return tx_time, rx_time
 
 
-def get_steering_angles(xsf: nc.Dataset, tx_rot_a2s: Rotation, rx_rot_a2s: Rotation) -> Tuple[np.ndarray, np.ndarray]:
+def get_steering_angles(xsf: nc.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     """
     Returns rx and tx steering angles [radians] relative to ACS for each detection.
 
     :param xsf: nc.Dataset object
-    :param tx_rot_a2s: Rotation object from ACS to SCS for transmit
-    :param rx_rot_a2s: Rotation object from ACS to SCS for receive
     :return: tuple of (tx_steer, rx_steer) in radians
     """
-    # Get Rx beam angle relative to the Rx transducer array if beam are not stabilized
+    # Get beam angle relative to the RX transducer array if beam are not stabilized
     angle_ref_rx = xsf[sg.BathymetryGrp.DETECTION_BEAM_POINTING_ANGLE(BM_GRP)][:].astype(np.float64)
-    # angle_ref_rx = xsf[sg.BeamGroup1Grp.RX_BEAM_ROTATION_PHI(BM_GRP)][:].astype(np.float64)
+    # If stabilized (ME70 for example) angles are relative to the horizontal plane
+
     ping_number, detection_number = angle_ref_rx.shape
-
-    rx_steer = angle_ref_rx.ravel()
-    # If stabilized (ME70 for example) angles are relative to the horizontal plane and need to be transformed to be relative to the array
-    beam_stab_path = sg.BathymetryGrp.DETECTION_BEAM_STABILISATION(BM_GRP)
-    beam_stab_var = get_variable(i_dataset=xsf, variable_path=beam_stab_path)
-    if beam_stab_var is not None:
-        beam_stab_mask = beam_stab_var[:] == 1
-        # expand to the shape of angle_ref_rx
-        beam_stab_mask = np.broadcast_to(beam_stab_mask[:, None], (ping_number, detection_number)).ravel()
-        if np.any(beam_stab_mask):
-            beam_scs = np.column_stack(
-                [
-                    np.zeros_like(rx_steer[beam_stab_mask]),
-                    np.sin(np.deg2rad(rx_steer[beam_stab_mask])),
-                    np.cos(np.deg2rad(rx_steer[beam_stab_mask])),
-                ]
-            )
-            beam_acs = rx_rot_a2s[beam_stab_mask].inv().apply(beam_scs)
-            rx_beam_steer = np.degrees(np.arctan2(beam_acs[:, 1], beam_acs[:, 2]))
-            rx_steer = rx_beam_steer
-
-    # Tx steering angle
     detection_ping_index = np.arange(ping_number)[:, None] * np.ones((1, detection_number), dtype=int)
 
-    tx_beam_size = xsf[sg.BeamGroup1Grp.get_group_path(BM_GRP)].dimensions[sg.BeamGroup1Grp.TX_BEAM_DIM_NAME].size
-    if tx_beam_size > 1:
-        # if there are multiple tx beams, it means that there might be sector firing delays to take into account
-        detection_tx_beam = xsf[sg.BathymetryGrp.DETECTION_TX_BEAM(BM_GRP)][:]
-    else:
-        detection_tx_beam = np.zeros(angle_ref_rx.shape, dtype=int)
-
+    detection_tx_beam = xsf[sg.BathymetryGrp.DETECTION_TX_BEAM(BM_GRP)][:]
+    # remove mask for invalid data
     detection_tx_beam = np.array(detection_tx_beam)
     # modify invalid values to point to first tx beam, does not matter since all values will be latter flagged as invalid
     detection_tx_beam[detection_tx_beam < 0] = 0
 
-    # Get Tx beam angle relative to the Tx transducer array if beam are not stabilized
-    if (
-        sg.BeamGroup1VendorSpecificGrp.RAW_TX_BEAM_TILT_ANGLE_VNAME
-        in xsf[sg.BeamGroup1VendorSpecificGrp.get_group_path(BM_GRP)].variables
-    ):
-        angle_ref_tx = xsf[sg.BeamGroup1VendorSpecificGrp.RAW_TX_BEAM_TILT_ANGLE(BM_GRP)][:]
-        angle_ref_tx = angle_ref_tx[detection_ping_index, detection_tx_beam].astype(np.float64)
-        tx_steer = angle_ref_tx.ravel()
-    else:
-        # use tx_beam_rotation_theta that is relative to surface if beam_stabilisation is active, so we need to transform it later
-        angle_ref_tx = xsf[sg.BeamGroup1Grp.TX_BEAM_ROTATION_THETA(BM_GRP)][:]
-        angle_ref_tx = angle_ref_tx[detection_ping_index, detection_tx_beam].astype(np.float64)
-        tx_steer = angle_ref_tx.ravel()
+    angle_ref_tx = xsf[sg.BeamGroup1VendorSpecificGrp.RAW_TX_BEAM_TILT_ANGLE(BM_GRP)][:]
+    angle_ref_tx = angle_ref_tx[detection_ping_index, detection_tx_beam].astype(np.float64)
 
-        beam_stab_path = sg.BeamGroup1Grp.BEAM_STABILISATION(BM_GRP)
-        beam_stab_var = get_variable(i_dataset=xsf, variable_path=beam_stab_path)
-        if beam_stab_var is not None:
-            beam_stab_mask = beam_stab_var[:] == 1
-            # expand to the shape of angle_ref_rx
-            beam_stab_mask = np.broadcast_to(beam_stab_mask[:, None], (ping_number, detection_number)).ravel()
-            if np.any(beam_stab_mask):
-                # beams are stabilized, they are relative to SCS (an not platform as it mentionned in the helper)
-                # need to rotate angles in SCS -> ACS uising tx_rot_a2s
-                tx_steer_scs = Rotation.from_euler("Y", tx_steer[beam_stab_mask], degrees=True)
-                tx_steer_acs = tx_rot_a2s[beam_stab_mask].inv() * tx_steer_scs
-                tx_steer = tx_steer_acs.as_euler("ZYX", degrees=True)[:, 1]
+    rx_steer = angle_ref_rx.ravel()
+    tx_steer = angle_ref_tx.ravel()
+
+    # We need to transform them to be relative to the array
+    beam_stab_path = sg.BathymetryGrp.DETECTION_BEAM_STABILISATION(BM_GRP)
+    beam_stab_var = get_variable(i_dataset=xsf, variable_path=beam_stab_path)
+    if beam_stab_var is not None:
+        beam_stab_mask = beam_stab_var[:] == 1
+        if np.any(beam_stab_mask):
+            raise NotImplementedError(
+                "This echosounder has stabilized beams and beam stabilization is not managed yet."
+            )
+            # TODO If stabilized (ME70 for example) angles are relative to the surface plane for both transmit en receive times : pitch and roll compensation
+            ## Below is the best attempt so far, but it does not seems to work well with real data.
+            # angle_ref_tx[beam_stab_mask] = angle_ref_tx[beam_stab_mask] + rotS2ARF.as_euler("XYZ", degrees=True)[
+            #     :, 1
+            # ].reshape(angle_ref_rx.shape)
+
+            # # angle_ref_rx[beam_stab_mask] = angle_ref_rx[beam_stab_mask] + rotS2ARF.as_euler("XYZ", degrees=True)[
+            # #     :, 0
+            # # ].reshape(angle_ref_rx.shape)
+
+            # # angle_in_new_frame(
+            # #     rotS2ARF.as_euler("XYZ", degrees=True)[:, 0],
+            # #     Rotation.from_euler("Z", delta, degrees=False),
+            # #     axis="X",
+            # #     degrees=True,
+            # # )
+            # # try to take into account on otrhogonality betwwen Tx and Rx in ARF
+            # angle_ref_rx[beam_stab_mask] = angle_ref_rx[beam_stab_mask] + angle_in_new_frame(
+            #     rotS2ARF.as_euler("XYZ", degrees=True)[:, 0],
+            #     Rotation.from_euler("Z", delta, degrees=False),
+            #     axis="X",
+            #     degrees=True,
+            # ).reshape(angle_ref_rx.shape)
 
     return np.deg2rad(tx_steer), np.deg2rad(rx_steer)

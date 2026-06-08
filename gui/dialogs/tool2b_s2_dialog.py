@@ -175,8 +175,6 @@ class _SummaryPage(QWizardPage):
         layout.addWidget(QLabel("\u914d\u7f6e\u603b\u7ed3:"))
         self._text = QTextEdit()
         self._text.setReadOnly(True)
-        self._text.setStyleSheet(
-            "QTextEdit{background:#1e1e1e;color:#d4d4d4;font-family:Consolas}")
         layout.addWidget(self._text)
 
     def setSummary(self, text: str) -> None:

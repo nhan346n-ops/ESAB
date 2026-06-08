@@ -101,6 +101,12 @@ class SlidingModel:
         incidence_curve = mean_bs.incidence_model
         transmission_curve = mean_bs.transmission_model
 
+        # Sort along ping_time coordinate to make it monotonically increasing (required for interpolate_na)
+        if BackscatterCurve.PING_TIME in incidence_curve.ds.dims:
+            incidence_curve.ds = incidence_curve.ds.sortby(BackscatterCurve.PING_TIME)
+        if BackscatterCurve.PING_TIME in transmission_curve.ds.dims:
+            transmission_curve.ds = transmission_curve.ds.sortby(BackscatterCurve.PING_TIME)
+
         # estimate reference level by ping
         self.ref_level = (
             incidence_curve.ds[BackscatterCurve.MEAN_BS]

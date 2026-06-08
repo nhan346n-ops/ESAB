@@ -36,7 +36,7 @@ class _InputOutputPage(QWizardPage):
         layout = QVBoxLayout(self)
 
         # Input files
-        layout.addWidget(QLabel(f"XSF Files to process: {len(selected_files)}"))
+        layout.addWidget(QLabel(f"待处理 XSF 文件: {len(selected_files)}"))
         fl = QListWidget()
         for f in selected_files[:8]:
             fl.addItem(f)
@@ -45,7 +45,7 @@ class _InputOutputPage(QWizardPage):
 
         # BSAR model (required)
         bsar_row = QHBoxLayout()
-        bsar_row.addWidget(QLabel("BSAR Model (.bsar.nc):"))
+        bsar_row.addWidget(QLabel("BSAR 模型 (.bsar.nc):"))
         self._bsar_edit = QLineEdit()
         self._bsar_edit.setPlaceholderText("Required \u2014 pre-computed BSAR model")
         bsar_row.addWidget(self._bsar_edit)
@@ -57,7 +57,7 @@ class _InputOutputPage(QWizardPage):
 
         # Reference DTM (optional)
         dtm_row = QHBoxLayout()
-        dtm_row.addWidget(QLabel("Reference DTM (_bathy.nc):"))
+        dtm_row.addWidget(QLabel("参考 DTM (_bathy.nc):"))
         self._dtm_edit = QLineEdit()
         self._dtm_edit.setPlaceholderText("Optional \u2014 for incidence-angle correction")
         dtm_row.addWidget(self._dtm_edit)
@@ -146,8 +146,8 @@ class _ParametersPage(QWizardPage):
 
         # Separator
         layout.addRow(QLabel(""))
-        layout.addRow(QLabel("The following options are read from the BSAR model "
-                             "and shown here for reference:"))
+        layout.addRow(QLabel("以下选项从 BSAR 模型中读取 "
+                             "如果不可用或需要覆盖，请勾选复选框并手动设置:"))
 
         self._sounder = QComboBox()
         self._sounder.addItems(SOUNDER_TYPES)
@@ -257,11 +257,9 @@ class _SummaryPage(QWizardPage):
         self.setSubTitle("Review settings and run.")
 
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("Configuration summary:"))
+        layout.addWidget(QLabel("配置总结:"))
         self._text = QTextEdit()
         self._text.setReadOnly(True)
-        self._text.setStyleSheet(
-            "QTextEdit{background:#1e1e1e;color:#d4d4d4;font-family:Consolas}")
         layout.addWidget(self._text)
 
     def setSummary(self, text: str) -> None:

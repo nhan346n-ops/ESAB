@@ -1,7 +1,0 @@
-= Geometric Translation
-
-== Overview
-
-This process applies a translation on input DTM file(s).
-
-include::example$generated/dtm/_experimental/geometric_translation_params.adoc[]

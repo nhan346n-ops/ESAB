@@ -1,7 +1,0 @@
-= GDAL raster (like TIFF) -> CSV
-
-== Overview
-
-This application takes GDAL raster file(s) as input and will export it (or them) as CSV file(s).
-
-include::example$generated/tiff/tiff_to_csv_params.adoc[]

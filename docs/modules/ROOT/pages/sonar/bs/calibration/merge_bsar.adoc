@@ -1,9 +1,0 @@
-= Merge BSAR files
-
-== Overview
-
-Merge multiple BSAR files into a single BSAR file.
-When a mode is present in multiple files, the values are averaged taking into account the count value.
-The smooting by spline is applied to the merged BSAR file for the mean bs value by incidence angle and the residual value by transmission angle.
-
-include::example$generated/sonar/bs/calibration/merge_bsar_params.adoc[]

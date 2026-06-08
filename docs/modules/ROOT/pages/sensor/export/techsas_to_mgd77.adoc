@@ -1,7 +1,0 @@
-= TECHSAS (gravi/mag/depth) -> MGD77
-
-== Overview
-
-This application converts TECHSAS files to MGD77.
-
-include::example$generated/sensor/export/techsas_to_mgd77_params.adoc[]

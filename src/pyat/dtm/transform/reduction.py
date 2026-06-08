@@ -97,7 +97,7 @@ class ReductionProcess:
         monitor.set_work_remaining(n)
 
         # If cell_value exist process it first, else create cell_value.
-        i_vc = np.ones(i_driver[DtmConstants.ELEVATION_NAME].shape, dtype=np.int32) * np.invert(
+        i_vc = np.ones(i_driver[DtmConstants.ELEVATION_NAME].shape, dtype=int) * np.invert(
             i_driver[DtmConstants.ELEVATION_NAME][:].mask
         )
         name = DtmConstants.VALUE_COUNT

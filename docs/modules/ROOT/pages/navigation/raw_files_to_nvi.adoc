@@ -1,9 +1,0 @@
-= NVI netcdf export
-
-== Overview
-
-This application takes binary files produced by Globe to create a NVI file in V2 format.
-
-include::example$generated/navigation/raw_files_to_nvi_params.adoc[]
-
-

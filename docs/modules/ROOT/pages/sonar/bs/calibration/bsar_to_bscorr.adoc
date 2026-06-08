@@ -1,9 +1,0 @@
-= Update bscorr with BSAR
-
-== Overview
-
-Use bsar backscatter mean residual values by transmission angle to update a .bscorr.txt file
-
-IMPORTANT: It is not necassary to have all the ping modes in the bsar file, only the ones to update. But be careful to update all the swath of a given mode at once (eg. both swath of a dual swath mode)
-
-include::example$generated/sonar/bs/calibration/bsar_to_bscorr_params.adoc[]

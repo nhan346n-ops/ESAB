@@ -575,7 +575,6 @@ class PageSummary(QWizardPage):
         layout = QVBoxLayout(self)
         self._summary = QTextEdit()
         self._summary.setReadOnly(True)
-        self._summary.setStyleSheet("QTextEdit { background: #1e1e1e; color: #d4d4d4; font-family: Consolas; }")
         layout.addWidget(QLabel("\u914d\u7f6e\u603b\u7ed3:"))
         layout.addWidget(self._summary)
 

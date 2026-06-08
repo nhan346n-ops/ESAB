@@ -562,8 +562,7 @@ class PageSummary(QWizardPage):
         super().__init__(parent)
         self.setTitle("步骤 4: 汇总")
         self.setSubTitle("请确认以下配置，无误后点击「运行」。")
-        self._text = QTextEdit(); self._text.setReadOnly(True); self._text.setMinimumHeight(300)
-        self._text.setStyleSheet("QTextEdit{background:#1e1e1e;color:#d4d4d4;font-family:Consolas}")
+        self._text = QTextEdit(); self._text.setReadOnly(True)
         layout = QVBoxLayout(self); layout.addWidget(QLabel("配置摘要:")); layout.addWidget(self._text)
 
     def set_summary(self, text: str): self._text.setText(text)

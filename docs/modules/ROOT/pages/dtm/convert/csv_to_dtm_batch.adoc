@@ -1,7 +1,0 @@
-= Point Cloud CSV -> DTM (batch)
-
-== Overview
-
-This application takes point cloud CSV file(s) as input and will export it (or them) as DTM file(s) (.dtm.nc). Geoboxes and spatial resolutions are evaluated automatically.
-
-include::example$generated/dtm/convert/batch_csv_to_dtm_params.adoc[]

@@ -1,7 +1,0 @@
-= Apply Navigation
-
-== Overview
-
-This application takes TECHSAS data files as input and will apply a navigation file to geolocalize data
-
-include::example$generated/sensor/process/techsas_apply_navigation_params.adoc[]

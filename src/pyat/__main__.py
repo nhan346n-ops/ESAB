@@ -17,7 +17,10 @@ if __name__ == "__main__":
         __launch__(sys.argv[1])
     else:
         # Display pyat version and usage message if no .json parameter file is provided
-        pyat_version = version("pyat")
+        try:
+            pyat_version = version("pyat")
+        except Exception:
+            pyat_version = "0.1.40"
         print(f"pyat version: {pyat_version}")
         print("A parameters file in .json format may be passed as an argument.")
         print("Usage: python -m pyat <parameters_file.json>")

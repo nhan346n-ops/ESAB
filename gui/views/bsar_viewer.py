@@ -56,7 +56,7 @@ class BsarViewer(QWidget):
 
         # PyQtGraph plot
         self._plot = pg.PlotWidget()
-        self._plot.setBackground("#252526")
+        self._plot.setBackground("#FFFFFF")
         self._plot.setLabel("left", "\u540e\u5411\u6563\u5c04\u5f3a\u5ea6", units="dB")
         self._plot.setLabel("bottom", "\u5165\u5c04\u89d2", units="\u00b0  (\u5de6\u8237/\u53f3\u8237)")
         self._plot.addLegend(offset=(-10, 10))
@@ -299,7 +299,7 @@ class BsarViewer(QWidget):
             self._info_label.setText("\u672a\u627e\u5230\u6709\u6548\u66f2\u7ebf\u6570\u636e")
 
     def _on_spline_changed(self, value: int) -> None:
-        self._spline_label.setText(f"{value} ({'off' if value == 0 else 'active'})")
+        self._spline_label.setText(f"{value} ({'关闭' if value == 0 else '开启'})")
 
     def _replot_with_filter(self) -> None:
         """Re-plot using the currently selected combo filter."""

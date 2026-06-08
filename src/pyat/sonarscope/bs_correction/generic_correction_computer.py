@@ -66,9 +66,8 @@ class GenericCorrectionComputer:
                 along_incidence_deg = along_incidence_deg + along_slope
                 across_incidence_deg = across_incidence_deg + across_slope
 
-            # clip values to [-90, 90] degrees to avoid numerical issues in later computations
-            self._across_incidence_angles = np.clip(across_incidence_deg, -90.0, 90.0)
-            self._along_incidence_angles = np.clip(along_incidence_deg, -90.0, 90.0)
+            self._across_incidence_angles = across_incidence_deg
+            self._along_incidence_angles = along_incidence_deg
 
         return self._across_incidence_angles, self._along_incidence_angles
 

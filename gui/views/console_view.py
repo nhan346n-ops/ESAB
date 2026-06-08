@@ -49,13 +49,7 @@ class ConsoleView(QWidget):
         # Log output
         self._log_view = QTextEdit()
         self._log_view.setReadOnly(True)
-        self._log_view.setFont(QFont("Consolas", 9))
         self._log_view.setObjectName("logView")
-        self._log_view.setStyleSheet("""
-            QTextEdit {
-                border: 1px solid #3c3c3c;
-            }
-        """)
         splitter.addWidget(self._log_view)
 
         # Job list
@@ -63,10 +57,10 @@ class ConsoleView(QWidget):
         job_layout = QVBoxLayout(job_widget)
         job_layout.setContentsMargins(4, 4, 4, 4)
 
-        job_layout.addWidget(QLabel("Jobs"))
+        job_layout.addWidget(QLabel("任务列表"))
 
         self._job_tree = QTreeWidget()
-        self._job_tree.setHeaderLabels(["Task", "Status", "Progress"])
+        self._job_tree.setHeaderLabels(["任务", "状态", "进度"])
         self._job_tree.setColumnWidth(0, 150)
         self._job_tree.setColumnWidth(1, 100)
         self._job_tree.setRootIsDecorated(False)
@@ -89,7 +83,7 @@ class ConsoleView(QWidget):
         item.setData(0, Qt.UserRole, task.task_id)
         item.setText(0, task.tool_name)
         item.setText(1, task.status.value)
-        self._add_log("INFO", f"Task [{task.task_id}] {task.tool_name} — QUEUED")
+        self._add_log("INFO", f"任务 [{task.task_id}] {task.tool_name} — 已排队")
 
     def _on_task_status_changed(self, task: Task) -> None:
         for i in range(self._job_tree.topLevelItemCount()):
@@ -97,13 +91,13 @@ class ConsoleView(QWidget):
             if item.data(0, Qt.UserRole) == task.task_id:
                 item.setText(1, task.status.value)
                 if task.status == TaskStatus.COMPLETED:
-                    item.setForeground(1, QColor("#4ec94e"))
-                    self._add_log("OK", f"Task [{task.task_id}] COMPLETED")
+                    item.setForeground(1, QColor("#1A6FBF"))
+                    self._add_log("OK", f"任务 [{task.task_id}] 已完成")
                 elif task.status == TaskStatus.FAILED:
-                    item.setForeground(1, QColor("#f44747"))
-                    self._add_log("ERROR", f"Task [{task.task_id}] FAILED: {task.error_message}")
+                    item.setForeground(1, QColor("#d32f2f"))
+                    self._add_log("ERROR", f"任务 [{task.task_id}] 失败: {task.error_message}")
                 elif task.status == TaskStatus.RUNNING:
-                    item.setForeground(1, QColor("#569cd6"))
+                    item.setForeground(1, QColor("#1A6FBF"))
                 break
 
     def _on_task_progress(self, task_id: str, percent: int, message: str) -> None:
@@ -114,13 +108,13 @@ class ConsoleView(QWidget):
 
     def _add_log(self, level: str, message: str) -> None:
         color_map = {
-            "ERROR": "#f44747",
-            "WARNING": "#cca700",
-            "OK": "#4ec94e",
-            "INFO": "#d4d4d4",
+            "ERROR": "#d32f2f",
+            "WARNING": "#f57c00",
+            "OK": "#388e3c",
+            "INFO": "#1C2B3A",
             "DEBUG": "#808080",
         }
-        color = color_map.get(level, "#d4d4d4")
+        color = color_map.get(level, "#1C2B3A")
         formatted = f'<span style="color:{color}">[{level}] {message}</span>'
         self._log_view.append(formatted)
         # Auto-scroll to bottom

@@ -52,6 +52,7 @@ class Wc2dViewer(QWidget):
 
         # 右侧：PyQtGraph 热力图
         self._plot = pg.PlotWidget()
+        self._plot.setBackground("#FFFFFF")
         # Aspect ratio will be locked dynamically for polar echograms
         self._plot.setLabel('left', '水深', units='m')
         self._plot.setLabel('bottom', '波束索引')

@@ -1,9 +1,0 @@
-= Upgrade NVI (.nvi -> .nvi.nc)
-
-== Overview
-
-This application takes NVI file(s) as an input and will migrate it (or them) into a new netcdf file format.
-
-include::example$generated/navigation/upgrade_nvi_params.adoc[]
-
-

@@ -1,9 +1,0 @@
-= XYZ -> DTM4 (NetCDF4) with CDI
-
-== Overview
-
-This application takes XYZ file(s) as input and will export it (or them) as DTM file(s) in
-the new netcdf format.
-Coordinates are assumed to be in degrees (longitudes and latitudes)
-
-Set a given CDI to all valid cell in a DTM file.

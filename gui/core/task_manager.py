@@ -9,11 +9,11 @@ from ..utils.config import LOGS_DIR, get_timestamp, ensure_dirs
 
 
 class TaskStatus(Enum):
-    QUEUED = "QUEUED"
-    RUNNING = "RUNNING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    CANCELLED = "CANCELLED"
+    QUEUED = "已排队"
+    RUNNING = "运行中"
+    COMPLETED = "已完成"
+    FAILED = "失败"
+    CANCELLED = "已取消"
 
 
 @dataclass

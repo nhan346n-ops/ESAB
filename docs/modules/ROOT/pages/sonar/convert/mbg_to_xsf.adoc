@@ -1,9 +1,0 @@
-= MBG -> XSF (with Sounder Files)
-
-== Overview
-
-This application takes some sounder files (.all or .s7k) as input and will convert them to XSF file(s)
-
-These XSF files are upgraded with MBG data.
-
-include::example$generated/sonar/convert/mbg_to_xsf_params.adoc[]

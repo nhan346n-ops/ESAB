@@ -32,8 +32,7 @@ def xsf_to_bscorr_process(
         else:
             # write bscorr str to txt file with standard io
             default_config.logger.info(f"File {i_path} contains bscorr data")
-            # use newline='' to avoid adding extra newlines on windows
-            with open(o_path, "w", encoding="utf-8", newline="") as f:
+            with open(o_path, "w", encoding="utf-8") as f:
                 f.write(bs_corr)
             default_config.logger.info(f"Exported bscorr data to {o_path}")
 

@@ -1,7 +1,0 @@
-= Merge Sonar Netcdf files
-
-== Overview
-
-This application takes some Sonar Netcdf files as input and merge them into one (or some) Sonar Netcdf file.
-
-include::example$generated/sonar/merge_nc_params.adoc[]

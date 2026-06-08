@@ -1,6 +1,0 @@
-== Tide / draught correction
-
-=== Overview
-Processing consists of integrating a tide file (in tide netcdf format) into the given XSF files.
-
-include::example$generated/sonar/tide/depth_correction_params.adoc[]
