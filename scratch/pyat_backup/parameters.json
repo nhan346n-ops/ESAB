@@ -1,0 +1,15 @@
+{
+    "i_paths": [
+        "input.nc",
+        "input_2.nc"
+    ],
+    "o_paths": [
+        "output.nc",
+        "output_2.nc"
+    ],
+    "mask_size": 3,
+    "kml": [
+        "input_1.kml",
+        "input_2.kml"
+    ]
+}

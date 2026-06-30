@@ -12,27 +12,13 @@ from pyat.utils.string_utils import upper_camel_case
 
 
 @dataclass_json
-@dataclass(frozen=False, init=False, unsafe_hash=True)
+@dataclass(frozen=True)
 class KeyModeResonGeneric(ResonKey):
     frequency_install: float | None
     frequency_mode: float | None
     pulse_form: int | None
     swath_count: int | None
     swath_index: int | None
-
-    def __init__(
-        self,
-        frequency_install: float | None = None,
-        frequency_mode: float | None = None,
-        pulse_form: int | None = None,
-        swath_count: int | None = None,
-        swath_index: int | None = None,
-    ):
-        self.frequency_install = float(frequency_install) if frequency_install is not None else None
-        self.frequency_mode = float(frequency_mode) if frequency_mode is not None else None
-        self.pulse_form = int(pulse_form) if pulse_form is not None else None
-        self.swath_count = int(swath_count) if swath_count is not None else None
-        self.swath_index = int(swath_index) if swath_index is not None else None
 
     def short_name(self) -> str:
         short_name = "Reson"
@@ -50,11 +36,7 @@ class KeyModeResonGeneric(ResonKey):
 
     def is_valid(self):
         """indicate if the mode is a valid mode, ie has all values set"""
-        valid = True
-        for value in dataclasses.asdict(self).values():
-            if value is None:
-                valid = False
-        return valid
+        return all(value is not None for value in dataclasses.asdict(self).values())
 
     # pylint: disable=no-member
     @classmethod
@@ -68,6 +50,9 @@ class KeyModeResonGeneric(ResonKey):
 
     def get_tx_beam_count(self):
         return 1
+
+    def get_center_frequency(self) -> tuple | None:
+        return (self.frequency_mode,) if self.frequency_mode is not None else None
 
     def __str__(self):
         return self.short_name()

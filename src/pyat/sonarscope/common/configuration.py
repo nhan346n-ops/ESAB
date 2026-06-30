@@ -29,13 +29,19 @@ class IntegrationMethod(Enum):
     MEDIAN = 2
 
 
+class InterpolationMethod(Enum):
+    NEAREST = 1
+    LINEAR = 2
+
+
 # set default behaviour
 class Parameters:
     def __init__(self):
         self.db_to_linear = None
         self.linear_to_db = None
         self.integration_method = IntegrationMethod.MEAN
-        self.set_linear_scale(working_scale=LinearScale.AMPLITUDE)
+        self.set_linear_scale(working_scale=LinearScale.ENERGY)
+        self.frequency_interpolation_method = InterpolationMethod.LINEAR
         self.logger = pyat_logger.logging.getLogger(__name__)
         self.monitor = ProgressMonitor()
         self.incidence_angles = IncidenceAngleBins()
@@ -44,6 +50,7 @@ class Parameters:
         self.use_snippets = False
         self.use_svp = True
         self.use_insonified_area = True
+        self.use_reference_by_sector = True
         self.remove_compensation = True
         self.remove_calibration = True
         self.sounder_type = None
@@ -75,6 +82,14 @@ class Parameters:
     def set_integration_method(self, integration_method: IntegrationMethod):
         """Set if insonified area should be recomputed"""
         self.integration_method = integration_method
+
+    def set_frequency_interpolation_method(self, interpolation_method: InterpolationMethod):
+        """Set the method to use for interpolating frequencies from reference incidence curves"""
+        self.frequency_interpolation_method = interpolation_method
+
+    def set_use_reference_by_sector(self, use_reference_by_sector: bool):
+        """Set if reference incidence curves should be used by sector or for the whole acquisition mode"""
+        self.use_reference_by_sector = use_reference_by_sector
 
     def set_use_insonified_area(self, use_insonified_area: bool):
         """Set if insonified area should be recomputed"""

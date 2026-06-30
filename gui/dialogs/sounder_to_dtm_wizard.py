@@ -486,7 +486,7 @@ class PageAdvancedGridding(QWizardPage):
 
     def getParams(self) -> dict:
         return {
-            "valid_sounds_only": self._valid_sounds.isChecked(),
+            "valid_soundings_only": self._valid_sounds.isChecked(),
             "spatial_antialiasing": self._antialiasing.isChecked(),
             "gap_filling": self._gap_fill.isChecked(),
             "mask_size": self._mask_size.value() if self._gap_fill.isChecked() else None,
@@ -637,7 +637,7 @@ class SounderToDtmWizard(QWizard):
             lines.append(f"  \u8fb9\u754c: \u897f={c['west']:.4f} \u5357={c['south']:.4f} \u4e1c={c['east']:.4f} \u5317={c['north']:.4f}")
         lines.append("")
         lines.append("=== \u7f51\u683c\u5316 ===")
-        lines.append(f"  \u4ec5\u6709\u6548\u56de\u58f0: {p['valid_sounds_only']}")
+        lines.append(f"  \u4ec5\u6709\u6548\u56de\u58f0: {p['valid_soundings_only']}")
         lines.append(f"  \u53cd\u6df7\u53e0: {p['spatial_antialiasing']}")
         lines.append(f"  \u586b\u8865\u7f3a\u5931: {p['gap_filling']} (\u6df9\u6ca1\u533a: {p['mask_size']})")
         lines.append(f"  \u8d28\u91cf\u6307\u6807: {p['quality_indicator']}")

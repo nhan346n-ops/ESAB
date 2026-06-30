@@ -26,12 +26,17 @@ def interp1d_nan(values: np.ndarray):
     return f(indexes)
 
 
-def linear_interp_data(values, values_times, times):
+def linear_interp_data(values, values_times, times, extrapolate=False):
     """
     Returns linearly interpolated data values whether values are masked or not
-    No extrapolation : defaults to NaN outside data range.
+    No extrapolation by default : defaults to NaN outside data range.
     """
-    data_time_interpolator = scipy.interpolate.interp1d(values_times, values, kind="linear", bounds_error=False)
+    if extrapolate:
+        data_time_interpolator = scipy.interpolate.interp1d(
+            values_times, values, kind="linear", bounds_error=False, fill_value="extrapolate"
+        )
+    else:
+        data_time_interpolator = scipy.interpolate.interp1d(values_times, values, kind="linear", bounds_error=False)
     # cannot apply function to masked array, so fill masked values with nan
     if isinstance(times, np.ma.MaskedArray):
         if np.issubdtype(times.dtype, np.floating):
@@ -145,12 +150,129 @@ def aggregate(
 
 
 @numba.njit(cache=True, fastmath=False)
+def compute_weighted_statistics(
+    in_array: np.ndarray,
+    x_array: np.ndarray,
+    y_array: np.ndarray,
+    in_weights: np.ndarray,
+    out_x_array: Optional[np.ndarray] = None,
+    out_y_array: Optional[np.ndarray] = None,
+    out_last_array: Optional[np.ndarray] = None,
+    out_min_array: Optional[np.ndarray] = None,
+    out_mean_array: Optional[np.ndarray] = None,
+    out_max_array: Optional[np.ndarray] = None,
+    out_weighted_count_array: Optional[np.ndarray] = None,
+    out_weighted_sum_array: Optional[np.ndarray] = None,
+    out_filtered_array: Optional[np.ndarray] = None,
+) -> None:
+    """
+    Project the values contained in in_array to the out_*_array using weights.
+    Indexes (column and row) used to determine the cell in out_*_array are found in x_array and y_array.
+
+    :param in_array : float values to aggregate.
+    :param x_array : column index in in_array, containing the column index of the destination cell
+    :param y_array : row index in in_array, containing the row index of the destination cell
+    :param in_weights : weight values to apply to in_array values.
+    :param out_x_array : the receiving array containing all x mean values per cell
+    :param out_y_array : the receiving array containing all y mean values per cell
+    :param out_last_array : the receiving array containing all last projected values per cell
+    :param out_min_array : the receiving array containing all min values per cell
+    :param out_mean_array : the receiving array containing all mean values per cell
+    :param out_max_array : the receiving array containing all max values per cell
+    :param out_weighted_count_array : the receiving array containing the sum of weights per cell
+    :param out_filtered_array : the receiving array containing the number of values equals to nan
+    :param out_sum_array : the receiving array containing all sum values per cell (weighted if in_weights is provided)
+
+    """
+    shape = (0, 0)
+    if out_last_array is not None:
+        shape = out_last_array.shape
+    if out_min_array is not None:
+        shape = out_min_array.shape
+    if out_mean_array is not None:
+        shape = out_mean_array.shape
+    if out_max_array is not None:
+        shape = out_max_array.shape
+    if out_weighted_count_array is not None:
+        shape = out_weighted_count_array.shape
+    if out_weighted_sum_array is not None:
+        shape = out_weighted_sum_array.shape
+    if out_filtered_array is not None:
+        shape = out_filtered_array.shape
+    if shape == (0, 0):
+        raise ValueError("At least one out array must be specified")
+    if out_mean_array is not None and out_weighted_count_array is None:
+        raise ValueError("out_weighted_count_array is mandatory to compute the mean values")
+
+    for value, x, y, weight in zip(in_array.flat, x_array.flat, y_array.flat, in_weights.flat):
+        if np.isnan(weight) or weight <= 0.0:
+            continue
+        col = math.floor(x)
+        row = math.floor(y)
+        if 0 <= row < shape[0] and 0 <= col < shape[1]:
+            if not np.isnan(value):
+                if out_last_array is not None:
+                    out_last_array[row, col] = value
+                if out_mean_array is not None and out_weighted_count_array is not None:
+                    if np.isnan(out_mean_array[row, col]):
+                        out_mean_array[row, col] = value
+                    else:
+                        out_mean_array[row, col] = (
+                            (np.float64(out_mean_array[row, col]) * out_weighted_count_array[row, col])
+                            + (np.float64(value) * weight)
+                        ) / (out_weighted_count_array[row, col] + weight)
+                if out_x_array is not None and out_weighted_count_array is not None:
+                    if np.isnan(out_x_array[row, col]):
+                        out_x_array[row, col] = x
+                    else:
+                        out_x_array[row, col] = (
+                            (np.float64(out_x_array[row, col]) * out_weighted_count_array[row, col])
+                            + (np.float64(x) * weight)
+                        ) / (out_weighted_count_array[row, col] + weight)
+                if out_y_array is not None and out_weighted_count_array is not None:
+                    if np.isnan(out_y_array[row, col]):
+                        out_y_array[row, col] = y
+                    else:
+                        out_y_array[row, col] = (
+                            (np.float64(out_y_array[row, col]) * out_weighted_count_array[row, col])
+                            + (np.float64(y) * weight)
+                        ) / (out_weighted_count_array[row, col] + weight)
+                if out_weighted_count_array is not None:
+                    if out_weighted_count_array[row, col] <= 0:
+                        out_weighted_count_array[row, col] = weight
+                    else:
+                        out_weighted_count_array[row, col] = out_weighted_count_array[row, col] + weight
+                if out_min_array is not None:
+                    if np.isnan(out_min_array[row, col]):
+                        out_min_array[row, col] = value
+                    else:
+                        out_min_array[row, col] = min(out_min_array[row, col], value)
+                if out_max_array is not None:
+                    if np.isnan(out_max_array[row, col]):
+                        out_max_array[row, col] = value
+                    else:
+                        out_max_array[row, col] = max(out_max_array[row, col], value)
+                if out_weighted_sum_array is not None:
+                    if np.isnan(out_weighted_sum_array[row, col]):
+                        out_weighted_sum_array[row, col] = np.float64(value) * weight
+                    else:
+                        out_weighted_sum_array[row, col] = out_weighted_sum_array[row, col] + (
+                            np.float64(value) * weight
+                        )
+            elif out_filtered_array is not None:
+                if out_filtered_array[row, col] <= 0:
+                    out_filtered_array[row, col] = 1
+                else:
+                    out_filtered_array[row, col] = out_filtered_array[row, col] + 1
+
+
+@numba.njit(cache=True, fastmath=False)
 def compute_statistics(
     in_array: np.ndarray,
     x_array: np.ndarray,
     y_array: np.ndarray,
-    out_x_array: np.ndarray = None,
-    out_y_array: np.ndarray = None,
+    out_x_array: Optional[np.ndarray] = None,
+    out_y_array: Optional[np.ndarray] = None,
     out_last_array: Optional[np.ndarray] = None,
     out_min_array: Optional[np.ndarray] = None,
     out_mean_array: Optional[np.ndarray] = None,
@@ -160,8 +282,8 @@ def compute_statistics(
     out_filtered_array: Optional[np.ndarray] = None,
 ) -> None:
     """
-    Project the values contained in in_array to the out_*_array
-    Indexes (column and row) used to determine the cell in out_*_array are found in x_array and y_array
+    Project the values contained in in_array to the out_*_array.
+    Indexes (column and row) used to determine the cell in out_*_array are found in x_array and y_array.
 
     :param in_array : float values to aggregate.
     :param x_array : column index in in_array, containing the column index of the destination cell
@@ -172,9 +294,9 @@ def compute_statistics(
     :param out_min_array : the receiving array containing all min values per cell
     :param out_mean_array : the receiving array containing all mean values per cell
     :param out_max_array : the receiving array containing all max values per cell
-    :param out_count_array : the receiving array containing the number of values per cell
+    :param out_count_array : the receiving array containing the number of values per cell, or the sum of weights if in_weights is provided
     :param out_filtered_array : the receiving array containing the number of values equals to nan
-    :param out_sum_array : the receiving array containing all sum values per cell
+    :param out_sum_array : the receiving array containing all sum values per cell (weighted if in_weights is provided)
     """
     # Check out array
     shape = (0, 0)
@@ -196,17 +318,13 @@ def compute_statistics(
         raise ValueError("At least one out array must be specified")
     if out_mean_array is not None and out_count_array is None:
         raise ValueError("out_count_array is mandatory to compute the mean values")
-
     for value, x, y in zip(in_array.flat, x_array.flat, y_array.flat):
         col = math.floor(x)
         row = math.floor(y)
-        # Sanity check
         if 0 <= row < shape[0] and 0 <= col < shape[1]:
             if not np.isnan(value):
-                # Last value
                 if out_last_array is not None:
                     out_last_array[row, col] = value
-                # Value mean
                 if out_mean_array is not None and out_count_array is not None:
                     if np.isnan(out_mean_array[row, col]):
                         out_mean_array[row, col] = value
@@ -214,7 +332,6 @@ def compute_statistics(
                         out_mean_array[row, col] = (
                             (np.float64(out_mean_array[row, col]) * out_count_array[row, col]) + np.float64(value)
                         ) / (out_count_array[row, col] + 1)
-
                 if out_x_array is not None and out_count_array is not None:
                     if np.isnan(out_x_array[row, col]):
                         out_x_array[row, col] = x
@@ -229,32 +346,26 @@ def compute_statistics(
                         out_y_array[row, col] = (
                             (np.float64(out_y_array[row, col]) * out_count_array[row, col]) + np.float64(y)
                         ) / (out_count_array[row, col] + 1)
-
-                # Value count
                 if out_count_array is not None:
                     if out_count_array[row, col] <= 0:
                         out_count_array[row, col] = 1
                     else:
                         out_count_array[row, col] = out_count_array[row, col] + 1
-                # Value min
                 if out_min_array is not None:
                     if np.isnan(out_min_array[row, col]):
                         out_min_array[row, col] = value
                     else:
                         out_min_array[row, col] = min(out_min_array[row, col], value)
-                # Value max
                 if out_max_array is not None:
                     if np.isnan(out_max_array[row, col]):
                         out_max_array[row, col] = value
                     else:
                         out_max_array[row, col] = max(out_max_array[row, col], value)
-                # Value sum
                 if out_sum_array is not None:
                     if np.isnan(out_sum_array[row, col]):
                         out_sum_array[row, col] = value
                     else:
                         out_sum_array[row, col] = out_sum_array[row, col] + value
-
             elif out_filtered_array is not None:
                 if out_filtered_array[row, col] <= 0:
                     out_filtered_array[row, col] = 1

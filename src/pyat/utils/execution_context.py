@@ -14,8 +14,5 @@ def is_debug() -> bool:
 # pylint: disable=import-outside-toplevel
 def is_running_from_ipython():
     # pylint:disable = import-error
-    try:
-        from IPython import get_ipython
-        return get_ipython() is not None
-    except ImportError:
-        return False
+    from IPython import get_ipython
+    return get_ipython() is not None

@@ -252,11 +252,6 @@ def __process_each_input_file(
                 i_file.close()
             sub_monitor.done()
 
-    if files_in_error:
-        raise IOError(
-            f"{process_name}: {len(files_in_error)} file(s) failed: {files_in_error}"
-        )
-
     log_result(logger, begin, files_in_error)
 
 

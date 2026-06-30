@@ -13,6 +13,7 @@ def compute_means(means_per_file: List[np.ndarray], count_per_file: List[np.ndar
     """compute means statistics values
     @param means_per_file the list of 3darray (rx_antenna, tx_beam, angles) containing mean values for each file
     @param count_per_file the list of 3darray (rx_antenna, tx_beam, angles) containing value count for each file
+    All arrays in means_per_file and count_per_file must have the same shape.
     """
     # convert lists to array
     mean_values = np.stack(means_per_file, axis=0)
@@ -51,6 +52,7 @@ def merge_incidence_curves(
     input_curves: List[BackscatterCurveByIncidence],
     use_raw_data: bool = True,
     apply_filtering: bool = True,
+    join_sectors: bool = False,
     filter_angle_lower_limit: float = 3.0,
 ) -> BackscatterCurveByIncidence:
     """
@@ -59,6 +61,7 @@ def merge_incidence_curves(
     @param input_curves: List of BackscatterCurveByIncidence objects to merge.
     @param use_raw_data: If True, use raw mean backscatter values and counts as weights; otherwise, use processed mean values.
     @param apply_filtering: If True, apply spline filtering to the merged data.
+    @param join_sectors: If True, join sectors before merging.
     @param filter_angle_lower_limit: incidence angle below which no filtering is applied.
     """
     means_by_incidence_per_file_linear = []
@@ -78,10 +81,22 @@ def merge_incidence_curves(
         # switch to linear
         mean_values_incidence = default_config.db_to_linear(mean_values_incidence)
         angle_incidence = ds_incidence[BackscatterCurve.ANGLE].data
-        # mult by the value count, this contains the sum of values in linear scale
-        means_by_incidence_per_file_linear.append(mean_values_incidence)
-        count_by_incidence_per_file.append(count_incidence)
-        angle_by_incidence_per_file.append(angle_incidence)
+
+        if join_sectors:
+            # reshape [rx_antenna][tx_beam][angle] into [rx_antenna*tx_beam][angle] array by joining sectors
+            for rx_antenna in range(mean_values_incidence.shape[0]):
+                for tx_beam in range(mean_values_incidence.shape[1]):
+                    means_by_incidence_per_file_linear.append(
+                        mean_values_incidence[rx_antenna][tx_beam].reshape(1, 1, -1)
+                    )
+                    count_by_incidence_per_file.append(count_incidence[rx_antenna][tx_beam].reshape(1, 1, -1))
+                    angle_by_incidence_per_file.append(angle_incidence)
+        else:
+            # mult by the value count, this contains the sum of values in linear scale
+            means_by_incidence_per_file_linear.append(mean_values_incidence)
+            count_by_incidence_per_file.append(count_incidence)
+            angle_by_incidence_per_file.append(angle_incidence)
+
     # compute the sum of each values per beam, taking into account for nan values
     mean_by_incidence_linear, count_by_incidence_sum = compute_means(
         means_by_incidence_per_file_linear, count_by_incidence_per_file
@@ -94,15 +109,17 @@ def merge_incidence_curves(
 
     # apply spline filtering
     if apply_filtering:
-        filtered_data = apply_spline_filtering(
-            x=angle_by_incidence_per_file[0],
-            y=mean_values_by_incidence,
-            count=count_by_incidence_sum,
-        )
-        # force angles lower than 3 deg not being filtered
-        filtered_data[angle_by_incidence_per_file[0] < filter_angle_lower_limit] = mean_values_by_incidence[
-            angle_by_incidence_per_file[0] < filter_angle_lower_limit
-        ]
+        filtered_data = np.full_like(mean_values_by_incidence, fill_value=np.nan, dtype=np.float64)
+        for rx_antenna in range(mean_values_by_incidence.shape[0]):
+            for tx_beam in range(mean_values_by_incidence.shape[1]):
+                filtered_data[rx_antenna][tx_beam] = apply_spline_filtering(
+                    x=angle_by_incidence_per_file[0],
+                    y=mean_values_by_incidence[rx_antenna][tx_beam],
+                    count=count_by_incidence_sum[rx_antenna][tx_beam],
+                )
+        # for angles below the filter angle lower limit, use the mean values directly (no filtering)
+        not_filtered_mask = abs(angle_by_incidence_per_file[0]) < filter_angle_lower_limit
+        filtered_data[..., not_filtered_mask] = mean_values_by_incidence[..., not_filtered_mask]
     else:
         # if no filtering, use the mean values directly
         filtered_data = mean_values_by_incidence
@@ -181,8 +198,6 @@ def merge_transmission_curves(
         filtered_residuals_data = mean_residual_values_by_transmission
 
     return BackscatterCurveByTransmission.build(
-        rx_antenna_count=mean_residual_values_by_transmission.shape[0],
-        tx_beam_count=mean_residual_values_by_transmission.shape[1],
         mean_values=mean_values_by_transmission,
         mean_residual_values=filtered_residuals_data,
         count=count_by_transmission_sum,
@@ -203,17 +218,7 @@ def merge_curves_by_incidence(mean_bs: MeanBSModel, use_raw_data: bool = True) -
         input_curves=curves_by_incidence,
         use_raw_data=use_raw_data,
         apply_filtering=True,
-    )
-
-
-def split_curves(mean_bs: MeanBSModel) -> BackscatterCurveByIncidence:
-    """
-    Merge all BackscatterCurveByIncidence objects from the mean_bs model into a single BackscatterCurveByIncidence.
-    """
-    curves_by_incidence = [mean_bs.model[mode][0] for mode in mean_bs.model]
-    return merge_incidence_curves(
-        input_curves=curves_by_incidence,
-        apply_filtering=True,
+        join_sectors=True,
     )
 
 
@@ -225,22 +230,33 @@ def fit_gsab_to_incidence_curve(
     """
     # get mean values per file for this mode
     x = incidence_curve.ds[BackscatterCurve.ANGLE][:]
-    count = incidence_curve.ds[BackscatterCurve.VALUE_COUNT][:]
 
     if use_raw_data:
         y = incidence_curve.ds[BackscatterCurve.RAW_MEAN_BS][:]
         count = incidence_curve.ds[BackscatterCurve.VALUE_COUNT][:]
     else:
         y = incidence_curve.ds[BackscatterCurve.MEAN_BS][:]
-        count = xr.ones_like(count)
+        count = xr.ones_like(y)
 
-    gsab_data_model = gsab_model.GsabDataModel(x, y, count)
-    gsab_data_model.fit_gsab()
+    mean_values = xr.full_like(y, fill_value=np.nan, dtype=np.float64)
+    gsab_data_model = None
+    for rx_antenna in range(y.shape[0]):
+        for tx_beam in range(y.shape[1]):
+            gsab_data_model = gsab_model.GsabDataModel(x, y[rx_antenna][tx_beam], count[rx_antenna][tx_beam])
+            gsab_data_model.fit_gsab()
+            default_config.logger.info(
+                f"Fitted GSAB coefficients for rx_antenna {rx_antenna} tx_beam {tx_beam}:\n{gsab_data_model.coeffs}"
+            )
+            mean_values[rx_antenna][tx_beam] = gsab_data_model.apply().data
+
+    comment = "GSAB fitted values"
+    if y.shape[0] == 1 and y.shape[1] == 1 and gsab_data_model is not None:
+        comment += f"\n{gsab_data_model.coeffs}"
 
     return BackscatterCurveByIncidence.build(
         raw_mean_values=y.data,
-        mean_values=gsab_data_model.apply().data,
+        mean_values=mean_values.data,
         count=count.data,
-        bin_centers=gsab_data_model.x.data,
-        origin=None,
+        bin_centers=x.data,
+        origin=comment,
     )

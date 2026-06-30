@@ -9,13 +9,16 @@ import numba
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from pyat.utils.hyperbolas_utils import intersect_tx_rx_beams_analytical
 from pyat.xsf.bathy.raytracing.beam_footprint_location import (
     init_slant_ranges,
     intersect_tx_rx_beams_analytical_nb,
     intersect_tx_rx_beams_triangles,
 )
-from pyat.xsf.bathy.raytracing.raytracing import raytracing_by_depth, raytracing_by_depth_nb
-from pyat.utils.hyperbolas_utils import intersect_tx_rx_beams_analytical
+from pyat.xsf.bathy.raytracing.raytracing import (
+    raytracing_by_depth,
+    raytracing_by_depth_nb,
+)
 from pyat.xsf.xsf_driver import XsfDriver
 
 
@@ -63,6 +66,7 @@ def ncta(
     tx_fcs_position,
     rx_fcs_position,
     rot_arf2s,
+    sv_at_tx,
     tol=1e-6,
     max_iter=10,
 ):
@@ -71,8 +75,6 @@ def ncta(
     Compute beam pointing vector in the ARF coordinate system by intersecting projected triangles on focal plane
     Based on Bu [2020] algorithm
     """
-    # Get surface sound velocity
-    sv_at_tx = xsf.read_sound_speed_at_transducer()
     # Get sound velocity profiles index from XSF file for each detection
     ssp_idx = xsf.get_ssp_idx().repeat(xsf.sounder_file.beam_count)
     # get two-way travel time in seconds
@@ -92,7 +94,7 @@ def ncta(
             tx_fcs_position,
             rx_fcs_position,
             two_way_travel_time.ravel(),
-            sv_at_tx,
+            sv_at_tx.ravel(),
             ssp_idx,
         )
     ):
@@ -135,17 +137,17 @@ def ncta(
                 tx_fcs_pos[-1] + launch_vector_scs[-1],
                 incidence_tx,
                 tx_fcs_pos[-1],
-                sv_at_tx,
+                sv_tx,
             )
             owtt_rx, _, _ = raytracing_by_depth(
-                svp_depths, svp_values, rx_fcs_pos[-1] + receive_vector_scs[-1], incidence_rx, rx_fcs_pos[-1], sv_at_tx
+                svp_depths, svp_values, rx_fcs_pos[-1] + receive_vector_scs[-1], incidence_rx, rx_fcs_pos[-1], sv_tx
             )
 
             # adjust focal range based on TWTT error
             twtt_error = twtt - (owtt_tx + owtt_rx)
             slant_range_increment = twtt_error / 2 * sv_bottom
-            tl += slant_range_increment[0]
-            rl += slant_range_increment[0]
+            tl += slant_range_increment
+            rl += slant_range_increment
             iter_count += 1
 
         # populate incidence and azimuth angles and owtt from Tx
@@ -153,7 +155,11 @@ def ncta(
         bp_azimuth_tx[i] = azimuth_tx
         one_way_travel_time_tx[i] = owtt_tx
 
-    return bp_incidence_tx, bp_azimuth_tx, one_way_travel_time_tx
+    return (
+        bp_incidence_tx.reshape(two_way_travel_time.shape),
+        bp_azimuth_tx.reshape(two_way_travel_time.shape),
+        one_way_travel_time_tx.reshape(two_way_travel_time.shape),
+    )
 
 
 def ncca(
@@ -166,6 +172,7 @@ def ncca(
     tx_fcs_position,
     rx_fcs_position,
     rot_arf2s,
+    sv_at_tx,
     tol=1e-6,
     max_iter=10,
 ):
@@ -175,8 +182,6 @@ def ncca(
     Based on Hamilton [2014] algorithm
     [https://hydrography.ca/wp-content/uploads/files/2014conference/20-Hamilton-et-al-Algorithm-for-non-concentric-MB-array-geometry.pdf]
     """
-    # Get surface sound velocity
-    sv_at_tx = xsf.read_sound_speed_at_transducer()
     # Get sound velocity profiles index from XSF file for each detection
     ssp_idx = xsf.get_ssp_idx().repeat(xsf.sounder_file.beam_count)
     # get two-way travel time in seconds
@@ -198,7 +203,7 @@ def ncca(
             tx_fcs_position,
             rx_fcs_position,
             two_way_travel_time.ravel(),
-            sv_at_tx,
+            sv_at_tx.ravel(),
             ssp_idx,
         )
     ):
@@ -259,7 +264,7 @@ def ncca(
             # adjust focal range based on TWTT error
             twtt_error = twtt - (owtt_tx + owtt_rx)
             range_increment = twtt_error / 2 * sv_bottom * np.cos(np.deg2rad(bottom_incidence_tx))
-            rng += range_increment[0]
+            rng += range_increment  # [0]
             iter_count += 1
 
         # populate incidence and azimuth angles and owtt from Tx
@@ -267,7 +272,11 @@ def ncca(
         bp_azimuth_tx[i] = azimuth_tx
         one_way_travel_time_tx[i] = owtt_tx
 
-    return bp_incidence_tx, bp_azimuth_tx, one_way_travel_time_tx
+    return (
+        bp_incidence_tx.reshape(two_way_travel_time.shape),
+        bp_azimuth_tx.reshape(two_way_travel_time.shape),
+        one_way_travel_time_tx.reshape(two_way_travel_time.shape),
+    )
 
 
 @numba.njit(parallel=True)

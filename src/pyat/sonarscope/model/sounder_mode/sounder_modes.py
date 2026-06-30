@@ -1,8 +1,10 @@
 """
 For a sounder type compute a mode information object corresponding to a combination of several sounder mode
 """
+
 from abc import ABC, abstractmethod
 from enum import Enum
+
 
 class KeyMode(ABC):
     """Abstract class of a mode combination key, the way the key is constructed depends on the sounder"""
@@ -34,10 +36,17 @@ class KeyMode(ABC):
         for each tx sector for kongsberg sounders
         """
 
+    @abstractmethod
+    def get_center_frequency(self) -> tuple | None:
+        """return the center frequency tuple for this mode, this is used to match the mode with the correct
+        calibrated reference curve
+        return None if the mode does not have a center frequency or if it is not relevant for this mode
+        """
 
 
 class KongsbergKey(KeyMode):
     pass
+
 
 class ResonKey(KeyMode):
     pass
@@ -45,14 +54,16 @@ class ResonKey(KeyMode):
 
 class KmPulseForm(Enum):
     """Enum for .all and .kmall pulse form"""
+
     UNKNOWN = -1
     CW = 0
     MIXED = 1
     FM = 2
-    
+
+
 class ResonPulseForm(Enum):
     """Enum for .s7k pulse form"""
+
     UNKNOWN = -1
     CW = 0
     FM = 1
-    

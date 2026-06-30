@@ -10,6 +10,7 @@ class SounderModel:
     """Contains all sounder names"""
 
     EM1002 = "EM1002"
+    EM3002 = "EM3002"
     EM2040 = "EM2040"
     EM120 = "EM120"
     EM122 = "EM122"
@@ -31,8 +32,11 @@ class SounderType:
     AUTO = "AUTO"
     # COMMON
     COMMON = "COMMON"
+    # CALIBRATED (ex: EK80)
+    CALIBRATED = "CALIBRATED"
     # ALL
     EM1002_ALL = "EM1002_ALL"
+    EM3002_ALL = "EM3002_ALL"
     EM2040_ALL = "EM2040_ALL"
     EM120_ALL = "EM120_ALL"
     EM122_ALL = "EM122_ALL"
@@ -53,7 +57,9 @@ class SounderType:
 
     SOUNDER_TYPES = [
         COMMON,
+        CALIBRATED,
         EM1002_ALL,
+        EM3002_ALL,
         EM2040_ALL,
         EM120_ALL,
         EM122_ALL,
@@ -71,6 +77,7 @@ class SounderType:
 
     KONGSBERG_SOUNDER_TYPES = [
         EM1002_ALL,
+        EM3002_ALL,
         EM2040_ALL,
         EM120_ALL,
         EM122_ALL,
@@ -104,6 +111,8 @@ class SounderType:
         if SounderRawFileFormat.ALL == rawfileformat:
             if SounderModel.EM1002 in model:
                 sounder_type = SounderType.EM1002_ALL
+            elif SounderModel.EM3002 in model:
+                sounder_type = SounderType.EM3002_ALL
             elif SounderModel.EM2040 in model:
                 sounder_type = SounderType.EM2040_ALL
             elif SounderModel.EM120 in model:

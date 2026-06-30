@@ -64,6 +64,9 @@ class KeyModeBscorr(KongsbergKey):
     def get_tx_beam_count(self):
         return self.sector_count or 1
 
+    def get_center_frequency(self) -> tuple | None:
+        return None
+
     def __str__(self):
         return self.short_name()
 

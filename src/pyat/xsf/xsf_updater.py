@@ -103,6 +103,9 @@ class XsfUpdater:
                     # transfer processing status
                     self._transfer_proc_status(i_xsf_driver, o_xsf_driver)
 
+                    # Transfer tide group attributes
+                    self._transfer_group_attributes(i_xsf_driver, o_xsf_driver, xsf_driver.TIDE_GROUP)
+
                     # Process transfer
                     transfer_variables_func = self._get_suitable_function(ref_version, self.__transfer_variables_funcs)
                     self.logger.debug(f"Transferring variables with {transfer_variables_func.__name__}()")
@@ -220,6 +223,18 @@ class XsfUpdater:
     def _transfer_proc_status(self, ref_xsf: xsf_driver.XsfDriver, o_xsf: xsf_driver.XsfDriver) -> None:
         ref_processing_status = ref_xsf.get_processing_status()
         o_xsf.update_processing_status(status_dict=ref_processing_status)
+
+    def _transfer_group_attributes(
+        self, ref_xsf: xsf_driver.XsfDriver, o_xsf: xsf_driver.XsfDriver, group_path: str
+    ) -> None:
+        # Transfer group attributes only
+        ref_group = ref_xsf.get_group(group_path)
+        o_group = o_xsf.get_group(group_path)
+        if ref_group is None or o_group is None:
+            self.logger.warning(f"Group {group_path} not found in reference or target file : group skipped")
+            return
+        for attr_name in ref_group.ncattrs():
+            o_group.setncattr(attr_name, ref_group.getncattr(attr_name))
 
     def __init__(
         self,

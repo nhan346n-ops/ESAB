@@ -15,7 +15,7 @@ from pyat.utils.string_utils import upper_camel_case
 
 
 @dataclass_json
-@dataclass(frozen=False, init=False, unsafe_hash=False)
+@dataclass(frozen=True, unsafe_hash=False)
 class KeyModeAllGeneric(KongsbergKey):
     ping_mode: int | None = None
     pulse_form: int | None = None
@@ -23,22 +23,6 @@ class KeyModeAllGeneric(KongsbergKey):
     swath_index: int | None = None
     sector_count: int | None = None
     center_frequency: tuple | None = None
-
-    def __init__(
-        self,
-        ping_mode: int | None = None,
-        pulse_form: int | None = None,
-        swath_mode: int | None = None,
-        swath_index: int | None = None,
-        sector_count: int | None = None,
-        center_frequency: tuple | None = None,
-    ):
-        self.ping_mode = int(ping_mode) if ping_mode is not None else None
-        self.pulse_form = int(pulse_form) if pulse_form is not None else None
-        self.swath_mode = int(swath_mode) if swath_mode is not None else None
-        self.swath_index = int(swath_index) if swath_index is not None else None
-        self.sector_count = int(sector_count) if sector_count is not None else None
-        self.center_frequency = tuple(center_frequency) if center_frequency is not None else None
 
     def short_name(self) -> str:
         short_name = "All"
@@ -74,6 +58,9 @@ class KeyModeAllGeneric(KongsbergKey):
 
     def get_tx_beam_count(self):
         return self.sector_count or 1
+
+    def get_center_frequency(self) -> tuple | None:
+        return self.center_frequency
 
     def __str__(self):
         return self.short_name()

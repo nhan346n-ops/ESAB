@@ -158,7 +158,7 @@ class GsabDataModel:
 
     def fit_gsab(self):
         # Perform the curve fit
-        mask = np.isfinite(self.x) & np.isfinite(self.y) & self.count > 0
+        mask = np.isfinite(self.x) & np.isfinite(self.y) & (self.count > 0)
         sigma = np.sqrt(np.max(self.count[mask]) * 1.0 / self.count[mask])
         # False positive pytlint warning
         # pylint: disable-next=unbalanced-tuple-unpacking

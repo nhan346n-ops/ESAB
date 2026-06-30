@@ -58,6 +58,9 @@ WATERLEVEL = constants.PlatformGrp.WATER_LEVEL()
 DELTA_DRAUGHT = constants.DynamicDraughtGrp.DELTA_DRAUGHT()
 TIDE_INDICATIVE = constants.TideGrp.TIDE_INDICATIVE()
 
+# Group paths
+TIDE_GROUP = constants.TideGrp.get_group_path()
+
 # ATTRIBUTES CONSTANTS
 ATT_HISTORY = "history"
 ATT_PROCESSING_STATUS = "processing_status"
@@ -149,6 +152,10 @@ class XsfDriver(sounder_driver.SounderDriver):
         """return the nc variable designated by the path layer_path"""
         return netcdf_utils.get_variable(i_dataset=self.dataset, variable_path=layer_path)
 
+    def get_group(self, group_path: str) -> Optional[nc.Group]:
+        """Return a group by its path"""
+        return netcdf_utils.get_group(i_dataset=self.dataset, group_path=group_path)
+
     def get_provenance_ext(self) -> str | None:
         """
         return file extension of first provenance file or None file list is empty
@@ -213,6 +220,12 @@ class XsfDriver(sounder_driver.SounderDriver):
             # Detection backscatter is a mandatory variable, but some files historically have been found without it
             return np.full((to_swath - from_swath, int(self.sounder_file.beam_count)), np.nan)
 
+    def read_along_distances(self, from_swath: int, to_swath: int) -> np.ndarray:
+        """
+        return the numpy array of along distance. Shape is (to_swath - from_swath, beam_count)
+        """
+        return self[DETECTION_X][from_swath:to_swath]
+
     def read_across_distances(self, from_swath: int, to_swath: int) -> np.ndarray:
         """
         return the numpy array of across distance. Shape is (to_swath - from_swath, beam_count)
@@ -251,10 +264,10 @@ class XsfDriver(sounder_driver.SounderDriver):
         """
         sound_speeds = self[constants.SoundSpeedProfileGrp.SOUND_SPEED()][ssp_idx]
         depths = self[constants.SoundSpeedProfileGrp.SAMPLE_DEPTH()][ssp_idx]
-        # Keep only unique SVP values
-        repeated_values_ix = np.where(np.diff(sound_speeds) == 0)[0]
-        depths = np.delete(depths, repeated_values_ix)
-        sound_speeds = np.delete(sound_speeds, repeated_values_ix)
+        # # Keep only unique SVP values
+        # repeated_values_ix = np.where(np.diff(sound_speeds) == 0)[0]
+        # depths = np.delete(depths, repeated_values_ix)
+        # sound_speeds = np.delete(sound_speeds, repeated_values_ix)
 
         return depths.astype(np.float64), sound_speeds.astype(np.float64)
 
@@ -420,6 +433,27 @@ class XsfDriver(sounder_driver.SounderDriver):
             attitude_id = next(iter(self[constants.AttitudeGrp.get_group_path()].groups))
         return attitude_id
 
+    def get_preferred_heading_subgroup_id(self) -> Optional[str]:
+        """
+        return preferred platform heading subgroup or None if not found
+        """
+        # first test if preferred_heading attribute exist (added from XSF v0.7), if not return None
+        if not hasattr(self[constants.BeamGroup1Grp.get_group_path(BEAM_GROUP_NAME)], "preferred_heading"):
+            return None
+        # then check preferred_heading value, negative value means no heading sensor, hence return None
+        preferred_heading_idx = self[constants.BeamGroup1Grp.get_group_path(BEAM_GROUP_NAME)].preferred_heading
+        if preferred_heading_idx < 0:
+            return None
+        heading_id = None
+        # now retrieve the name of the sensor, use netcdf api to ensure that group really exist
+        if constants.PlatformGrp.HEADING_IDS_VNAME in self[constants.PlatformGrp.get_group_path()].variables:
+            heading_ids = self[constants.PlatformGrp.HEADING_IDS()][:]
+            heading_id = heading_ids[preferred_heading_idx]
+        # check preferred_heading really exists
+        if heading_id not in self[constants.HeadingGrp.get_group_path()].groups:
+            return None
+        return heading_id
+
     def read_attitude_offset(self) -> np.ndarray:
         """
         Returns vector from the platform coordinate system origin to the preferred MRU origin
@@ -439,24 +473,38 @@ class XsfDriver(sounder_driver.SounderDriver):
         """
         return self[constants.AttitudeSubGroup.TIME(self.get_preferred_attitude_subgroup_id())][:]
 
-    def read_attitude_rolls(self) -> np.ndarray:
+    def read_attitude_rolls(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Returns the numpy array of rolls from preffered_MRU.
+        Returns a tuple of numpy array of rolls and times (nanoseconds since 1970-01-01 00:00:00Z) from preffered_MRU.
         """
-        return self[constants.AttitudeSubGroup.ROLL(self.get_preferred_attitude_subgroup_id())][:]
+        return (
+            self[constants.AttitudeSubGroup.ROLL(self.get_preferred_attitude_subgroup_id())][:],
+            self.read_attitude_times(),
+        )
 
-    def read_attitude_pitches(self) -> np.ndarray:
+    def read_attitude_pitches(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Returns the numpy array of pitches from preffered_MRU.
+        Returns a tuple of numpy array of pitches and times (nanoseconds since 1970-01-01 00:00:00Z) from preffered_MRU.
         """
+        return (
+            self[constants.AttitudeSubGroup.PITCH(self.get_preferred_attitude_subgroup_id())][:],
+            self.read_attitude_times(),
+        )
 
-        return self[constants.AttitudeSubGroup.PITCH(self.get_preferred_attitude_subgroup_id())][:]
-
-    def read_attitude_headings(self) -> np.ndarray:
+    def read_attitude_headings(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Returns the numpy array of headings from preffered_MRU.
+        Returns a tuple of numpy array of headings and times (nanoseconds since 1970-01-01 00:00:00Z) from preffered_heading if exists, otherwise from preffered_MRU.
         """
-        return self[constants.AttitudeSubGroup.HEADING(self.get_preferred_attitude_subgroup_id())][:]
+        if self.get_preferred_heading_subgroup_id() is not None:
+            return (
+                self[constants.HeadingSubGroup.HEADING(self.get_preferred_heading_subgroup_id())][:],
+                self[constants.HeadingSubGroup.TIME(self.get_preferred_heading_subgroup_id())][:],
+            )
+        else:
+            return (
+                self[constants.AttitudeSubGroup.HEADING(self.get_preferred_attitude_subgroup_id())][:],
+                self.read_attitude_times(),
+            )
 
     def read_attitude_vertical_offsets(self) -> np.ndarray:
         """
@@ -518,9 +566,9 @@ class XsfDriver(sounder_driver.SounderDriver):
             return None
 
     def iter_beam_positions(
-        self, swath_count_by_iter: int, first_swath: int = 0
+        self, swath_count_by_iter: int, first_swath: int = 0, valid_only: bool = False
     ) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
-        return BeamPositionIterator(self, swath_count_by_iter, first_swath)
+        return BeamPositionIterator(self, swath_count_by_iter, first_swath, valid_only=valid_only)
 
     def read_detection_longitude(self) -> np.ndarray | None:
         """
@@ -652,10 +700,11 @@ class XsfDriver(sounder_driver.SounderDriver):
 
 
 class BeamPositionIterator:
-    def __init__(self, driver: XsfDriver, swath_count_by_iter: int, first_swath: int):
+    def __init__(self, driver: XsfDriver, swath_count_by_iter: int, first_swath: int, valid_only: bool = False):
         self.driver = driver
         self.swath_count_by_iter = swath_count_by_iter
         self.swath = first_swath
+        self.valid_only = valid_only
 
     def __iter__(self):
         return self
@@ -668,6 +717,11 @@ class BeamPositionIterator:
         last_swath = min(self.swath + self.swath_count_by_iter, self.driver.sounder_file.swath_count)
         result_lon = self.driver[DETECTION_LONGITUDE][self.swath : last_swath, :]
         result_lat = self.driver[DETECTION_LATITUDE][self.swath : last_swath, :]
+        if self.valid_only:
+            # if asked, mask invalid soundings positions
+            is_valid = self.driver.read_validity_flags(self.swath, last_swath)
+            result_lon[~is_valid] = np.nan
+            result_lat[~is_valid] = np.nan
         self.swath = last_swath
         return result_lon, result_lat
 

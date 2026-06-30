@@ -156,8 +156,13 @@ def raytracing_by_time(
     )
 
     # Layers flight-through times
-    t = np.where(ray_cst == 0, np.log(svp_v), np.log(np.tan(incidence_angles / 2)))
-    dt = np.diff(t, axis=0) / svp_grad  # (svp_grad[:, np.newaxis])
+    # t = np.where(ray_cst == 0, np.log(svp_v), np.log(np.tan(incidence_angles / 2)))
+    t = np.log(svp_v)  # Pre-allocate t array filled with the fallback value
+    np.log(
+        np.tan(incidence_angles / 2), out=t, where=(ray_cst != 0)
+    )  # Compute log(tan) ONLY where the mask is True, writing directly into 't'
+
+    dt = np.diff(t, axis=0) / svp_grad
     # set all above tx_depth layers flight time to 0 : only propagate downward
     layers = np.arange(dt.shape[0])[:, None]
     dt[layers < i_tx_depth] = 0
@@ -177,32 +182,41 @@ def raytracing_by_time(
         np.arctan(np.tan(incidence_angles[last_layer, np.arange(n_beam)] / 2) * np.exp(grad_last * dt_last))
     )
     # Bottom sound speed
-    sv_last = np.where(
-        ray_cst == 0,
-        svp_v[last_layer, np.arange(n_beam)] * np.exp(grad_last * dt_last),
-        np.sin(bottom_incidence_angle) / ray_cst,
-    )
+    sv_last = svp_v[last_layer, np.arange(n_beam)] * np.exp(
+        grad_last * dt_last
+    )  # Pre-allocate 'sv_last' array filled with the fallback value
+    np.divide(
+        np.sin(bottom_incidence_angle), ray_cst, out=sv_last, where=(ray_cst != 0)
+    )  # divide only where ray_cst is not zero, writing directly into 'sv_last'
+
     # Finaly, compute depth below tx_depth...
     dz = (sv_last - svp_v[last_layer, np.arange(n_beam)]) / grad_last
     depth = svp_z[last_layer, np.arange(n_beam)] + dz - tx_depth
 
     # ... and horizontal distance from Tx array
-    svp_grad = np.vstack([svp_grad, svp_grad[-1, np.newaxis]])  # np.hstack([svp_grad, svp_grad[-1]])
-    radius = np.where(ray_cst == 0, 0.0, -svp_v / svp_grad / np.sin(incidence_angles))
+    svp_grad = np.vstack([svp_grad, svp_grad[-1, np.newaxis]])
+    radius = np.zeros_like(incidence_angles, dtype=float)  # Pre-allocate 'radius' array filled with the fallback value
+    np.divide(
+        -svp_v / svp_grad, np.sin(incidence_angles), out=radius, where=(ray_cst != 0)
+    )  # divide only where ray_cst is not zero, writing directly into 'radius'
+
     hrz_dist = radius[:-1, :] * np.diff(np.cos(incidence_angles), axis=0)
     # set all above tx_depth layers horizontal distance to 0 : only propagate downward
     hrz_dist[layers < i_tx_depth] = 0
     hrz_dist_total = np.vstack([np.zeros(n_beam), np.cumsum(hrz_dist, axis=0)])
 
-    horizontal_distance = np.where(
-        ray_cst == 0,
-        0.0,
+    horizontal_distance = np.zeros_like(
+        depth, dtype=float
+    )  # Pre-allocate 'horizontal_distance' array filled with the fallback value
+    np.divide(
         hrz_dist_total[last_layer, np.arange(n_beam)]
         - (np.cos(bottom_incidence_angle) - np.cos(incidence_angles[last_layer, np.arange(n_beam)]))
         * svp_v[last_layer, np.arange(n_beam)]
-        / grad_last
-        / np.sin(incidence_angles[last_layer, np.arange(n_beam)]),
-    )
+        / grad_last,
+        np.sin(incidence_angles[last_layer, np.arange(n_beam)]),
+        out=horizontal_distance,
+        where=(ray_cst != 0),
+    )  # divide only where ray_cst is not zero, writing directly into 'horizontal_distance'
 
     return depth, horizontal_distance, np.rad2deg(bottom_incidence_angle)
 
@@ -513,7 +527,6 @@ def compute_detection_xyz(
         svp_depths, svp_values = xsf.read_sound_speed_profile(ssp_i)
 
         # perform ray-tracing
-        np.seterr(all="raise")
         detection_z[ping], horizontal_distance, _ = raytracing_by_time(
             svp_depths, svp_values, one_way_travel_time, beam_incidence_angle, tx_depth, sv_tx
         )

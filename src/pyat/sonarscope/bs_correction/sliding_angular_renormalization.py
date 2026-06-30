@@ -91,47 +91,6 @@ def interpolate_bs_by_incidence(
             curve_incidence_values[i][~curve_incidence_mask[i]],
         )
     return bs_incidence
-import pandas as pd
-
-def safe_pandas_rolling(data_or_da, window, center=True, method="sum"):
-    """
-    Perform a pandas time-based rolling calculation safely, even if the index is
-    non-monotonic or contains duplicate values.
-    """
-    if hasattr(data_or_da, "to_pandas"):
-        data = data_or_da.to_pandas()
-    else:
-        data = data_or_da
-
-    orig_idx = data.index
-    orig_order = np.arange(len(data))
-
-    is_series = isinstance(data, pd.Series)
-    if is_series:
-        df = pd.DataFrame({"value": data, "orig_order": orig_order})
-    else:
-        df = data.copy()
-        df["orig_order"] = orig_order
-
-    df_sorted = df.sort_index()
-    cols_to_roll = [c for c in df_sorted.columns if c != "orig_order"]
-
-    rolled_values = df_sorted[cols_to_roll].rolling(window, center=center)
-    if method == "sum":
-        rolled_df = rolled_values.sum()
-    elif method == "median":
-        rolled_df = rolled_values.median()
-    else:
-        raise ValueError(f"Unknown rolling method {method}")
-
-    rolled_df["orig_order"] = df_sorted["orig_order"]
-    rolled_df_restored = rolled_df.sort_values("orig_order")
-    rolled_df_restored.index = orig_idx
-
-    if is_series:
-        return rolled_df_restored["value"]
-    else:
-        return rolled_df_restored.drop(columns=["orig_order"])
 
 
 class SlidingMeanBSComputer:
@@ -330,23 +289,25 @@ class SlidingMeanBSComputer:
             merge_backscatter_curve(ds_incidence_files, merged_incidence_file)
 
             with xr.open_dataset(merged_incidence_file, chunks={BackscatterCurve.PING_TIME: 1000}) as ds_incidence:
+                # Ensure ping_time is monotonic for pandas rolling
+                if BackscatterCurve.PING_TIME in ds_incidence.dims:
+                    ds_incidence = ds_incidence.sortby(BackscatterCurve.PING_TIME)
+                
                 # get mean values for this mode
                 mean_values_incidence = ds_incidence[BackscatterCurve.MEAN_BS]
                 count_incidence = ds_incidence[BackscatterCurve.VALUE_COUNT]
-                rolled_count = safe_pandas_rolling(
-                    count_incidence, f"{self.sliding_window_min}min", center=True, method="sum"
-                )
+                rolled_count = count_incidence.to_pandas().rolling(f"{self.sliding_window_min}min", center=True).sum()
 
                 if default_config.integration_method is IntegrationMethod.MEAN:
                     mean_values_incidence_linear = default_config.db_to_linear(mean_values_incidence)
                     weighted_mean_values = mean_values_incidence_linear * count_incidence
-                    rolled_sum = safe_pandas_rolling(
-                        weighted_mean_values, f"{self.sliding_window_min}min", center=True, method="sum"
+                    rolled_sum = (
+                        weighted_mean_values.to_pandas().rolling(f"{self.sliding_window_min}min", center=True).sum()
                     )
                     rolled_mean_values = default_config.linear_to_db(rolled_sum / rolled_count)
                 else:  # default_config.integration_method is IntegrationMethod.MEDIAN
-                    rolled_mean_values = safe_pandas_rolling(
-                        mean_values_incidence, f"{self.sliding_window_min}min", center=True, method="median"
+                    rolled_mean_values = (
+                        mean_values_incidence.to_pandas().rolling(f"{self.sliding_window_min}min", center=True).median()
                     )
 
                 # clear empty pings
@@ -534,8 +495,6 @@ class SlidingMeanBSComputer:
 
                         # create curve for all sectors
                         curve_by_transmission = BackscatterCurveByTransmissionByPing.build(
-                            rx_antenna_count=rx_antenna_count,
-                            tx_beam_count=mode.get_tx_beam_count(),
                             mean_values=mean_values_per_tx,
                             mean_residual_values=mean_diff_values_per_tx,
                             count=value_counts_per_tx,
@@ -573,6 +532,10 @@ class SlidingMeanBSComputer:
             with xr.open_dataset(
                 merged_transmission_file, chunks={BackscatterCurve.PING_TIME: 1000}
             ) as ds_transmission:
+                # Ensure ping_time is monotonic for pandas rolling
+                if BackscatterCurve.PING_TIME in ds_transmission.dims:
+                    ds_transmission = ds_transmission.sortby(BackscatterCurve.PING_TIME)
+                
                 # get mean values per file for this mode
                 mean_transmission = ds_transmission[BackscatterCurve.MEAN_BS]
                 mean_residual_transmission = ds_transmission[BackscatterCurve.MEAN_RESIDUAL_BS]
@@ -588,35 +551,35 @@ class SlidingMeanBSComputer:
 
                 for i in range(rolled_count.shape[0]):
                     for j in range(rolled_count.shape[1]):
-                        rolled_count[i][j] = safe_pandas_rolling(
-                            count_transmission[i][j],
-                            f"{self.sliding_window_min}min",
-                            center=True,
-                            method="sum",
+                        rolled_count[i][j] = (
+                            count_transmission[i][j]
+                            .to_pandas()
+                            .rolling(f"{self.sliding_window_min}min", center=True)
+                            .sum()
                         )
                         if default_config.integration_method is IntegrationMethod.MEAN:
-                            rolled_mean_residual_sum = safe_pandas_rolling(
-                                weighted_mean_residual[i][j],
-                                f"{self.sliding_window_min}min",
-                                center=True,
-                                method="sum",
+                            rolled_mean_residual_sum = (
+                                weighted_mean_residual[i][j]
+                                .to_pandas()
+                                .rolling(f"{self.sliding_window_min}min", center=True)
+                                .sum()
                             )
                             rolled_mean_residual[i][j] = default_config.linear_to_db(
                                 rolled_mean_residual_sum / rolled_count[i][j]
                             )
                         else:  # default_config.integration_method is IntegrationMethod.MEDIAN
-                            rolled_mean_residual[i][j] = safe_pandas_rolling(
-                                mean_residual_transmission[i][j],
-                                f"{self.sliding_window_min}min",
-                                center=True,
-                                method="median",
+                            rolled_mean_residual[i][j] = (
+                                mean_residual_transmission[i][j]
+                                .to_pandas()
+                                .rolling(f"{self.sliding_window_min}min", center=True)
+                                .median()
                             )
                         # short term stats always use median
-                        rolled_mean[i][j] = safe_pandas_rolling(
-                            mean_transmission[i][j],
-                            f"{self.short_sliding_window_min}min",
-                            center=True,
-                            method="median",
+                        rolled_mean[i][j] = (
+                            mean_transmission[i][j]
+                            .to_pandas()
+                            .rolling(f"{self.short_sliding_window_min}min", center=True)
+                            .median()
                         )
 
                 # clear empty pings
@@ -627,8 +590,6 @@ class SlidingMeanBSComputer:
                 rolled_mean[mask_array] = np.nan
 
                 curve_by_transmission = BackscatterCurveByTransmissionByPing.build(
-                    rx_antenna_count=rolled_mean_residual.shape[0],
-                    tx_beam_count=rolled_mean_residual.shape[1],
                     mean_values=rolled_mean[:],
                     mean_residual_values=rolled_mean_residual[:],
                     count=rolled_count[:],

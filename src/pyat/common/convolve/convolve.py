@@ -61,9 +61,10 @@ def _copy_input_if_needed(input_src, dtype=float, order="C", nan_treatment=None,
                 # ``np.nan`` is a ``float`` and there is no conversion to an
                 # ``int`` type. Therefore, a pre-fill copy is needed for non
                 # ``float`` masked arrays. ``subok=True`` is needed to retain
-                # ``np.ma.maskedarray.filled()``. ``copy=False`` allows the fill
+                # ``np.ma.maskedarray.filled()``. ``copy=None`` allows the fill
                 # to act as the copy if type and order are already correct.
-                output = np.array(input_src, dtype=dtype, copy=False, order=order, subok=True)
+                # ``copy=False`` is no longer permissive in numpy2.0
+                output = np.array(input_src, dtype=dtype, copy=None, order=order, subok=True)
                 # pylint: disable=E1101
                 output = output.filled(fill_value)
             else:

@@ -140,6 +140,7 @@ class MainWindow(QMainWindow):
 
         # ── Toolbar ──
         main_toolbar = QToolBar("主要功能", self)
+        main_toolbar.setObjectName("MainToolBar")
         main_toolbar.setIconSize(QSize(24, 24))
         main_toolbar.setStyleSheet("QToolBar { border: none; background: transparent; spacing: 5px; } QToolButton { padding: 4px; border-radius: 4px; } QToolButton:hover { background-color: rgba(0, 120, 212, 0.1); }")
         
@@ -189,12 +190,14 @@ class MainWindow(QMainWindow):
 
     def _setup_docks(self) -> None:
         self._left_dock = QDockWidget("\u9879\u76ee\u6d4f\u89c8\u5668", self)
+        self._left_dock.setObjectName("LeftDock")
         self._left_dock.setWidget(self._project_explorer)
         self._left_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self._left_dock.setMinimumWidth(300)
         self.addDockWidget(Qt.LeftDockWidgetArea, self._left_dock)
 
         self._bottom_dock = QDockWidget("\u63a7\u5236\u53f0 & \u4efb\u52a1\u7ba1\u7406", self)
+        self._bottom_dock.setObjectName("BottomDock")
         self._bottom_dock.setWidget(self._console_view)
         self._bottom_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
         self._bottom_dock.setMinimumHeight(150)
@@ -540,7 +543,7 @@ class MainWindow(QMainWindow):
             layers=p["layers"],
             gap_filling=p["gap_filling"],
             mask_size=p["mask_size"] or 3,
-            valid_sounds_only=p["valid_sounds_only"],
+            valid_soundings_only=p["valid_soundings_only"],
             spatial_antialiasing=p["spatial_antialiasing"],
             min_elevation=p["min_elevation"],
             max_elevation=p["max_elevation"],

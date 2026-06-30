@@ -5,7 +5,6 @@ import sonar_netcdf.sonar_groups as sg
 
 from pyat.sonarscope.model.constants import VariableKeys as Key
 from pyat.sonarscope.model.signal.ping_signal import PingSignal
-from pyat.sonarscope.model.sounder_mode.kmall_kongsberg_mode import KeyModeKmallGeneric
 from pyat.sonarscope.model.sounder_mode.s7k_reson_mode import KeyModeResonGeneric
 from pyat.sonarscope.model.sounder_mode.sounder_modes import KeyMode
 from pyat.sonarscope.model.sounder_mode.sounder_modes_computer import ModeComputer
@@ -37,7 +36,7 @@ class ModeComputerResonGeneric(ModeComputer):
         global_keys: Dict[KeyMode, int],
     ) -> Tuple[Dict[KeyMode, int], np.ndarray]:
         """
-        Parse all the parameter arrays and retrieve a set of exclusive KeyMode of all combination seen in the file
+        Parse all the parameter arrays and retrieve a set of exclusive KeyModeResonGeneric of all combination seen in the file
         Returns : a tuple containing a dictionary of the KeyMode values and their id, and a 1D array of modes
 
         """
@@ -48,7 +47,7 @@ class ModeComputerResonGeneric(ModeComputer):
             or reference_shape != swath_index.shape
         ):
             raise BadParameter(
-                f"Compute backscatter key mode function does not support arrays with different shape, coding error in {KeyModeKmallGeneric.__name__}"
+                f"Compute backscatter key mode function does not support arrays with different shape, coding error in {KeyModeResonGeneric.__name__}"
             )
         values = np.full(shape=reference_shape, fill_value=-1)
         # iterate over all frequency, mode, etc arrays
@@ -61,7 +60,7 @@ class ModeComputerResonGeneric(ModeComputer):
             s_index = None if np.isnan(s_index) else int(s_index)
 
             key = KeyModeResonGeneric(
-                frequency_install=frequency_install,
+                frequency_install=float(frequency_install),
                 frequency_mode=fq,
                 pulse_form=p_form,
                 swath_count=s_count,
@@ -96,7 +95,7 @@ class ModeComputerResonGeneric(ModeComputer):
 
         # compute signal modes
         return self.compute_keys_values(
-            frequency_install=freq_install,
+            frequency_install=float(freq_install),
             frequency_array=fq_mode,
             pulse_form=pulse_form,
             swath_count=swath_per_ping,

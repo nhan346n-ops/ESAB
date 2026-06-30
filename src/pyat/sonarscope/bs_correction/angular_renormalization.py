@@ -87,16 +87,25 @@ class AngleNormalizer:
 
             default_config.logger.info(f"Apply normalisation")
             for mode, indexes in key_dict.items():
+                tx_beam_count = mode.get_tx_beam_count()
                 lut_incidence_table, lut_incidence_angles = self.avg_model.get_avg_incidence_lut(mode)
                 lut_transmission_table, lut_transmission_angles = self.avg_model.get_avg_residual_transmission_lut(mode)
                 if lut_transmission_table is None or lut_incidence_table is None:
                     continue
+
+                if lut_incidence_table.shape[0] == 1 and rx_antenna_count > 1:
+                    # if there is only one line in the lut, it means that the correction does not depend on rx antenna, we can duplicate it for all rx antenna
+                    lut_incidence_table = np.repeat(lut_incidence_table, rx_antenna_count, axis=0)
+                if lut_incidence_table.shape[1] == 1 and tx_beam_count > 1:
+                    # if there is only one line in the lut, it means that the correction does not depend on tx beam, we can duplicate it for all tx beam
+                    lut_incidence_table = np.repeat(lut_incidence_table, tx_beam_count, axis=1)
+
                 mode_mask = sounder_mode_array == indexes
                 for rx_antenna in range(0, rx_antenna_count):
                     rx_mask = detection_rx_transducer == rx_antenna_index[rx_antenna]
                     if not np.any(rx_mask):
                         continue
-                    for tx_beam in range(0, mode.get_tx_beam_count()):
+                    for tx_beam in range(0, tx_beam_count):
                         # need to take into account for txsectors
                         detection_mask = detection_tx_beam == tx_beam
                         # remove data not matching rx_antenna
@@ -110,10 +119,10 @@ class AngleNormalizer:
                         partial_bs_values = bs_value[detection_mask]
 
                         # need to remove nan values from lut
-                        lut_incidence_mask = ~np.isnan(lut_incidence_table)
+                        lut_incidence_mask = ~np.isnan(lut_incidence_table[rx_antenna][tx_beam])
                         lut_transmission_mask = ~np.isnan(lut_transmission_table[rx_antenna][tx_beam])
                         partial_lut_incidence_angles = lut_incidence_angles[lut_incidence_mask]
-                        partial_lut_incidence_values = lut_incidence_table[lut_incidence_mask]
+                        partial_lut_incidence_values = lut_incidence_table[rx_antenna][tx_beam][lut_incidence_mask]
                         partial_lut_transmission_angles = lut_transmission_angles[lut_transmission_mask]
                         partial_lut_transmission_values = lut_transmission_table[rx_antenna][tx_beam][
                             lut_transmission_mask

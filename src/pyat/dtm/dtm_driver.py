@@ -408,95 +408,64 @@ class DtmDriver:
         self._dtm_file = DtmFile(file_path)
         self._dataset = None
 
-        # Try to initialize _dtm_file with gdal / netCDF4
+        # Try to initialize _dtm_file with gdal
         if os.path.isfile(file_path):
             gdal_dataset = None
 
             try:
-                # 1. First, always try to read the projection using netCDF4 from the crs variable
-                crs_loaded = False
-                with self.open():
-                    if "crs" in self.dataset.variables:
-                        crs_var = self.dataset.variables["crs"]
-                        if "crs_wkt" in crs_var.ncattrs():
-                            crs_wkt = crs_var.getncattr("crs_wkt")
-                            spatial_reference = osr.SpatialReference()
-                            if spatial_reference.ImportFromWkt(crs_wkt) == gdal.ogr.OGRERR_NONE:
-                                self._dtm_file.spatial_reference = spatial_reference
-                                crs_loaded = True
-                    
-                    if not crs_loaded:
-                        # Guess based on variable names (x/y indicates projected)
-                        if DtmConstants.DIM_ABSCISSA in self.dataset.variables or DtmConstants.DIM_ORDINATE in self.dataset.variables:
-                            pass # We will rely on get_x_axis/get_y_axis checking variable existence later
-                        else:
-                            self._dtm_file.spatial_reference = gf.SR_WGS_84
-
-                # 2. Try to initialize projection and get_geo_transform using GDAL
+                # Initialize projection with gdal
                 gdal.UseExceptions()
-                has_netcdf = gdal.GetDriverByName("netCDF") is not None
-                if has_netcdf:
-                    try:
-                        # Reading metadata to find variable to read
-                        with open_nc_file(file_path) as inDataset:
-                            if DtmConstants.ELEVATION_NAME in inDataset.variables:
-                                var_to_read = DtmConstants.ELEVATION_NAME
-                            else:
-                                var_to_read = DtmConstants.BACKSCATTER
-                        gdal_dataset = gdal.Open(f'NETCDF:"{file_path}":{var_to_read}', gdal.GA_ReadOnly)
+                # Reading metadata
+                with open_nc_file(file_path) as inDataset:
+                    if DtmConstants.ELEVATION_NAME in inDataset.variables:
+                        var_to_read = DtmConstants.ELEVATION_NAME
+                    else:
+                        var_to_read = DtmConstants.BACKSCATTER
+                gdal_dataset = gdal.Open(f'NETCDF:"{file_path}":{var_to_read}', gdal.GA_ReadOnly)
 
-                        if gdal_dataset:
-                            if not crs_loaded:
-                                projection = gdal_dataset.GetProjection()
-                                if projection:
-                                    spatial_reference = osr.SpatialReference()
-                                    if spatial_reference.ImportFromWkt(projection) == gdal.ogr.OGRERR_NONE:
-                                        self._dtm_file.spatial_reference = spatial_reference
+                if gdal_dataset:
+                    projection = gdal_dataset.GetProjection()
+                    if projection:
+                        spatial_reference = osr.SpatialReference()
+                        if spatial_reference.ImportFromWkt(projection) == gdal.ogr.OGRERR_NONE:
+                            self._dtm_file.spatial_reference = spatial_reference
+                    # Do we need to raise a projection Exception ?("Not supported projection")
 
-                            # retrieve the values with gdal
-                            geo_transform = gdal_dataset.GetGeoTransform()
-                            if geo_transform:
-                                self.dtm_file.spatial_resolution_x = abs(geo_transform[1])
-                                self.dtm_file.spatial_resolution_y = abs(geo_transform[5])
-                                # Specific case : spanning 180th on the first cell
-                                if self._dtm_file.spatial_reference.IsGeographic() and geo_transform[1] < 0.0:
-                                    self.dtm_file.spatial_resolution_x = 360.0 - self.dtm_file.spatial_resolution_x
-                    except Exception as gdal_err:
-                        self.logger.debug(f"GDAL netCDF open failed: {gdal_err}")
+                    # it is better to retrieve the values with gdal rather than to calculate them
+                    geo_transform = gdal_dataset.GetGeoTransform()
+                    if geo_transform:
+                        self.dtm_file.spatial_resolution_x = abs(geo_transform[1])
+                        self.dtm_file.spatial_resolution_y = abs(geo_transform[5])
+                        # Specific case : spanning 180th on the first cell
+                        if self._dtm_file.spatial_reference.IsGeographic() and geo_transform[1] < 0.0:
+                            self.dtm_file.spatial_resolution_x = 360.0 - self.dtm_file.spatial_resolution_x
 
-                # 3. Initialize grid dimensions and resolutions (falling back to coordinate arrays if GDAL failed)
+                # Initialize grid
                 with self.open():
                     abscissa = self.get_x_axis()
                     self.dtm_file.col_count = len(abscissa)
-                    
-                    res_x = self.dtm_file.spatial_resolution_x
-                    if res_x is None or np.isnan(res_x) or res_x == 0:
-                        res_x = abs(abscissa[1] - abscissa[0]) if len(abscissa) > 1 else 1.0
+                    if not self.dtm_file.spatial_resolution_x:
+                        self.dtm_file.spatial_resolution_x = abs(abscissa[1] - abscissa[0])
                         # Specific case : spanning 180th on the first cell
                         if self.dtm_file.spatial_reference.IsGeographic() and abscissa[0] >= 0.0 > abscissa[1]:
-                            res_x = 360.0 - res_x
-                        self.dtm_file.spatial_resolution_x = res_x
+                            self.dtm_file.spatial_resolution_x = 360.0 - self.dtm_file.spatial_resolution_x
 
-                    self.dtm_file.west = abscissa[0] - res_x / 2.0
+                    self.dtm_file.west = abscissa[0] - self.dtm_file.spatial_resolution_x / 2.0
                     self.dtm_file.east = (
-                        abscissa[self.dtm_file.col_count - 1] + res_x / 2.0
+                        abscissa[self.dtm_file.col_count - 1] + self.dtm_file.spatial_resolution_x / 2.0
                     )
 
                     ordinates = self.get_y_axis()
                     self.dtm_file.row_count = len(ordinates)
-                    
-                    res_y = self.dtm_file.spatial_resolution_y
-                    if res_y is None or np.isnan(res_y) or res_y == 0:
-                        res_y = abs(ordinates[1] - ordinates[0]) if len(ordinates) > 1 else 1.0
-                        self.dtm_file.spatial_resolution_y = res_y
-                        
-                    self.dtm_file.south = ordinates[0] - res_y / 2.0
+                    if not self.dtm_file.spatial_resolution_y:
+                        self.dtm_file.spatial_resolution_y = abs(ordinates[1] - ordinates[0])
+                    self.dtm_file.south = ordinates[0] - self.dtm_file.spatial_resolution_y / 2.0
                     self.dtm_file.north = (
-                        ordinates[self.dtm_file.row_count - 1] + res_y / 2.0
+                        ordinates[self.dtm_file.row_count - 1] + self.dtm_file.spatial_resolution_y / 2.0
                     )
 
-            except Exception as e:
-                self.logger.error(f"Error initializing DTM file {file_path}: {e}")
+            except RuntimeError:
+                self.logger.debug("File {file_path} exists but not seems to be a DTM")
             finally:
                 gdal_dataset = None  # Close the file
                 self._dataset = None  # See open()
@@ -597,25 +566,19 @@ class DtmDriver:
 
     def get_x_axis(self) -> nc.Variable:
         """return the layer containing the value of the columns (DIM_LON or DIM_ABSCISSA]"""
-        if self.dtm_file.spatial_reference.IsProjected():
-            if DtmConstants.DIM_ABSCISSA in self:
-                return self[DtmConstants.DIM_ABSCISSA]
-            return self[DtmConstants.DIM_LON]
-        else:
-            if DtmConstants.DIM_LON in self:
-                return self[DtmConstants.DIM_LON]
-            return self[DtmConstants.DIM_ABSCISSA]
+        return (
+            self[DtmConstants.DIM_ABSCISSA]
+            if self.dtm_file.spatial_reference.IsProjected()
+            else self[DtmConstants.DIM_LON]
+        )
 
     def get_y_axis(self) -> nc.Variable:
         """return the layer containing the value of the rows (DIM_LAT or DIM_ORDINATE]"""
-        if self.dtm_file.spatial_reference.IsProjected():
-            if DtmConstants.DIM_ORDINATE in self:
-                return self[DtmConstants.DIM_ORDINATE]
-            return self[DtmConstants.DIM_LAT]
-        else:
-            if DtmConstants.DIM_LAT in self:
-                return self[DtmConstants.DIM_LAT]
-            return self[DtmConstants.DIM_ORDINATE]
+        return (
+            self[DtmConstants.DIM_ORDINATE]
+            if self.dtm_file.spatial_reference.IsProjected()
+            else self[DtmConstants.DIM_LAT]
+        )
 
     def get_layers(self) -> Dict[str, nc.Variable]:
         """

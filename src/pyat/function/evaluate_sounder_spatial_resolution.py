@@ -17,15 +17,18 @@ class SpatialResolutionEvaluator:
     def __init__(
         self,
         i_paths: List[str],
+        valid_soundings_only: bool = True,
         monitor: ProgressMonitor = DefaultMonitor,
     ):
         """
         Constructor.
         :param : i_paths : path of the sounding files to analyse
         :param : result : path of the resulting json file
+        :param : valid_soundings_only : if true, only position from soundings with a valid flag will be used for the evaluation
         """
         i_paths = arg_util.parse_list_of_files("i_paths", i_paths)
         self.i_path = i_paths[0]
+        self.valid_soundings_only = valid_soundings_only
 
         # Prefer to use RSocket monitor if available
         self.monitor = monitor
@@ -52,7 +55,7 @@ class SpatialResolutionEvaluator:
         """
         _, _, distance = geod.inv(lons[0:-1], lats[0:-1], lons[1:], lats[1:])
         distance[distance == 0] = np.nan  # useful to ignore 0 when using np.nanmean
-        return np.nanmean(distance)
+        return np.nanmedian(distance)
 
     def evaluate_mean_distance_between_beam(self, lons: np.ndarray, lats: np.ndarray, geod: Geod) -> float:
         """
@@ -60,7 +63,7 @@ class SpatialResolutionEvaluator:
         """
         _, _, distance = geod.inv(lons[:, 0:-1], lats[:, 0:-1], lons[:, 1:], lats[:, 1:])
         distance[distance == 0] = np.nan  # useful to ignore 0 when using np.nanmean
-        return np.nanmean(distance)
+        return np.nanmedian(distance)
 
     def _evaluate_resolution_meter(self, i_sounder_driver: SounderDriver, geod: Geod) -> float:
         """
@@ -71,14 +74,23 @@ class SpatialResolutionEvaluator:
             res_meter = np.nanmean(
                 [
                     # Analysing the 10th first swaths
-                    self.__evaluate_beams(i_sounder_driver.iter_beam_positions(10), geod),
+                    self.__evaluate_beams(
+                        i_sounder_driver.iter_beam_positions(10, valid_only=self.valid_soundings_only), geod
+                    ),
                     # Analysing the 10th last swaths
-                    self.__evaluate_beams(i_sounder_driver.iter_beam_positions(10, swath_count - 10), geod),
+                    self.__evaluate_beams(
+                        i_sounder_driver.iter_beam_positions(
+                            10, swath_count - 10, valid_only=self.valid_soundings_only
+                        ),
+                        geod,
+                    ),
                 ]
             )
         else:
             # Analysing all swaths
-            res_meter = self.__evaluate_beams(i_sounder_driver.iter_beam_positions(20), geod)
+            res_meter = self.__evaluate_beams(
+                i_sounder_driver.iter_beam_positions(20, valid_only=self.valid_soundings_only), geod
+            )
 
         if np.isfinite(res_meter):
             self.logger.info(f"Evaluation of the spatial resolution in meter is {res_meter}")

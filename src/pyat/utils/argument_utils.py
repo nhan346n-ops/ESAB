@@ -428,46 +428,19 @@ def create_argv_parser(process_name: str, json_config_file_path: str) -> argpars
         if not "nargs" in param:
             param["nargs"] = None
         elif param["nargs"] not in ["?", "+", "*"]:
-            # Handle composite nargs values like '+|1' by extracting the
-            # argparse-compatible part (before '|')
-            nargs_val = str(param["nargs"]).split("|")[0].strip()
-            if nargs_val in ["?", "+", "*"]:
-                param["nargs"] = nargs_val
-            else:
-                try:
-                    param["nargs"] = int(nargs_val)
-                except ValueError:
-                    param["nargs"] = None
-
-        if not "help" in param:
-            param["help"] = None
-        if not "name" in param:
-            param["name"] = ""
+            param["nargs"] = int(param["nargs"])
         if not "action" in param:
-            if "long_key" in param:
-                parser.add_argument(
-                    param["key"],
-                    param["long_key"],
-                    nargs=param["nargs"],
-                    type=param["type"],
-                    choices=param["choices"],
-                    help=param["help"],
-                    default=param["default"],
-                )
-            else:
-                parser.add_argument(
-                    param["key"],
-                    nargs=param["nargs"],
-                    type=param["type"],
-                    choices=param["choices"],
-                    help=param["help"],
-                    default=param["default"],
-                )
+            parser.add_argument(
+                param["key"],
+                param["long_key"],
+                nargs=param["nargs"],
+                type=param["type"],
+                choices=param["choices"],
+                help=param["help"],
+                default=param["default"],
+            )
         else:
-            if "long_key" in param:
-                parser.add_argument(param["key"], param["long_key"], help=param["help"], action=param["action"])
-            else:
-                parser.add_argument(param["key"], help=param["help"], action=param["action"])
+            parser.add_argument(param["key"], param["long_key"], help=param["help"], action=param["action"])
         logger.debug(param["key"] + " " + param["name"])
 
     return parser

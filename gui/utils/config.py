@@ -11,7 +11,7 @@ def resource_path(relative_path: str) -> str:
     import os
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(str(PROJECT_ROOT.parent), relative_path)
+    return os.path.join(str(PROJECT_ROOT), relative_path)
 
 # GUI runtime directories
 GUI_DIR = PROJECT_ROOT / "gui"

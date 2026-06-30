@@ -257,6 +257,19 @@ def get_variable(i_dataset: nc.Dataset, variable_path: str) -> Optional[nc.Varia
     return parent_group.variables[variable_name] if variable_name in parent_group.variables else None
 
 
+def get_group(i_dataset: nc.Dataset, group_path: str) -> Optional[nc.Group]:
+    """return the nc group designated by the path group_path"""
+    path = [p for p in group_path.split("/") if p]  # Remove empty strings from path (can happen if path ends with "/")
+    group_name = path.pop()
+    parent_group = i_dataset
+    for sub_group in path:
+        if sub_group:
+            if sub_group not in parent_group.groups:
+                return None
+            parent_group = parent_group.groups[sub_group]
+    return parent_group.groups[group_name] if group_name in parent_group.groups else None
+
+
 # __        ___  _______  ______  ____   ___      _ _  _     _                       _       _   _               _           ____ _____   _   __
 # \ \      / / |/ /_   _|/ /  _ \|  _ \ / _ \    | | || |   | |_ _ __ __ _ _ __  ___| | __ _| |_(_) ___  _ __   | |_ ___    / ___|  ___| / | / /_
 #  \ \ /\ / /| ' /  | | / /| |_) | |_) | | | |_  | | || |_  | __| '__/ _` | '_ \/ __| |/ _` | __| |/ _ \| '_ \  | __/ _ \  | |   | |_    | || '_ \

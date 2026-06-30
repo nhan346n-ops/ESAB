@@ -139,7 +139,7 @@ class SounderDriver(ABC):
 
     @abstractmethod
     def iter_beam_positions(
-        self, swath_count_by_iter: int, first_swath: int = 0
+        self, swath_count_by_iter: int, first_swath: int = 0, valid_only: bool = False
     ) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
         """
         return an Iterable of the numpy arrays of beam's longitude and latitude

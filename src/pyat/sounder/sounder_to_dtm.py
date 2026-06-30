@@ -12,9 +12,9 @@ from osgeo import osr
 from pygws.service.progress_monitor import DefaultMonitor, ProgressMonitor
 from pyproj import Transformer, crs
 
-import pyat.dtm.dtm_driver as dtm_driver
 import pyat.dtm.analyse.dtm_expected_stdev as expected_stdev
 import pyat.dtm.analyse.dtm_quality_indicator as quality_indicator
+import pyat.dtm.dtm_driver as dtm_driver
 import pyat.dtm.dtm_standard_constants as DTM
 import pyat.dtm.transform.interpolation.gap_filling as gap_filling_process
 import pyat.dtm.utils.process_utils as process_util
@@ -53,10 +53,10 @@ class SounderToDtmExporter:
         coord: Optional[Dict] = None,
         overwrite: bool = False,
         layers: Optional[List[str]] = None,
-        valid_sounds_only: bool = False,
+        valid_soundings_only: bool = False,
         min_elevation: float = float("-inf"),
         max_elevation: float = float("inf"),
-        min_sounds: int = 0,
+        min_soundings: int = 0,
         spatial_antialiasing: bool = True,
         gap_filling: bool = False,
         mask_size: int = 3,
@@ -97,14 +97,12 @@ class SounderToDtmExporter:
             self.geobox = arg_util.parse_geobox("coord", coord)
             self.geobox.spatial_reference = osr.SpatialReference()
             self.geobox.spatial_reference.ImportFromProj4(self.target_spatial_reference)
-        else:
-            self.geobox = None
 
         self.overwrite = overwrite
-        self.valid_sounds_only = valid_sounds_only
+        self.valid_soundings_only = valid_soundings_only
         self.min_elevation = arg_util.parse_float("min_elevation", min_elevation, float("-inf"))
         self.max_elevation = arg_util.parse_float("max_elevation", max_elevation, float("inf"))
-        self.min_sounds = arg_util.parse_int("min_sounds", min_sounds, 0)
+        self.min_soundings = arg_util.parse_int("min_soundings", min_soundings, 0)
 
         self.spatial_antialiasing = str.upper(str(spatial_antialiasing)) == "TRUE"
         self.gap_filling = str.upper(str(gap_filling)) == "TRUE"
@@ -150,7 +148,9 @@ class SounderToDtmExporter:
         chunk_size_in_swath_count = int(CHUNK_SIZE_IN_DETECTION_COUNT / i_sounder_driver.sounder_file.beam_count)
 
         # pylint:disable = unpacking-non-sequence
-        for longitudes, latitudes in i_sounder_driver.iter_beam_positions(chunk_size_in_swath_count):
+        for longitudes, latitudes in i_sounder_driver.iter_beam_positions(
+            chunk_size_in_swath_count, valid_only=self.valid_soundings_only
+        ):
             if transform is None:
                 x_min = min(x_min, np.nanmin(longitudes))
                 x_max = max(x_max, np.nanmax(longitudes))
@@ -180,7 +180,7 @@ class SounderToDtmExporter:
     ) -> np.ndarray:
         """
         Read depth values, depths are in fcs coordinate system, ie if set relative to an absolute surface reference
-        Mask unvalid soundings if valid_sounds_only is True
+        Mask unvalid soundings if valid_soundings_only is True
         """
         depths = i_sounder_driver.read_fcs_depths(from_swath, to_swath)
         if validities is not None:
@@ -197,7 +197,7 @@ class SounderToDtmExporter:
     ) -> np.ndarray:
         """
         Read reflectivities in sounder file.
-        Mask unvalid soundings if valid_sounds_only is True
+        Mask unvalid soundings if valid_soundings_only is True
         """
         result = i_sounder_driver.read_reflectivities(from_swath, to_swath)
         if validities is not None:
@@ -213,7 +213,7 @@ class SounderToDtmExporter:
     ) -> np.ndarray:
         """
         Read across distances in sounder file.
-        Mask unvalid soundings if valid_sounds_only is True
+        Mask unvalid soundings if valid_soundings_only is True
         """
         result = i_sounder_driver.read_across_distances(from_swath, to_swath)
         if validities is not None:
@@ -229,9 +229,27 @@ class SounderToDtmExporter:
     ) -> np.ndarray:
         """
         Read across angles in sounder file.
-        Mask unvalid soundings if valid_sounds_only is True
+        Mask unvalid soundings if valid_soundings_only is True
         """
         result = i_sounder_driver.read_across_angles(from_swath, to_swath)
+        if validities is not None:
+            result[~validities] = np.nan
+        return result
+
+    def __compute_backscatter_weight(
+        self,
+        i_sounder_driver: sounder_driver.SounderDriver,
+        from_swath: int,
+        to_swath: int,
+        validities: Optional[np.ndarray],
+    ) -> np.ndarray:
+        """
+        Compute backscatter weight based on across angles.
+        Mask unvalid soundings if valid_sounds_only is True
+        """
+        angles = i_sounder_driver.read_across_angles(from_swath, to_swath)
+        # gaussian weight centered on 45° with a stdev of 15°
+        result = np.exp(-0.5 * ((angles - 45) / 15) ** 2)
         if validities is not None:
             result[~validities] = np.nan
         return result
@@ -242,7 +260,7 @@ class SounderToDtmExporter:
         """
         Read validity flags if need be.
         """
-        if self.valid_sounds_only:
+        if self.valid_soundings_only:
             return i_sounder_driver.read_validity_flags(from_swath, to_swath)
         return None
 
@@ -308,8 +326,8 @@ class SounderToDtmExporter:
             the layer of beam angles if it has been generated by the gridder. None otherwise
         """
         # Delete isolated values
-        if self.min_sounds > 0:
-            dtm_gridder.reset_cell(self.min_sounds)
+        if self.min_soundings > 0:
+            dtm_gridder.reset_cell(self.min_soundings)
 
         #
         beam_angles = None
@@ -349,7 +367,9 @@ class SounderToDtmExporter:
         # Process beams by chunk
         chunk_size_in_swath_count = int(CHUNK_SIZE_IN_DETECTION_COUNT / i_sounder_driver.sounder_file.beam_count)
 
-        for xs, ys in i_sounder_driver.iter_beam_positions(chunk_size_in_swath_count):
+        for xs, ys in i_sounder_driver.iter_beam_positions(
+            chunk_size_in_swath_count, valid_only=self.valid_soundings_only
+        ):
             self.logger.info(f"Process swaths {i_swath} - {i_swath + xs.shape[0] - 1}")
             x, y = self.__project_coords(dtm_gridder, xs, ys)
 
@@ -360,17 +380,21 @@ class SounderToDtmExporter:
             elevations = self.__read_real_depth(i_sounder_driver, i_swath, i_swath + xs.shape[0], validities)
             dtm_gridder.grid_elevations(x, y, elevations, cdi)
 
-            columns = np.floor(x).astype(int)
-            rows = np.floor(y).astype(int)
+            # Compute grid indices, but convert nans to -1 (outside the grid) before casting to int, to avoid raising invalid value errors (might occur, depending on execution context)
+            columns = np.floor(np.nan_to_num(x, nan=-1)).astype(int)
+            rows = np.floor(np.nan_to_num(y, nan=-1)).astype(int)
 
             # Reflectivity
             if DTM.BACKSCATTER in self.layers:
                 backscatter = self.__read_reflectivities(i_sounder_driver, i_swath, i_swath + xs.shape[0], validities)
+                weight = self.__compute_backscatter_weight(i_sounder_driver, i_swath, i_swath + xs.shape[0], validities)
+
                 dtm_gridder.grid_backscatter(
                     columns=columns,
                     rows=rows,
                     elevations=elevations,
                     backscatter=signal.db_to_amplitude(backscatter.astype(np.float64)),
+                    weights=weight,
                 )
 
             # Across distances
@@ -388,7 +412,9 @@ class SounderToDtmExporter:
                 dtm_gridder.grid_min_max(
                     min_layer_name=None,
                     max_layer_name=DTM.MAX_ACCROSS_ANGLE,
-                    values=self.__read_across_angles(i_sounder_driver, i_swath, i_swath + xs.shape[0], validities),
+                    values=np.abs(
+                        self.__read_across_angles(i_sounder_driver, i_swath, i_swath + xs.shape[0], validities)
+                    ),
                     columns=columns,
                     rows=rows,
                 )

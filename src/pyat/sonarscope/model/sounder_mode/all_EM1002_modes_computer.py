@@ -7,6 +7,7 @@ from pyat.sonarscope.model.signal.ping_signal import PingSignal
 from pyat.sonarscope.model.sounder_mode.all_EM1002_mode import KeyModeAllEM1002
 from pyat.sonarscope.model.sounder_mode.sounder_modes import KeyMode
 from pyat.sonarscope.model.sounder_mode.sounder_modes_computer import ModeComputer
+from pyat.utils.exceptions.exception_list import BadParameter
 from pyat.xsf import xsf_driver
 from pyat.xsf.xsf_driver import XsfDriver
 
@@ -27,30 +28,39 @@ class ModeComputerAllEM1002(ModeComputer):
     def compute_keys_values(
         self,
         ping_mode: np.ndarray,
+        center_frequency: np.ndarray,
         global_keys: Dict[KeyMode, int],
     ) -> Tuple[Dict[KeyMode, int], np.ndarray]:
         """
-        Parse all the parameter arrays and retrieve a set of exclusive KeyModeEM2040 of all combination seen in the file
+        Parse all the parameter arrays and retrieve a set of exclusive KeyModeEM1002 of all combination seen in the file
         Returns : a tuple containing a dictionary of the KeyMode values and their id, and a 1D array of modes
 
         """
         reference_shape = ping_mode.shape
+        if reference_shape[0] != center_frequency.shape[0]:
+            raise BadParameter(
+                f"Compute backscatter key mode function does not support arrays with different shape, coding error in {KeyModeAllEM1002.__name__}"
+            )
         values = np.full(shape=reference_shape, fill_value=-1)
         # iterate over all frequency, mode, etc arrays
-        i = 0
-        for pmode in np.nditer((ping_mode)):
+        for i in range(reference_shape[0]):
+            pmode = ping_mode[i]
+            cfreq = center_frequency[i]
             # For each combination create a key
             pmode = None if np.isnan(pmode) else int(pmode)
+            # ensure converting to immutable tuple of int
+            cfreq = tuple(int(x) for x in cfreq[:])
 
-            key = KeyModeAllEM1002(ping_mode=pmode)
+            key = KeyModeAllEM1002(
+                ping_mode=pmode,
+                center_frequency=cfreq,
+            )
             # the use of a set will retain unique keys
-
             if key not in global_keys:
                 next_index = len(global_keys)
                 global_keys[key] = next_index
 
             values[i] = global_keys[key]
-            i = i + 1
         return global_keys, values
 
     def compute_xsf(self, xsf: XsfDriver, global_keys: Dict[KeyMode, int]) -> Tuple[Dict[KeyMode, int], np.ndarray]:
@@ -64,9 +74,11 @@ class ModeComputerAllEM1002(ModeComputer):
 
         # retrieve values
         ping_mode = model.xr_dataset[Key.PING_MODE].to_numpy()
+        center_frequency = xsf.read_multiping_center_frequency()
 
         # compute signal modes
         return self.compute_keys_values(
             ping_mode=ping_mode,
+            center_frequency=center_frequency,
             global_keys=global_keys,
         )

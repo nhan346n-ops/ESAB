@@ -13,6 +13,7 @@ def csv_to_bsar_process(
     i_path: str,
     o_path: str,
     overwrite: bool = False,
+    frequency: Optional[float] = None,
 ) -> None:
     """
     Convert mean bs model by incidence from csv to bsar file.
@@ -20,8 +21,9 @@ def csv_to_bsar_process(
     @param i_path : input file path
     @param o_path : output file path
     @param overwrite : True to overwrite output files if needed
+    @param frequency : Frequency in Hz to determine sounder mode.
     """
-    mean_bs_model = MeanBSModel.import_from_csv(input_files=[i_path])
+    mean_bs_model = MeanBSModel.import_from_csv(input_files=[i_path], frequency=frequency)
     if mean_bs_model is None:
         default_config.logger.error(f"File {i_path} does not contain mean BS data")
     else:

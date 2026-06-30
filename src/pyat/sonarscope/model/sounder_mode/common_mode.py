@@ -29,7 +29,10 @@ class KeyModeCommon(KeyMode):
         return self.to_json()
 
     def get_tx_beam_count(self):
-        return 0
+        return 1
+
+    def get_center_frequency(self) -> tuple | None:
+        return None
 
     def __str__(self):
         return self.short_name()

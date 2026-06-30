@@ -137,7 +137,7 @@ class SensorTide:
     def process(self):
         self.logger.info(f"Read input files")
 
-        (longitudesMasked, latitudesMasked, altitudesMasked) = self.read_sensor_data()
+        longitudesMasked, latitudesMasked, altitudesMasked = self.read_sensor_data()
         if altitudesMasked.empty:
             self.logger.info(f"No data to process")
             return
@@ -149,7 +149,7 @@ class SensorTide:
             self.end_date = altitudesMasked.index[-1]
 
         # get subsampled interpolated navigation for performance with tide server
-        (longitudesSubsampled, latitudesSubsampled) = self.subsample_and_interpolate_navigation(
+        longitudesSubsampled, latitudesSubsampled = self.subsample_and_interpolate_navigation(
             longitudesMasked, latitudesMasked
         )
         self.logger.info(f"Change reference")
@@ -202,7 +202,7 @@ class SensorTide:
             altitudesMasked.values[:] -= tide_pred_interpolator(x=altitudesMasked.index.astype(np.int64))
 
         self.logger.info("Apply lowpass filtering")
-        (filtered_long, filtered_lat, filtered_alt) = self._filter_and_interpolate_nav(
+        filtered_long, filtered_lat, filtered_alt = self._filter_and_interpolate_nav(
             longitudesMasked, latitudesMasked, altitudesMasked
         )
 
@@ -373,7 +373,7 @@ class XsfTide(SensorTide):
         # if self.display:
         #     self.global_df.plot.scatter(x="date", y="altitude", c=quality, cmap="viridis", marker=".")
 
-        gps_quality_mask = quality > 2 if self.positioning_type_filter else quality > 0
+        gps_quality_mask = quality > 2 if self.positioning_type_filter else quality != 0
         latitudes_masked = self.global_df["latitude"][gps_quality_mask]
         longitudes_masked = self.global_df["longitude"][gps_quality_mask]
         altitudes_masked = self.global_df["altitude"][gps_quality_mask]
@@ -549,7 +549,7 @@ def _apply_low_pass_cheby2_filter(data: pd.Series) -> pd.Series:
     frequency_cut = 1 / 300  # (-40dB point)
     frequency_sampling = 1  # 1Hz
 
-    (b, a) = scipy.signal.cheby2(order, attenuation_cut, frequency_cut, "lowpass", fs=frequency_sampling, analog=False)
+    b, a = scipy.signal.cheby2(order, attenuation_cut, frequency_cut, "lowpass", fs=frequency_sampling, analog=False)
     filtered_data = scipy.signal.filtfilt(b=b, a=a, x=data, method="gust")
     return pd.Series(data=filtered_data, index=data.axes[0])
 
@@ -560,7 +560,7 @@ def _apply_low_pass_butter_filter(data: pd.Series) -> pd.Series:
     frequency_sampling = 1  # 1Hz
 
     # Prepare filter
-    (b, a) = scipy.signal.butter(order, frequency_cut, "lowpass", fs=frequency_sampling, analog=False)
+    b, a = scipy.signal.butter(order, frequency_cut, "lowpass", fs=frequency_sampling, analog=False)
     # Apply filter
     filtered_data = scipy.signal.filtfilt(b=b, a=a, x=data)
     return pd.Series(data=filtered_data, index=data.axes[0])

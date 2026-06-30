@@ -369,7 +369,7 @@ class MapView(QWidget):
         """Clear navLayer and redraw all visible tracks."""
         if not self._nav_tracks:
             return
-        parts = ["navLayer.clearLayers()"]
+        parts = ["if (typeof navLayer !== 'undefined') { navLayer.clearLayers(); }"]
         for fp, coords in self._nav_tracks.items():
             if fp not in self._visible_tracks:
                 continue

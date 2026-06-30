@@ -8,7 +8,7 @@ from scipy.stats import binned_statistic
 from pyat.xsf import xsf_driver
 from ...utils import argument_utils, numpy_utils
 from ...utils.multiple_entry_dict import MultipleEntryDict
-from ..common.configuration import IntegrationMethod, LinearScale, default_config
+from ..common.configuration import IntegrationMethod, InterpolationMethod, LinearScale, default_config
 from ..common.mask import compute_geo_mask_from_lon_lat
 from ..model.constants import VariableKeys as Key
 from ..model.signal.ping_detection_signal import PingDetectionSignal
@@ -41,6 +41,10 @@ class MeanBSComputer:
         curves_by_incidence_per_mode_and_file = MultipleEntryDict()  # curve dictionary per mode
 
         valid_indices = get_valid_key_indices(key_dict=global_data.keymode_dict)
+
+        rx_antenna_count = None
+        rx_antenna_index = None
+
         #
         # START PROCESS PER FILE BY INCIDENCE
         #
@@ -64,6 +68,8 @@ class MeanBSComputer:
                         Key.BATHYMETRY_STATUS,
                         Key.DETECTION_LONGITUDE,
                         Key.DETECTION_LATITUDE,
+                        Key.DETECTION_TX_BEAM_INDEX,
+                        Key.DETECTION_RX_TRANSDUCER_INDEX,
                     ]
                 )
 
@@ -71,6 +77,8 @@ class MeanBSComputer:
                 status_mask = status == 0
                 detection_longitude = ping_detection_model.xr_dataset[Key.DETECTION_LONGITUDE].data
                 detection_latitude = ping_detection_model.xr_dataset[Key.DETECTION_LATITUDE].data
+                detection_tx_beam = ping_detection_model.xr_dataset[Key.DETECTION_TX_BEAM_INDEX].data
+                detection_rx_transducer = ping_detection_model.xr_dataset[Key.DETECTION_RX_TRANSDUCER_INDEX].data
 
                 geo_mask = np.full_like(status_mask, fill_value=True)
                 if mask_files is not None and len(mask_files) > 0:
@@ -79,6 +87,14 @@ class MeanBSComputer:
                     if not geo_mask.any():
                         default_config.logger.info("File outside of mask. Skipping it.")
                         continue
+
+                file_antenna_index = xsf.get_rx_transducers()
+                file_antenna_count = len(file_antenna_index) if file_antenna_index is not None else 0
+                if rx_antenna_count is None:
+                    rx_antenna_count = file_antenna_count
+                    rx_antenna_index = file_antenna_index
+                elif rx_antenna_count != file_antenna_count:
+                    default_config.logger.warning("The rx antenna count does not match in this file.")
 
                 bs_value, incidence_angles = BSComputer.compute_bs(
                     ping_dataset=ping_model,
@@ -95,57 +111,88 @@ class MeanBSComputer:
                         continue
                     default_config.logger.info(f"Processing mode {mode}")
 
+                    # compute stats by tx sector
+                    mean_values_per_sector = np.full(
+                        shape=(
+                            rx_antenna_count,
+                            mode.get_tx_beam_count(),
+                            default_config.incidence_angles.bin_count,
+                        ),
+                        dtype=np.float64,
+                        fill_value=np.nan,
+                    )
+                    value_counts_per_sector = np.full(
+                        shape=(
+                            rx_antenna_count,
+                            mode.get_tx_beam_count(),
+                            default_config.incidence_angles.bin_count,
+                        ),
+                        dtype=np.int32,
+                        fill_value=0,
+                    )
+
                     # resample data in order to be able to work mode per mode
                     # keep only data matching the current mode
                     mode_mask = modes_indexes == current_mode_idx
 
-                    # compute stats by incidence angle
-                    # remove data not valid
-                    detection_mask = status_mask.copy()
-                    # remove data not matching mode
-                    detection_mask[~mode_mask] = False
-                    # remove data outside geo_mask
-                    detection_mask[~geo_mask] = False
+                    for rx_antenna in range(rx_antenna_count):
+                        rx_mask = detection_rx_transducer == rx_antenna_index[rx_antenna]
+                        if not np.any(rx_mask):
+                            continue
+                        for tx_beam in range(mode.get_tx_beam_count()):
+                            # filter to keep data for this tx_beam
+                            detection_mask = detection_tx_beam == tx_beam
+                            # remove data not matching antenna
+                            detection_mask[~rx_mask] = False
+                            # remove data not matching mode
+                            detection_mask[~mode_mask] = False
+                            # remove data not valid
+                            detection_mask[~status_mask] = False
+                            # remove data outside geo_mask
+                            detection_mask[~geo_mask] = False
 
-                    incidence_angles_masked = incidence_angles[detection_mask]
-                    bs_masked = bs_value[detection_mask]
-                    flat_incidence_angles = incidence_angles_masked.ravel()
-                    flat_bs = bs_masked.ravel()
-                    flat_bs_linear = default_config.db_to_linear(bs_masked).ravel()
-                    # remove Nan value, this can happen when missing datagram for example
-                    values_to_remove = np.isnan(flat_bs_linear) | np.isnan(flat_incidence_angles)
+                            incidence_angles_masked = incidence_angles[detection_mask]
+                            bs_masked = bs_value[detection_mask]
+                            flat_incidence_angles = incidence_angles_masked.ravel()
+                            flat_bs = bs_masked.ravel()
+                            flat_bs_linear = default_config.db_to_linear(bs_masked).ravel()
+                            # remove Nan value, this can happen when missing datagram for example
+                            values_to_remove = np.isnan(flat_bs_linear) | np.isnan(flat_incidence_angles)
 
-                    flat_incidence_angles = flat_incidence_angles[~values_to_remove]
-                    flat_bs_linear = flat_bs_linear[~values_to_remove]
-                    flat_bs = flat_bs[~values_to_remove]
+                            flat_incidence_angles = flat_incidence_angles[~values_to_remove]
+                            flat_bs_linear = flat_bs_linear[~values_to_remove]
+                            flat_bs = flat_bs[~values_to_remove]
 
-                    if default_config.integration_method is IntegrationMethod.MEAN:
-                        mean_method = "mean"
-                    else:
-                        mean_method = "median"
+                            if default_config.integration_method is IntegrationMethod.MEAN:
+                                mean_method = "mean"
+                            else:
+                                mean_method = "median"
 
-                    stat_count, bin_edges, _ = binned_statistic(
-                        x=flat_incidence_angles,
-                        values=flat_bs,
-                        statistic="count",
-                        bins=default_config.incidence_angles.bin_count,
-                        range=default_config.incidence_angles.angle_range,
-                    )
-                    stat_mean_linear, _, _ = binned_statistic(
-                        x=flat_incidence_angles,
-                        values=flat_bs_linear,
-                        statistic=mean_method,
-                        bins=default_config.incidence_angles.bin_count,
-                        range=default_config.incidence_angles.angle_range,
-                    )
-                    stat_mean = default_config.linear_to_db(stat_mean_linear)
-                    mean_values_by_incidence = stat_mean
-                    value_counts_by_incidence = stat_count.astype(np.int32)
+                            stat_count, bin_edges, _ = binned_statistic(
+                                x=flat_incidence_angles,
+                                values=flat_bs,
+                                statistic="count",
+                                bins=default_config.incidence_angles.bin_count,
+                                range=default_config.incidence_angles.angle_range,
+                            )
+                            stat_count = stat_count.astype(np.int32)
+
+                            stat_mean_linear, _, _ = binned_statistic(
+                                x=flat_incidence_angles,
+                                values=flat_bs_linear,
+                                statistic=mean_method,
+                                bins=default_config.incidence_angles.bin_count,
+                                range=default_config.incidence_angles.angle_range,
+                            )
+                            stat_mean = default_config.linear_to_db(stat_mean_linear)
+
+                            mean_values_per_sector[rx_antenna][tx_beam] = stat_mean
+                            value_counts_per_sector[rx_antenna][tx_beam] = stat_count
 
                     # create curve by incidence
                     curve_by_incidence = BackscatterCurveByIncidence.build(
-                        mean_values=mean_values_by_incidence,
-                        count=value_counts_by_incidence,
+                        mean_values=mean_values_per_sector,
+                        count=value_counts_per_sector,
                         bin_centers=default_config.incidence_angles.bin_centers,
                         origin=file,
                     )
@@ -331,8 +378,21 @@ class MeanBSComputer:
                             flat_bs_linear = default_config.db_to_linear(bs_masked).ravel()
 
                             # retrieve corresponding bs by incidence angle in bs model (extrapolate with left and right values)
-                            source_x = curve_by_incidence.ds[BackscatterCurve.ANGLE]
-                            source_y = curve_by_incidence.ds[BackscatterCurve.MEAN_BS]
+                            source_mean_bs_by_incidence = curve_by_incidence.ds[BackscatterCurve.MEAN_BS]
+                            if source_mean_bs_by_incidence.shape[0] == 1:
+                                # if only one rx antenna, use the same curve for all rx antenna
+                                source_rx_antenna = 0
+                            else:
+                                source_rx_antenna = rx_antenna
+                            if source_mean_bs_by_incidence.shape[1] == 1:
+                                # if only one tx beam, use the same curve for all sectors
+                                source_tx_beam = 0
+                            else:
+                                source_tx_beam = tx_beam
+                            source_x = curve_by_incidence.ds[BackscatterCurve.ANGLE][:]
+                            source_y = curve_by_incidence.ds[BackscatterCurve.MEAN_BS][
+                                source_rx_antenna, source_tx_beam, :
+                            ]
                             source_mask = np.isnan(source_y)
                             if source_mask.all():
                                 continue
@@ -394,8 +454,6 @@ class MeanBSComputer:
 
                     # create curve for all
                     curve_by_transmission = BackscatterCurveByTransmission.build(
-                        rx_antenna_count=rx_antenna_count,
-                        tx_beam_count=mode.get_tx_beam_count(),
                         mean_values=mean_values_per_tx,
                         mean_residual_values=mean_diff_values_per_tx,
                         count=value_counts_per_tx,
@@ -500,6 +558,7 @@ def compute_mean_model(
     use_svp: bool = True,
     use_snippets: bool = True,
     use_insonified_area: bool = True,
+    use_reference_by_sector: bool = True,
     remove_calibration: bool = True,
     remove_compensation: bool = True,
 ):
@@ -515,6 +574,7 @@ def compute_mean_model(
     @param use_svp : True to use sound velocity profile registered in input files
     @param use_snippets : True to recompute detection mean bs from snippets
     @param use_insonified_area : True to recompute insonified area from incidence seafloor angles
+    @param use_reference_by_sector : True to use a reference incidence curves by sector (for calibration)
     @param remove_calibration : True to remove sounder calibration (BSCorr from kmall only)
     @param remove_compensation : True to remove angular backscatter compensation (Lambert + specular)
     """
@@ -525,6 +585,7 @@ def compute_mean_model(
     default_config.set_use_insonified_area(use_insonified_area=use_insonified_area)
     default_config.set_remove_calibration(remove_calibration=remove_calibration)
     default_config.set_remove_compensation(remove_compensation=remove_compensation)
+    default_config.set_use_reference_by_sector(use_reference_by_sector=use_reference_by_sector)
 
     sounder_type = default_config.check_files_soundertype(input_files=i_paths, sounder_type=sounder_type)
 
@@ -557,7 +618,9 @@ def compute_mean_model_process(
     remove_compensation: bool = True,
     remove_calibration: bool = True,
     integration_method: str = IntegrationMethod.MEAN.name,
-    linear_scale: str = LinearScale.AMPLITUDE.name,
+    linear_scale: str = LinearScale.ENERGY.name,
+    frequency_interpolation_method: str = InterpolationMethod.LINEAR.name,
+    use_reference_by_sector: bool = True,
 ) -> None:
     """
     Compute mean backscatter model of input files
@@ -574,10 +637,15 @@ def compute_mean_model_process(
     @param remove_calibration : True to remove sounder calibration (BSCorr from kmall only)
     @param integration_method : method to use to integrate mean values (MEAN or MEDIAN)
     @param linear_scale : scale to use for mean value integration (ENERGY or AMPLITUDE)
+    @param frequency_interpolation_method : method to use for interpolating frequencies from reference incidence curves (NEAREST or LINEAR)
+    @param use_reference_by_sector : True to use a reference incidence curves by sector
     """
 
     default_config.set_integration_method(integration_method=IntegrationMethod[integration_method])
     default_config.set_linear_scale(working_scale=LinearScale[linear_scale])
+    default_config.set_frequency_interpolation_method(
+        interpolation_method=InterpolationMethod[frequency_interpolation_method]
+    )
     compute_mean_model(
         sounder_type=sounder_type,
         i_paths=i_paths,
@@ -591,4 +659,5 @@ def compute_mean_model_process(
         use_insonified_area=use_insonified_area,
         remove_compensation=remove_compensation,
         remove_calibration=remove_calibration,
+        use_reference_by_sector=use_reference_by_sector,
     )

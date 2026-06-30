@@ -248,7 +248,7 @@ def build_sounder_to_dtm_json(
     layers: Optional[List[str]] = None,
     gap_filling: bool = False,
     mask_size: int = 3,
-    valid_sounds_only: bool = True,
+    valid_soundings_only: bool = True,
     spatial_antialiasing: bool = False,
     min_elevation: Optional[float] = None,
     max_elevation: Optional[float] = None,
@@ -276,7 +276,7 @@ def build_sounder_to_dtm_json(
         "target_spatial_reference": target_spatial_reference,
         "gap_filling": gap_filling,
         "mask_size": mask_size,
-        "valid_sounds_only": valid_sounds_only,
+        "valid_soundings_only": valid_soundings_only,
         "spatial_antialiasing": spatial_antialiasing,
     }
     if coord:

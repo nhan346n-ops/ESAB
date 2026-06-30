@@ -105,7 +105,7 @@ def _process_filtering(args: AutomaticFilteringArg, o_path: str, i_path: str) ->
     # Open the copied file for filtering
     success = True
     with xd.open_xsf(o_path, mode="r+") as xsf_file:
-        x, y, z, validity = extract_data(args, xsf_file)
+        x, y, z, validity = extract_data(xsf_file, args.projection)
         new_validity = process_with_ndarray(x, y, z, validity, args.contamination)
         _apply_filtering_result(xsf_file, new_validity)
         _update_history(xsf_file)

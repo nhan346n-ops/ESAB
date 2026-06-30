@@ -109,9 +109,9 @@ class DtmGridder:
         self._tmp_mean_x_data = None
         self._tmp_mean_y_data = None
 
-        # temporary layer to store backscatter data and count
+        # temporary layer to store backscatter data and weights for mean calculation.
         self._tmp_mean_backscatter_data = None
-        self._tmp_backscatter_count = None
+        self._tmp_backscatter_weights = None
 
         # Dictionnary of CDI.
         # Key is the CDI transmit by the process
@@ -228,10 +228,10 @@ class DtmGridder:
                 np.float64,
                 np.nan,
             )
-            self._tmp_backscatter_count = self.o_dtm_driver.prepare_memmap_data(
-                "tmp_backscatter_count",
-                dtm_driver.get_type(DTM.VALUE_COUNT),
-                dtm_driver.get_missing_value(DTM.VALUE_COUNT),
+            self._tmp_backscatter_weights = self.o_dtm_driver.prepare_memmap_data(
+                "tmp_backscatter_weights",
+                np.float64,
+                0.0,
             )
 
     def restrict_elevations(self, min_elevation: float, max_elevation: float):
@@ -326,7 +326,12 @@ class DtmGridder:
             self.__set_cdi_where_none(cdi)
 
     def grid_backscatter(
-        self, columns: np.ndarray, rows: np.ndarray, elevations: np.ndarray, backscatter: np.ndarray
+        self,
+        columns: np.ndarray,
+        rows: np.ndarray,
+        elevations: np.ndarray,
+        backscatter: np.ndarray,
+        weights: Optional[np.ndarray] = None,
     ) -> None:
         """
         Grid backscatter values. Cells will contains the mean value of backscatter that should be linearized first.
@@ -337,13 +342,23 @@ class DtmGridder:
         backscatter[np.isnan(elevations)] = np.nan
 
         # Compute iterative mean
-        np_util.compute_statistics(
-            in_array=backscatter,
-            x_array=columns,
-            y_array=rows,
-            out_mean_array=self._tmp_mean_backscatter_data,
-            out_count_array=self._tmp_backscatter_count,
-        )
+        if weights is None:
+            np_util.compute_statistics(
+                in_array=backscatter,
+                x_array=columns,
+                y_array=rows,
+                out_mean_array=self._tmp_mean_backscatter_data,
+                out_count_array=self._tmp_backscatter_weights,
+            )
+        else:
+            np_util.compute_weighted_statistics(
+                in_array=backscatter,
+                x_array=columns,
+                y_array=rows,
+                in_weights=weights,
+                out_mean_array=self._tmp_mean_backscatter_data,
+                out_weighted_count_array=self._tmp_backscatter_weights,
+            )
 
     def grid_keep_last(
         self,
@@ -562,8 +577,8 @@ class DtmGridder:
             del self._tmp_square_elevation_data
         if self._tmp_mean_backscatter_data is not None:
             del self._tmp_mean_backscatter_data
-        if self._tmp_backscatter_count is not None:
-            del self._tmp_backscatter_count
+        if self._tmp_backscatter_weights is not None:
+            del self._tmp_backscatter_weights
 
     def __register_cdi_in_reference(self, cdi: str, cdi_or_cprd_prefix: str) -> None:
         """

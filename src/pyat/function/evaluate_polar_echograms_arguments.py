@@ -62,9 +62,9 @@ class PolarEchogramsArgumentsEvaluator:
                     _max_depth = max_depth
                 # sample_interval
                 sample_interval = xsf_driver["Sonar"]["Beam_group1"]["sample_interval"][:]
-                min_sample_interval = np.nanmin(sample_interval)
-                if _max_sample_interval == float("-inf") or min_sample_interval < _max_sample_interval:
-                    _max_sample_interval = min_sample_interval
+                max_sample_interval = np.nanmax(sample_interval)
+                if max_sample_interval > _max_sample_interval:
+                    _max_sample_interval = max_sample_interval
                 # sound_speed
                 sound_speed = xsf_driver["Sonar"]["Beam_group1"]["sound_speed_at_transducer"][:]
                 max_sound_speed = np.nanmax(sound_speed)

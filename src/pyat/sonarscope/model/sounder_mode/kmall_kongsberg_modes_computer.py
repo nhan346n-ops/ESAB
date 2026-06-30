@@ -33,6 +33,7 @@ class ModeComputerKmallGeneric(ModeComputer):
         sector_count: np.ndarray,
         swath_count: np.ndarray,
         swath_index: np.ndarray,
+        center_frequency: np.ndarray,
         global_keys: Dict[KeyMode, int],
     ) -> Tuple[Dict[KeyMode, int], np.ndarray]:
         """
@@ -41,29 +42,36 @@ class ModeComputerKmallGeneric(ModeComputer):
 
         """
         reference_shape = frequency_array.shape
+        # ensure all per-ping arrays share the same shape and center_frequency matches in first dim
         if (
-            reference_shape != depth_mode.shape
-            or reference_shape != pulse_form.shape
-            or reference_shape != sector_count.shape
-            or reference_shape != swath_count.shape
-            or reference_shape != swath_index.shape
+            not (
+                reference_shape
+                == depth_mode.shape
+                == pulse_form.shape
+                == sector_count.shape
+                == swath_count.shape
+                == swath_index.shape
+            )
+            or reference_shape[0] != center_frequency.shape[0]
         ):
             raise BadParameter(
                 f"Compute backscatter key mode function does not support arrays with different shape, coding error in {KeyModeKmallGeneric.__name__}"
             )
         values = np.full(shape=reference_shape, fill_value=-1)
         # iterate over all frequency, mode, etc arrays
-        i = 0
-        for fq, d_mode, p_form, tx_count, s_count, s_index in np.nditer(
-            (frequency_array, depth_mode, pulse_form, sector_count, swath_count, swath_index)
-        ):
-            # For each combination create a key
-            fq = None if np.isnan(fq) else float(fq)
-            d_mode = None if np.isnan(d_mode) else int(d_mode)
-            p_form = None if np.isnan(p_form) else int(p_form)
-            tx_count = None if np.isnan(tx_count) else int(tx_count)
-            s_count = None if np.isnan(s_count) else int(s_count)
-            s_index = None if np.isnan(s_index) else int(s_index)
+        for i in range(reference_shape[0]):
+            fq = None if np.isnan(frequency_array[i]) else float(frequency_array[i])
+            d_mode = None if np.isnan(depth_mode[i]) else int(depth_mode[i])
+            p_form = None if np.isnan(pulse_form[i]) else int(pulse_form[i])
+            tx_count = None if np.isnan(sector_count[i]) else int(sector_count[i])
+            s_count = None if np.isnan(swath_count[i]) else int(swath_count[i])
+            s_index = None if np.isnan(swath_index[i]) else int(swath_index[i])
+            c_freq = center_frequency[i]
+            # ensure converting to immutable tuple of int
+            if tx_count is not None and tx_count > 0:
+                c_freq = tuple(int(x) for x in c_freq[:tx_count])
+            else:
+                c_freq = None
 
             key = KeyModeKmallGeneric(
                 frequency_mode=fq,
@@ -72,6 +80,7 @@ class ModeComputerKmallGeneric(ModeComputer):
                 sector_count=tx_count,
                 swath_count=s_count,
                 swath_index=s_index,
+                center_frequency=c_freq,
             )
             # the use of a set will retain unique keys
             if key not in global_keys:
@@ -107,6 +116,7 @@ class ModeComputerKmallGeneric(ModeComputer):
         tx_sector_count = model.xr_dataset[Key.TX_SECTOR_COUNT].to_numpy()
         swath_per_ping = model.xr_dataset[Key.SWATH_PER_PING].to_numpy()
         multiping_sequence = model.xr_dataset[Key.MULTIPING_SEQUENCE].to_numpy()
+        center_frequency = xsf.read_multiping_center_frequency()
 
         # compute signal modes
         return self.compute_keys_values(
@@ -116,5 +126,6 @@ class ModeComputerKmallGeneric(ModeComputer):
             sector_count=tx_sector_count,
             swath_count=swath_per_ping,
             swath_index=multiping_sequence,
+            center_frequency=center_frequency,
             global_keys=global_keys,
         )

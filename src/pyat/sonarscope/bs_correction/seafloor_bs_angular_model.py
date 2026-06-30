@@ -31,10 +31,21 @@ class ConstantModel:
         # get an angular independent response model for the surveyed area
         for mode, (curve_by_incidence, curve_by_transmission) in mean_bs.model.items():
             avg_incidence_offset, incidence_angles = self.__get_avg_table(curve_by_incidence)
+            avg_residual_transmission_offset, transmission_angles = self.__get_avg_residual_table(curve_by_transmission)
+
+            # adapt incidence curve shape on transmission curve shape if needed (old format compatibility)
+            if avg_incidence_offset.shape[0] == 1 and avg_residual_transmission_offset.shape[0] > 1:
+                avg_incidence_offset = np.repeat(
+                    avg_incidence_offset, avg_residual_transmission_offset.shape[0], axis=0
+                )
+            if avg_incidence_offset.shape[1] == 1 and avg_residual_transmission_offset.shape[1] > 1:
+                avg_incidence_offset = np.repeat(
+                    avg_incidence_offset, avg_residual_transmission_offset.shape[1], axis=1
+                )
+
             self.avg_incidence_lut[mode] = avg_incidence_offset
             self.avg_incidence_angles = incidence_angles
 
-            avg_residual_transmission_offset, transmission_angles = self.__get_avg_residual_table(curve_by_transmission)
             self.avg_residual_transmission_lut[mode] = avg_residual_transmission_offset
             self.avg_transmission_angles = transmission_angles
 

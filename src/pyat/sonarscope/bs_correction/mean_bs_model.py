@@ -10,18 +10,20 @@ from typing import Dict, Iterable, Optional, TypeAlias
 
 import numpy as np
 import pandas as pd
+import scipy.interpolate
 import xarray as xr
 
 from pyat.sonarscope.model.sounder_lib import SounderType
-from pyat.sonarscope.model.sounder_mode.bscorr_mode import KeyModeBscorr
 from pyat.sonarscope.model.sounder_mode.all_kongsberg_mode import KeyModeAllGeneric
+from pyat.sonarscope.model.sounder_mode.bscorr_mode import KeyModeBscorr
+from pyat.sonarscope.model.sounder_mode.calibrated_mode import KeyModeCalibrated
 from pyat.sonarscope.model.sounder_mode.common_mode import KeyModeCommon
 from pyat.sonarscope.model.sounder_mode.kmall_kongsberg_mode import KeyModeKmallGeneric
 from pyat.utils.nc_encoding import open_nc_file
 
 from ...utils.exceptions.exception_list import UnexpectedError
 from ...utils.netcdf_utils import DEFAULT_COMPRESSION_LEVEL
-from ..common.configuration import default_config
+from ..common.configuration import InterpolationMethod, default_config
 from ..model.sonar_factories import ModeComputerFactory
 from ..model.sounder_mode.sounder_modes import KeyMode
 
@@ -75,15 +77,18 @@ class BackscatterCurveByIncidence(BackscatterCurve):
         raw_mean_values: Optional[np.ndarray] = None,
         origin: Optional[str] = None,
     ):
+        rx_antenna_count = mean_values.shape[0]
+        tx_beam_count = mean_values.shape[1]
+
         ds = xr.Dataset(
             data_vars={
                 BackscatterCurve.MEAN_BS: (
-                    [BackscatterCurve.ANGLE],
+                    [BackscatterCurve.RX_ANTENNA, BackscatterCurve.TX_BEAM, BackscatterCurve.ANGLE],
                     mean_values.astype(np.float64),
                     {"long_name": "filtered mean backscatter"},
                 ),
                 BackscatterCurve.RAW_MEAN_BS: (
-                    [BackscatterCurve.ANGLE],
+                    [BackscatterCurve.RX_ANTENNA, BackscatterCurve.TX_BEAM, BackscatterCurve.ANGLE],
                     (
                         raw_mean_values.astype(np.float64)
                         if raw_mean_values is not None
@@ -92,12 +97,22 @@ class BackscatterCurveByIncidence(BackscatterCurve):
                     {"long_name": "raw mean backscatter"},
                 ),
                 BackscatterCurve.VALUE_COUNT: (
-                    [BackscatterCurve.ANGLE],
+                    [BackscatterCurve.RX_ANTENNA, BackscatterCurve.TX_BEAM, BackscatterCurve.ANGLE],
                     count.astype(np.int32),
                     {"long_name": "value count per bin"},
                 ),
             },
             coords={
+                BackscatterCurve.RX_ANTENNA: (
+                    [BackscatterCurve.RX_ANTENNA],
+                    np.arange(0, rx_antenna_count, dtype=np.int32),
+                    {"long_name": "rx antenna index"},
+                ),
+                BackscatterCurve.TX_BEAM: (
+                    [BackscatterCurve.TX_BEAM],
+                    np.arange(0, tx_beam_count, dtype=np.int32),
+                    {"long_name": "tx beam index"},
+                ),
                 BackscatterCurve.ANGLE: (
                     [BackscatterCurve.ANGLE],
                     bin_centers.astype(np.float64),
@@ -118,10 +133,48 @@ class BackscatterCurveByIncidence(BackscatterCurve):
             skipinitialspace=True,
             engine="python",
         )
-        mean_values = df[BackscatterCurve.MEAN_BS].to_numpy()
         bin_centers = df[BackscatterCurve.ANGLE].to_numpy()
-        count = np.full(fill_value=1, shape=(bin_centers.shape[0]), dtype=np.int32)
-        return cls.build(mean_values=mean_values, count=count, bin_centers=bin_centers, origin=filepath)
+        mean_values = df[BackscatterCurve.MEAN_BS].to_numpy().reshape(1, 1, bin_centers.shape[0])
+        count = np.full(fill_value=1, shape=(1, 1, bin_centers.shape[0]), dtype=np.int32)
+        filename = os.path.basename(filepath)
+        return cls.build(
+            mean_values=mean_values,
+            count=count,
+            bin_centers=bin_centers,
+            origin=filename,
+        )
+
+    @classmethod
+    def from_netcdf(cls, filepath, group_name: Optional[str] = None) -> BackscatterCurve:
+        ds = xr.open_dataset(filepath, engine="netcdf4", group=group_name)
+        # check that dataset has the expected variables and dimensions and reshape if needed
+        if BackscatterCurve.MEAN_BS not in ds.data_vars:
+            raise UnexpectedError(
+                f"Dataset in {filepath} group {group_name} does not have {BackscatterCurve.MEAN_BS} variable"
+            )
+        if BackscatterCurve.ANGLE not in ds.coords:
+            raise UnexpectedError(
+                f"Dataset in {filepath} group {group_name} does not have {BackscatterCurve.ANGLE} coordinate"
+            )
+
+        if ds[BackscatterCurve.MEAN_BS].dims != (
+            BackscatterCurve.RX_ANTENNA,
+            BackscatterCurve.TX_BEAM,
+            BackscatterCurve.ANGLE,
+        ):
+            # try to reshape the dataset to have the expected dimensions, this is to be compatible with older versions of the model where the dimensions is only (angle)
+            if set(ds[BackscatterCurve.MEAN_BS].dims) == {BackscatterCurve.ANGLE}:
+                # Reshape the dataset to have the expected dimensions
+                n_tx_beam = 1
+                n_rx_antenna = 1
+                ds = ds.expand_dims(
+                    dim={BackscatterCurve.RX_ANTENNA: n_rx_antenna, BackscatterCurve.TX_BEAM: n_tx_beam}, axis=[0, 1]
+                )
+            else:
+                raise UnexpectedError(
+                    f"Dataset in {filepath} group {group_name} has {BackscatterCurve.MEAN_BS} variable with unexpected dimensions {ds[BackscatterCurve.MEAN_BS].dims}, expected dimensions are {(BackscatterCurve.RX_ANTENNA, BackscatterCurve.TX_BEAM, BackscatterCurve.ANGLE)}"
+                )
+        return BackscatterCurve(xr_dataset=ds, origin=group_name)
 
 
 class BackscatterCurveByIncidenceByPing(BackscatterCurve):
@@ -186,8 +239,6 @@ class BackscatterCurveByTransmission(BackscatterCurve):
     @classmethod
     def build(
         cls,
-        rx_antenna_count,
-        tx_beam_count,
         mean_values: np.ndarray,
         mean_residual_values: np.ndarray,
         count: np.ndarray,
@@ -195,12 +246,15 @@ class BackscatterCurveByTransmission(BackscatterCurve):
         raw_mean_residual_values: Optional[np.ndarray] = None,
         origin: Optional[str] = None,
     ):
-        if mean_values.shape[0] != count.shape[0] or mean_values.shape[0] != rx_antenna_count:
+        rx_antenna_count = mean_values.shape[0]
+        tx_beam_count = mean_values.shape[1]
+
+        if mean_values.shape[0] != count.shape[0]:
             raise UnexpectedError(
                 f"{BackscatterCurve.__name__} expect 3D array indexed per rx antenna, per tx sector, the first dimension does not match rx_antenna_count = {rx_antenna_count}"
             )
 
-        if mean_values.shape[1] != count.shape[1] or mean_values.shape[1] != tx_beam_count:
+        if mean_values.shape[1] != count.shape[1]:
             raise UnexpectedError(
                 f"{BackscatterCurve.__name__} expect 3D array indexed per rx antenna, per tx sector, the second dimension does not match tx_beam_count = {tx_beam_count}"
             )
@@ -260,8 +314,6 @@ class BackscatterCurveByTransmissionByPing(BackscatterCurve):
     @classmethod
     def build(
         cls,
-        rx_antenna_count,
-        tx_beam_count,
         mean_values: np.ndarray,
         mean_residual_values: np.ndarray,
         count: np.ndarray,
@@ -269,20 +321,15 @@ class BackscatterCurveByTransmissionByPing(BackscatterCurve):
         ping_time: np.ndarray,
         origin: Optional[str] = None,
     ):
-        if (
-            mean_values.shape[0] != mean_residual_values.shape[0]
-            or mean_residual_values.shape[0] != count.shape[0]
-            or mean_residual_values.shape[0] != rx_antenna_count
-        ):
+        rx_antenna_count = mean_values.shape[0]
+        tx_beam_count = mean_values.shape[1]
+
+        if mean_values.shape[0] != mean_residual_values.shape[0] or mean_residual_values.shape[0] != count.shape[0]:
             raise UnexpectedError(
                 f"{BackscatterCurve.__name__} expect 4D array indexed per rx antenna, tx sector, ping and angle the first dimension does not match rx_antenna_count = {rx_antenna_count}"
             )
 
-        if (
-            mean_values.shape[1] != count.shape[1]
-            or mean_residual_values.shape[1] != count.shape[1]
-            or mean_residual_values.shape[1] != tx_beam_count
-        ):
+        if mean_values.shape[1] != count.shape[1] or mean_residual_values.shape[1] != count.shape[1]:
             raise UnexpectedError(
                 f"{BackscatterCurve.__name__} expect 4D array indexed per rx antenna, tx sector, ping and angle the second dimension does not match tx_beam_count = {tx_beam_count}"
             )
@@ -405,21 +452,113 @@ class MeanBSModel:
 
     def load_in_memory(self):
         """Load the model entireley and release bounded file resources"""
-        for key, (curve_by_incidence, curve_by_sector) in self.model.items():
+        for key, (curve_by_incidence, curve_by_transmission) in self.model.items():
             if curve_by_incidence is not None:
                 curve_by_incidence.ds = curve_by_incidence.ds.load().copy(deep=True)
-            if curve_by_sector is not None:
-                curve_by_sector.ds = curve_by_sector.ds.load().copy(deep=True)
+            if curve_by_transmission is not None:
+                curve_by_transmission.ds = curve_by_transmission.ds.load().copy(deep=True)
         return self
 
     def get_curve_by_incidence(self, mode: KeyMode) -> Optional[BackscatterCurveByIncidence]:
         # retrieve curve by incidence
+        curve_by_incidence = None
         if mode in self.model.keys():
             curve_by_incidence, _ = self.model[mode]
+        elif self.sounder_type == SounderType.CALIBRATED:
+            # build a grid of mean values by frequency by angle from included modes
+            calibrated_modes = [m for m in self.model.keys() if isinstance(m, KeyModeCalibrated)]
+            if len(calibrated_modes) == 0:
+                return None
+            # order calibrated modes by frequency
+            calibrated_modes = sorted(calibrated_modes, key=lambda m: m.get_center_frequency()[0])
+            calibrated_frequencies = [m.get_center_frequency()[0] for m in calibrated_modes]
+
+            mean_values_per_frequency = np.full(
+                shape=(len(calibrated_modes), default_config.incidence_angles.bin_count),
+                dtype=np.float64,
+                fill_value=np.nan,
+            )
+
+            for m, calibrated_mode in enumerate(calibrated_modes):
+                curve_by_incidence_m, _ = self.model[calibrated_mode]
+                mean_values_m = curve_by_incidence_m.ds[BackscatterCurve.MEAN_BS][0, 0, :].to_numpy()
+                # interpolate mean values on the same angle bins for all modes
+                mean_values_per_frequency[m] = np.interp(
+                    default_config.incidence_angles.bin_centers,
+                    curve_by_incidence_m.ds[BackscatterCurve.ANGLE],
+                    mean_values_m,
+                    left=np.nan,
+                    right=np.nan,
+                )
+
+            # shape adaptation
+            # stats by tx sector
+            mean_values_per_sector = np.full(
+                shape=(
+                    1,  # only one rx antenna for now, this can be adapted in the future if needed
+                    mode.get_tx_beam_count(),
+                    default_config.incidence_angles.bin_count,
+                ),
+                dtype=np.float64,
+                fill_value=np.nan,
+            )
+            value_counts_per_sector = np.full(
+                shape=(
+                    1,  # only one rx antenna for now, this can be adapted in the future if needed
+                    mode.get_tx_beam_count(),
+                    default_config.incidence_angles.bin_count,
+                ),
+                dtype=np.int32,
+                fill_value=1,
+            )
+            # interpolate mean values for the mode frequency if it is between calibrated frequencies, otherwise use the closest one
+            if default_config.frequency_interpolation_method == InterpolationMethod.LINEAR:
+                interp_method = "linear"
+            else:
+                interp_method = "nearest"
+            mode_center_frequency = mode.get_center_frequency()
+            if mode_center_frequency is not None:
+                interpolator = scipy.interpolate.RegularGridInterpolator(
+                    (calibrated_frequencies, default_config.incidence_angles.bin_centers.astype(np.float64)),
+                    mean_values_per_frequency,
+                    method=interp_method,
+                    bounds_error=False,
+                    fill_value=np.nan,
+                )
+
+                if default_config.use_reference_by_sector:
+                    sector_frequencies = list(mode_center_frequency)
+                else:
+                    # if not using reference by sector, use the mean frequency of the mode as the frequency for all sectors,
+                    # this is to avoid having different mean values for each sector
+                    # and generate a bscorr that minimize sector difference instead of absolute backscatter values.
+                    sector_frequencies = [np.mean(np.array(mode_center_frequency))] * mode.get_tx_beam_count()
+
+                for f, frequency in enumerate(sector_frequencies):
+                    if frequency < calibrated_frequencies[0] or frequency > calibrated_frequencies[-1]:
+                        # use the closest one
+                        if frequency < calibrated_frequencies[0]:
+                            mean_values = mean_values_per_frequency[0]
+                        else:
+                            mean_values = mean_values_per_frequency[-1]
+                    else:
+                        angle_points = np.column_stack(
+                            [
+                                np.full(default_config.incidence_angles.bin_count, frequency, dtype=np.float64),
+                                default_config.incidence_angles.bin_centers.astype(np.float64),
+                            ]
+                        )
+                        mean_values = interpolator(angle_points)
+                    mean_values_per_sector[0, f, :] = mean_values
+
+            curve_by_incidence = BackscatterCurveByIncidence.build(
+                mean_values=mean_values_per_sector,
+                count=value_counts_per_sector,
+                bin_centers=default_config.incidence_angles.bin_centers,
+                origin=f"Interpolated({interp_method}) from calibrated modes {calibrated_modes}",
+            )
         elif KeyModeCommon() in self.model.keys():
             curve_by_incidence, _ = self.model[KeyModeCommon()]
-        else:
-            curve_by_incidence = None
         return curve_by_incidence
 
     @classmethod
@@ -437,17 +576,19 @@ class MeanBSModel:
             raise IOError(f"Output file {output_file} already exist and overwrite is not allowed")
         with open_nc_file(output_file, mode="w") as ncdataset:
             ncdataset.setncattr(self.TITLE, "Mean backscatter angular response")
-            ncdataset.setncattr(self.VERSION, "0.3")
+            ncdataset.setncattr(self.VERSION, "0.4")
             ncdataset.setncattr(self.SOUNDER_TYPE, self.sounder_type)
-            if self.sounder_type is not SounderType.COMMON:  # only set these attributes for specific sounders
+            if self.sounder_type not in [
+                SounderType.COMMON,
+                SounderType.CALIBRATED,
+            ]:  # only set these attributes for specific sounders
                 ncdataset.setncattr(self.USE_SVP, str(default_config.use_svp))
                 ncdataset.setncattr(self.USE_SNIPPETS, str(default_config.use_snippets))
                 ncdataset.setncattr(self.USE_INSONIFIED_AREA, str(default_config.use_insonified_area))
                 ncdataset.setncattr(self.REMOVE_CALIBRATION, str(default_config.remove_calibration))
                 ncdataset.setncattr(self.REMOVE_COMPENSATION, str(default_config.remove_compensation))
-
-            ncdataset.setncattr(self.INTEGRATION_METHOD, default_config.integration_method.name)
-            ncdataset.setncattr(self.LINEAR_SCALE, default_config.linear_scale.name)
+                ncdataset.setncattr(self.INTEGRATION_METHOD, default_config.integration_method.name)
+                ncdataset.setncattr(self.LINEAR_SCALE, default_config.linear_scale.name)
 
             for current_mode in self.model.keys():
                 mode_astxt = current_mode.to_json()
@@ -457,12 +598,15 @@ class MeanBSModel:
         # use xarray to serialize everything else,
         for current_mode in self.model.keys():
             group_name = str(current_mode)
-            curve_by_incidence, curve_by_sector = self.model[current_mode]
+            curve_by_incidence, curve_by_transmission = self.model[current_mode]
+            if curve_by_incidence.origin:
+                # add origin attribute to the curve by incidence dataset before exporting it to netcdf, this attribute will be used when merging curves to keep track of the source files
+                curve_by_incidence.ds.attrs["origin"] = curve_by_incidence.origin
             curve_by_incidence.ds.to_netcdf(
                 output_file, mode="a", engine="netcdf4", group=f"{group_name}/{MeanBSModel.INCIDENCE_SUBGROUP}"
             )
-            if curve_by_sector:
-                curve_by_sector.ds.to_netcdf(
+            if curve_by_transmission:
+                curve_by_transmission.ds.to_netcdf(
                     output_file, mode="a", engine="netcdf4", group=f"{group_name}/{MeanBSModel.TRANSMISSION_SUBGROUP}"
                 )
         default_config.logger.info(f"Write compensation model to {output_file}")
@@ -504,12 +648,12 @@ class MeanBSModel:
                     else:
                         curve_by_incidence = None
                     if MeanBSModel.TRANSMISSION_SUBGROUP in ncdataset.groups[grp].groups:
-                        curve_by_sector = BackscatterCurveByTransmission.from_netcdf(
+                        curve_by_transmission = BackscatterCurveByTransmission.from_netcdf(
                             filepath=input_file, group_name=f"{grp}/{MeanBSModel.TRANSMISSION_SUBGROUP}"
                         )
                     else:
-                        curve_by_sector = None
-                    mode_curves[current_mode] = (curve_by_incidence, curve_by_sector)
+                        curve_by_transmission = None
+                    mode_curves[current_mode] = (curve_by_incidence, curve_by_transmission)
                 else:
                     default_config.logger.warning(
                         f"Group {grp} does not have {MeanBSModel.MODE_SERIALIZED} attribute and is ignored"
@@ -528,8 +672,8 @@ class MeanBSModel:
             default_config.check_output_path(output_file, overwrite)
             bin_centers = default_config.incidence_angles.bin_centers
             squeleton = BackscatterCurveByIncidence.build(
-                mean_values=np.full(fill_value=0.0, shape=bin_centers.shape[0]),
-                count=np.full(fill_value=1, shape=(bin_centers.shape[0]), dtype=np.int32),
+                mean_values=np.full(fill_value=0.0, shape=(1, 1, bin_centers.shape[0]), dtype=np.float64),
+                count=np.full(fill_value=1, shape=(1, 1, bin_centers.shape[0]), dtype=np.int32),
                 bin_centers=bin_centers,
                 origin=None,
             )
@@ -546,12 +690,17 @@ class MeanBSModel:
             curve_by_incidence.to_csv(output_file, mode="a")
 
     @staticmethod
-    def import_from_csv(input_files: Iterable[str], sounder_type: Optional[str] = None, sep: Optional[str] = None):
+    def import_from_csv(input_files: Iterable[str], frequency: Optional[float] = None, sep: Optional[str] = None):
         mode_curves = {}
+        sounder_type = None
         for input_file in input_files:
             with open(file=input_file, mode="r", encoding="utf_8") as f:
                 first_line = f.readline()
                 mode = KeyModeCommon()
+                if frequency is not None:
+                    # determine acquisition mode from frequency
+                    sounder_type = SounderType.CALIBRATED
+                    mode = KeyModeCalibrated(frequency=frequency)
                 for stype in SounderType.SOUNDER_TYPES:
                     if stype in first_line:
                         if sounder_type and sounder_type != stype:

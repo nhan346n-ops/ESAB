@@ -290,10 +290,10 @@ class PulseLengthRealtime(common.VariableInterface):
             pl_effective_cw = pulse_length_effective[cw_mask]
             pl_runtime_cw = pulse_length_runtime[cw_mask]
             pl_nominal_cw = pulse_length_nominal[cw_mask]
-            if np.any(np.isclose(pl_runtime_cw, pl_effective_cw, rtol=0.005)):
+            if np.any(np.isclose(pl_runtime_cw, pl_effective_cw, rtol=0.01)):
                 # First check effective beacause runtime value can match effective from a sector and nominal from another
                 log.info("Pulse length from runtime datagram fits effective pulse length.")
-            elif np.any(np.isclose(pl_runtime_cw, pl_nominal_cw, rtol=0.005)):
+            elif np.any(np.isclose(pl_runtime_cw, pl_nominal_cw, rtol=0.01)):
                 log.info("Pulse length from runtime datagram fits nominal pulse length.")
             else:
                 log.warning("Runtime pulse length doesn't fit any sector")

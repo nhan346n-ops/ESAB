@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <!-- 背景渐变 -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#050a18" />
+      <stop offset="50%" stop-color="#0a122c" />
+      <stop offset="100%" stop-color="#030611" />
+    </linearGradient>
+    
+    <!-- 装饰网格图案 -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1d2d54" stroke-width="0.5" stroke-opacity="0.3"/>
+    </pattern>
+
+    <!-- 声呐波渐变 -->
+    <linearGradient id="sonarGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" stop-opacity="0.7" />
+      <stop offset="40%" stop-color="#0072ff" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#0072ff" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- 辉光滤镜 -->
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f2fe"/>
+      <stop offset="100%" stop-color="#4facfe"/>
+    </linearGradient>
+
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="15" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="800" height="500" fill="url(#bgGrad)" />
+  
+  <!-- 网格 -->
+  <rect width="800" height="500" fill="url(#grid)" />
+  
+  <!-- 装饰光晕 -->
+  <circle cx="100" cy="100" r="150" fill="#00f2fe" opacity="0.05" filter="url(#softGlow)" />
+  <circle cx="700" cy="400" r="200" fill="#7f00ff" opacity="0.08" filter="url(#softGlow)" />
+
+  <!-- 海底地形起伏与多波束扫描 (科技感设计) -->
+  <g transform="translate(0, 50)">
+    <!-- 绘制几条起伏的测深线，代表海底地形 -->
+    <!-- 背景层海底 -->
+    <path d="M 50,320 Q 150,260 250,300 T 450,270 T 650,330 T 750,290 L 750,420 L 50,420 Z" 
+          fill="none" stroke="#1d3d74" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.5"/>
+          
+    <!-- 中景层海底 -->
+    <path d="M 50,350 Q 180,290 300,340 T 550,280 T 750,330 L 750,420 L 50,420 Z" 
+          fill="none" stroke="#0072ff" stroke-width="2" opacity="0.3"/>
+          
+    <!-- 前景海底（带色彩渐变和网格点） -->
+    <path d="M 50,380 Q 200,310 350,370 T 600,330 T 750,360" 
+          fill="none" stroke="url(#cyanGrad)" stroke-width="3" filter="url(#glow)" />
+          
+    <!-- 绘制多波束声波发散扇面 -->
+    <circle cx="400" cy="80" r="4" fill="#00f2fe" filter="url(#glow)"/>
+    <line x1="400" y1="80" x2="400" y2="350" stroke="#00f2fe" stroke-width="1" stroke-dasharray="2,5" opacity="0.6"/>
+    
+    <!-- 扇面波束 -->
+    <path d="M 400,80 L 180,360 L 620,350 Z" fill="url(#sonarGrad)" />
+    
+    <!-- 声波弧线 -->
+    <path d="M 350,150 A 80,80 0 0,0 450,150" fill="none" stroke="#00f2fe" stroke-width="1.5" opacity="0.2"/>
+    <path d="M 300,220 A 160,160 0 0,0 500,220" fill="none" stroke="#00f2fe" stroke-width="1.5" opacity="0.4" stroke-dasharray="5,5"/>
+    <path d="M 240,290 A 250,250 0 0,0 560,290" fill="none" stroke="#00f2fe" stroke-width="2" opacity="0.7" filter="url(#glow)"/>
+
+    <!-- 声呐在海底的扫测线（高亮） -->
+    <path d="M 230,358 Q 315,364 400,352 T 570,338" fill="none" stroke="#00f2fe" stroke-width="4" filter="url(#glow)"/>
+    
+    <!-- 海底上的多波束测量点云（精细的点阵） -->
+    <g fill="#00f2fe" filter="url(#glow)">
+      <circle cx="250" cy="360" r="3" />
+      <circle cx="280" cy="361" r="2.5" />
+      <circle cx="310" cy="362" r="3" />
+      <circle cx="340" cy="358" r="2" />
+      <circle cx="370" cy="354" r="3" />
+      <circle cx="400" cy="352" r="3.5" />
+      <circle cx="430" cy="349" r="2" />
+      <circle cx="460" cy="346" r="3" />
+      <circle cx="490" cy="343" r="2.5" />
+      <circle cx="520" cy="341" r="3" />
+      <circle cx="550" cy="339" r="2" />
+    </g>
+  </g>
+
+  <!-- 软件LOGO与标题 -->
+  <g transform="translate(30, 30)">
+    <g transform="translate(0, 10)">
+      <!-- 外圈六边形 -->
+      <polygon points="25,0 50,15 50,45 25,60 0,45 0,15" fill="none" stroke="#00f2fe" stroke-width="2" filter="url(#glow)" />
+      <!-- 内圈六边形 -->
+      <polygon points="25,10 42,20 42,40 25,50 8,40 8,20" fill="none" stroke="#7f00ff" stroke-width="1.5" opacity="0.8" />
+      <!-- 中心发光核 -->
+      <circle cx="25" cy="30" r="5" fill="#00f2fe" filter="url(#glow)"/>
+    </g>
+    
+    <!-- 标题文字 -->
+    <text x="70" y="38" font-family="'Segoe UI', sans-serif" font-size="32" font-weight="800" fill="#ffffff" letter-spacing="1.5">
+      多波束数据智能处理软件
+    </text>
+    <text x="72" y="60" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="600" fill="#4facfe" letter-spacing="4">
+      MULTIBEAM DATA INTELLIGENT PROCESSOR
+    </text>
+  </g>
+
+  <!-- 加载状态提示 -->
+  <g transform="translate(80, 410)">
+    <!-- 加载中的旋转环效果（静态表现） -->
+    <circle cx="20" cy="15" r="10" fill="none" stroke="#1d2d54" stroke-width="3" />
+    <path d="M 20,5 A 10,10 0 0,1 30,15" fill="none" stroke="#00f2fe" stroke-width="3" stroke-linecap="round" filter="url(#glow)" />
+    
+    <text x="45" y="20" font-family="'Segoe UI', sans-serif" font-size="14" font-weight="500" fill="#a0aec0" letter-spacing="1">
+      系统正在初始化...
+    </text>
+  </g>
+
+  <!-- 右上角科技感线条装饰 -->
+  <path d="M 680,20 L 780,20 L 780,120" fill="none" stroke="#1d2d54" stroke-width="1" opacity="0.5"/>
+  <path d="M 730,20 L 780,20 L 780,70" fill="none" stroke="#00f2fe" stroke-width="1.5" opacity="0.8" filter="url(#glow)"/>
+  <circle cx="780" cy="20" r="3" fill="#00f2fe" filter="url(#glow)"/>
+
+</svg>

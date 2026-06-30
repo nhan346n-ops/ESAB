@@ -290,12 +290,12 @@ class MbgDriver(sounder_driver.SounderDriver):
         return self.read_across_beam_angle(from_swath, to_swath)
 
     def iter_beam_positions(
-        self, swath_count_by_iter: int, first_swath: int = 0
+        self, swath_count_by_iter: int, first_swath: int = 0, valid_only: bool = False
     ) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
         """
         Implementation of SounderDriver abstract method
         """
-        return BeamPositionIterator(self, swath_count_by_iter, first_swath)
+        return BeamPositionIterator(self, swath_count_by_iter, first_swath, valid_only=valid_only)
 
     def read_platform_longitudes(self) -> np.ndarray:
         """
@@ -1233,10 +1233,11 @@ class MbgDriver(sounder_driver.SounderDriver):
 
 
 class BeamPositionIterator:
-    def __init__(self, driver: MbgDriver, swath_count_by_iter: int, first_swath: int):
+    def __init__(self, driver: MbgDriver, swath_count_by_iter: int, first_swath: int, valid_only: bool = False):
         self.driver = driver
         self.swath_count_by_iter = swath_count_by_iter
         self.swath = first_swath
+        self.valid_only = valid_only
 
         self.norm, self.radius = self.driver._compute_norm_and_radius()
         self.headings = self.driver.read_heading()
@@ -1314,6 +1315,11 @@ class BeamPositionIterator:
             self._result_lon,
             self._result_lat,
         )
+        if self.valid_only:
+            # if asked, mask invalid soundings positions
+            is_valid = self.driver.read_validity_flags(self.swath, last_swath)
+            self._result_lon[~is_valid] = np.nan
+            self._result_lat[~is_valid] = np.nan
         self.swath = last_swath
         return self._result_lon, self._result_lat
 

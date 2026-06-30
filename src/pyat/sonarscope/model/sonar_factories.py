@@ -4,6 +4,7 @@ from pyat.sonarscope.model.sounder_mode.all_EM2040_mode import KeyModeAllEM2040
 from pyat.sonarscope.model.sounder_mode.all_EM2040_modes_computer import ModeComputerAllEM2040
 from pyat.sonarscope.model.sounder_mode.all_kongsberg_mode import KeyModeAllGeneric
 from pyat.sonarscope.model.sounder_mode.all_kongsberg_modes_computer import ModeComputerAllGeneric
+from pyat.sonarscope.model.sounder_mode.calibrated_mode import KeyModeCalibrated
 from pyat.sonarscope.model.sounder_mode.common_mode import KeyModeCommon
 from pyat.sonarscope.model.sounder_mode.kmall_kongsberg_mode import KeyModeKmallGeneric
 from pyat.sonarscope.model.sounder_mode.kmall_kongsberg_modes_computer import ModeComputerKmallGeneric
@@ -23,6 +24,8 @@ class ModeComputerFactory:
         sounder_type = SounderType.from_type(sounder_type)
         if SounderType.EM1002_ALL == sounder_type:
             mode_computer = ModeComputerAllEM1002()
+        elif SounderType.EM3002_ALL == sounder_type:
+            mode_computer = ModeComputerAllGeneric()
         elif SounderType.EM2040_ALL == sounder_type:
             mode_computer = ModeComputerAllEM2040()
         elif SounderType.EM120_ALL == sounder_type:
@@ -60,8 +63,12 @@ class ModeComputerFactory:
         sounder_type = SounderType.from_type(sounder_type)
         if json_text == "{}":
             key_mode = KeyModeCommon()
+        elif SounderType.CALIBRATED == sounder_type:
+            key_mode = KeyModeCalibrated.mode_from_json(json_text)
         elif SounderType.EM1002_ALL == sounder_type:
             key_mode = KeyModeAllEM1002.mode_from_json(json_text)
+        elif SounderType.EM3002_ALL == sounder_type:
+            key_mode = KeyModeAllGeneric.mode_from_json(json_text)
         elif SounderType.EM2040_ALL == sounder_type:
             key_mode = KeyModeAllEM2040.mode_from_json(json_text)
         elif SounderType.EM120_ALL == sounder_type:

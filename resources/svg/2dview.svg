@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Isometric cube outline -->
+  <path d="M12 3 L21 7.5 L21 16.5 L12 21 L3 16.5 L3 7.5 Z" />
+  <!-- Inner cube lines -->
+  <line x1="12" y1="12" x2="12" y2="21" />
+  <line x1="3" y1="7.5" x2="12" y2="12" />
+  <line x1="21" y1="7.5" x2="12" y2="12" />
+  
+  <!-- Text mask -->
+  <rect x="7.5" y="9.5" width="9" height="5" fill="#FFFFFF" stroke="none" rx="1" />
+  
+  <!-- Text -->
+  <text x="12" y="14" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="6.2" font-weight="black" fill="#1E88E5" stroke="none">2D</text>
+</svg>

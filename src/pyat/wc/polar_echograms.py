@@ -101,10 +101,7 @@ class PolarEchograms:
             )
             return
         # Get start and stop time and time sort file list
-        if len(in_xsfs) == 1:
-            sorted_file_list = [(in_xsfs[0], None, None)]
-        else:
-            sorted_file_list = nc_merger.time_sort_files(in_xsfs)
+        sorted_file_list = nc_merger.time_sort_files(in_xsfs)
         in_xsfs = [file for file, _, _ in sorted_file_list]
 
         gridder = self._prepare_gridder(in_xsfs, out_g3d)
@@ -112,7 +109,7 @@ class PolarEchograms:
             self._grid_xsf(in_xsfs, gridder, monitor.split(1))
         finally:
             self.logger.info(f"Writing file: {out_g3d}")
-            gridder.close_dataset()
+            gridder.flush_dataset()
 
     def _prepare_gridder(self, in_xsfs: List[str], out_g3d: str) -> PolarEchogramsGridder:
         """
@@ -125,9 +122,9 @@ class PolarEchograms:
 
         # compute indicative col_count and row_count
         # add 10% on max depth
-        self.max_abs_across = max(np.fabs(self.max_across), np.fabs(self.min_across))
         self.max_row_count = int(math.ceil(1.1 * self.max_vertical_distance / self.sample_resolution))
-        self.max_col_count = int(math.ceil(2.0 * self.max_abs_across / self.sample_resolution))
+        self.max_col_count = int(math.ceil(1.1 * (self.max_across - self.min_across) / self.sample_resolution))
+        self.max_abs_across = max(np.fabs(self.max_across), np.fabs(self.min_across))
         self.delta_elevation = self.sample_resolution
         self.delta_across = self.sample_resolution
 
@@ -154,9 +151,9 @@ class PolarEchograms:
         num_fill_layers = len(in_xsfs)
         monitor.begin_task(f"Gridding {len(in_xsfs)} file(s)", num_fill_layers)
         echoes_count = get_biggest_echoes_count(in_xsfs, 1)
+        mem_echos = sonarnative.MemEchos(echoes_count)
         swath_origin = 0
         for i_xsf in in_xsfs:
-            self._interpolate_masked_bathymetry(i_xsf)
             submonitor = monitor.split(1)
             # memory reservation
             try:
@@ -166,20 +163,10 @@ class PolarEchograms:
                     waterline_to_chart_datum = xsf_driver[WATERLINE_TO_CHART_DATUM][:]
                     transducer_depth = xsf_driver[TX_TRANSDUCER_DEPTH][:]
                     ping_time = xsf_driver[PING_TIME][:]
-                    # Read sample count to detect empty swaths
-                    sample_counts = xsf_driver["Sonar"]["Beam_group1"]["sample_count"][:]
-                    try:
-                        platform_roll = xsf_driver.dataset.groups['Sonar'].groups['Beam_group1'].variables['platform_roll'][:]
-                    except Exception:
-                        platform_roll = np.zeros_like(ping_time, dtype=float)
 
                 spatializer = sonarnative.open_spatializer(i_xsf, -1, True)
                 # setup filters
-                if self.json_filters and os.path.isfile(self.json_filters):
-                    from pyat.wc.utils.filter import apply_filters_file
-                    apply_filters_file(self.json_filters, spatializer)
-                else:
-                    apply_filters(self.json_filters, spatializer)
+                apply_filters(self.json_filters, spatializer)
 
                 submonitor.begin_task("Compute", spatializer.get_swath_count())
                 for sp_swath in range(spatializer.get_swath_count()):
@@ -187,102 +174,50 @@ class PolarEchograms:
                     # reinit gridder for swath
                     gridder.reset_grid()
 
-                    # Check if the swath has valid water column data
-                    has_wc = True
-                    if isinstance(sample_counts, np.ma.MaskedArray):
-                        if np.all(sample_counts.mask[sp_swath]):
-                            has_wc = False
-                    if has_wc:
-                        vals = sample_counts[sp_swath]
-                        if np.nanmax(vals) <= 0:
-                            has_wc = False
+                    if contains_raw_layer(self.layers):
+                        native_param = sonarnative.RangeNormalizationParameter(False, self.normalization_offset)
+                        sonarnative.apply_range_normalization_signal_processing(spatializer, native_param)
+                        self._fill_grid(
+                            gridder=gridder,
+                            spatializer=spatializer,
+                            mem_echos=mem_echos,
+                            waterline=waterline_to_chart_datum,
+                            transducer_depth=transducer_depth,
+                            swath_origin=swath_origin,
+                            swath_index=sp_swath,
+                            ping_time=ping_time,
+                            compensated=False,
+                        )
 
-                    if has_wc:
-                        if contains_raw_layer(self.layers):
-                            native_param = sonarnative.RangeNormalizationParameter(False, self.normalization_offset)
-                            sonarnative.apply_range_normalization_signal_processing(spatializer, native_param)
-                            mem_echos = sonarnative.MemEchos(echoes_count)
-                            self._fill_grid(
-                                gridder=gridder,
-                                spatializer=spatializer,
-                                mem_echos=mem_echos,
-                                waterline=waterline_to_chart_datum,
-                                transducer_depth=transducer_depth,
-                                ping_time=ping_time,
-                                platform_roll=platform_roll,
-                                swath_origin=swath_origin,
-                                swath_index=sp_swath,
-                                compensated=False,
-                            )
-
-                        if contains_compensated_layer(self.layers):
-                            # setup image processing
-                            native_param = sonarnative.RangeNormalizationParameter(True, self.normalization_offset)
-                            sonarnative.apply_range_normalization_signal_processing(spatializer, native_param)
-                            mem_echos = sonarnative.MemEchos(echoes_count)
-                            self._fill_grid(
-                                gridder=gridder,
-                                spatializer=spatializer,
-                                mem_echos=mem_echos,
-                                waterline=waterline_to_chart_datum,
-                                transducer_depth=transducer_depth,
-                                ping_time=ping_time,
-                                platform_roll=platform_roll,
-                                swath_origin=swath_origin,
-                                swath_index=sp_swath,
-                                compensated=True,
-                            )
+                    if contains_compensated_layer(self.layers):
+                        # setup image processing
+                        native_param = sonarnative.RangeNormalizationParameter(True, self.normalization_offset)
+                        sonarnative.apply_range_normalization_signal_processing(spatializer, native_param)
+                        self._fill_grid(
+                            gridder=gridder,
+                            spatializer=spatializer,
+                            mem_echos=mem_echos,
+                            waterline=waterline_to_chart_datum,
+                            transducer_depth=transducer_depth,
+                            swath_origin=swath_origin,
+                            swath_index=sp_swath,
+                            ping_time=ping_time,
+                            compensated=True,
+                        )
 
                     gridder.finalize(interpolate=self.interpolate)
                     gridder.add_g3d_grid(grid_idx=swath_origin + sp_swath)
+                    # flush dataset every 100 swaths to avoid too much memory usage
+                    # flushing every swath can cause performance issue due to too many I/O operations,
+                    # especially if swath count is high. So we flush every 100 swaths as a compromise.
+                    if (sp_swath + 1) % 100 == 0:
+                        gridder.flush_dataset()
                 swath_origin += spatializer.get_swath_count()
             finally:
-                if spatializer:
-                    pass # sonarnative.close_spatializer(spatializer)
+                gridder.flush_dataset()
+                sonarnative.close_spatializer(spatializer)
             submonitor.done()
         monitor.done()
-
-    def _interpolate_masked_bathymetry(self, xsf_path: str):
-        """
-        Interpolate masked bathymetry variables across beams (axis 1)
-        so the C++ bottom filter can process every beam.
-        """
-        import netCDF4 as nc
-        try:
-            with nc.Dataset(xsf_path, "r+") as ds:
-                try:
-                    bg = ds.groups['Sonar'].groups['Beam_group1'].groups['Bathymetry']
-                except KeyError:
-                    return
-                
-                vars_to_interpolate = [
-                    'detection_z',
-                    'detection_beam_pointing_angle',
-                    'detection_two_way_travel_time',
-                    'detection_x',
-                    'detection_y'
-                ]
-                
-                for var_name in vars_to_interpolate:
-                    if var_name not in bg.variables:
-                        continue
-                    var = bg.variables[var_name]
-                    data = var[:]
-                    if hasattr(data, 'mask') and np.any(data.mask):
-                        self.logger.info(f"Interpolating masked values in {var_name} of {os.path.basename(xsf_path)}...")
-                        for sw in range(data.shape[0]):
-                            sw_data = data[sw]
-                            if hasattr(sw_data, 'mask') and np.any(sw_data.mask):
-                                mask = sw_data.mask
-                                indices = np.arange(len(sw_data))
-                                valid_indices = indices[~mask]
-                                if len(valid_indices) > 0:
-                                    valid_values = sw_data[~mask]
-                                    sw_data[mask] = np.interp(indices[mask], valid_indices, valid_values)
-                                    data.mask[sw] = False
-                        var[:] = data
-        except Exception as e:
-            self.logger.warning(f"Could not interpolate masked bathymetry: {e}")
 
     def _fill_grid(
         self,
@@ -292,7 +227,6 @@ class PolarEchograms:
         waterline: np.ndarray,
         transducer_depth: np.ndarray,
         ping_time: np.ndarray,
-        platform_roll: np.ndarray,
         swath_origin: int,
         swath_index: int,
         compensated: bool = False,
@@ -316,36 +250,25 @@ class PolarEchograms:
         # compute swath index
         x_idx = swath_index + swath_origin
 
-        # Un-rotate the coordinates by the ship's roll to keep the sector upright and symmetric (front-view)
-        tx_z = -transducer_depth[swath_index]
-        z_rel = elevation - tx_z
-        roll_deg = platform_roll[swath_index]
-        phi = np.radians(roll_deg)
-        cos_phi = np.cos(phi)
-        sin_phi = np.sin(phi)
-
-        across_unrotated = across * cos_phi - z_rel * sin_phi
-        elevation_unrotated = across * sin_phi + z_rel * cos_phi + tx_z
-
         # setup grid (only one time per swath)
         if gridder.y_count == 0 and gridder.z_count == 0:
-            # Use fixed, symmetric, standard boundaries across all swaths
+            min_across = np.nanmin(across)
+            max_across = np.nanmax(across)
+
+            min_elevation = np.nanmin(elevation)
             max_elevation = -transducer_depth[swath_index]
-            min_elevation = max_elevation - 1.1 * self.max_vertical_distance
-            
-            min_across = -self.max_abs_across
-            max_across = self.max_abs_across
+
+            # check validity
+            min_across = np.nanmax([min_across, -2 * self.max_abs_across])
+            max_across = np.nanmin([max_across, 2 * self.max_abs_across])
+            min_elevation = np.nanmax([min_elevation, max_elevation - POLAR_MAX_HEIGHT * self.delta_elevation])
 
             # compute grid corners
             # estimate plane best fitting 3D points with 100 points from echoes
-            data = np.column_stack((across_unrotated, elevation_unrotated, along))
-            choices = np.random.choice(mem_echos.size, min(mem_echos.size, 100))
+            data = np.column_stack((across, elevation, along))
+            choices = np.random.choice(mem_echos.size, 100)
             points = Points(data[choices])
-            try:
-                plane = Plane.best_fit(points)
-            except ValueError:
-                # Fallback if points are collinear or not enough points (e.g. sparse filtered data)
-                plane = Plane(point=[0, 0, 0], normal=[0, 0, 1])
+            plane = Plane.best_fit(points)
 
             grid_gap_across = np.array([min_across, max_across])
             grid_gap_elevation = np.array([min_elevation, max_elevation])
@@ -387,31 +310,25 @@ class PolarEchograms:
             # estimate across spacing
             opening = np.nanmax(opening)
             across_dist = np.max([np.fabs([min_across, max_across])])
-            max_range = np.sqrt(np.square(across_dist) + np.square(max_elevation - min_elevation))
             across_spacing = (
                 np.tan(np.deg2rad(opening / 2))
                 * 2
-                * max_range
+                * (np.square(across_dist) + np.square(max_elevation - min_elevation))
+                / across_dist
             )
             across_limit = np.ceil(1.1 * across_spacing / self.delta_across + 1).astype(int)
             gridder.set_interpolate_limit(min(across_limit, POLAR_MAX_INTERPOLATION_LIMIT))
 
-            max_y_idx = self.max_col_count - 1
-            max_z_idx = self.max_row_count - 1
+            max_y_idx = np.around((max_across - min_across) / self.delta_across).astype(int)
+            max_z_idx = np.around((-transducer_depth[swath_index] - min_elevation) / self.delta_elevation).astype(int)
 
             # set effective size of current grid
-            gridder.set_size(y_count=self.max_col_count, z_count=self.max_row_count)
-
-        if len(echos) == 0:
-            return
+            gridder.set_size(y_count=max_y_idx + 1, z_count=max_z_idx + 1)
 
         # compute across indices
-        y_idx = np.around((across_unrotated - gridder.min_across) / self.delta_across).astype(int)
+        y_idx = np.around((across - gridder.min_across) / self.delta_across).astype(int)
         # compute elevation indices (relative to transducer)
-        z_idx = np.around((-transducer_depth[swath_index] - elevation_unrotated) / self.delta_elevation).astype(int)
-
-        y_idx = np.clip(y_idx, 0, gridder.y_count - 1)
-        z_idx = np.clip(z_idx, 0, gridder.z_count - 1)
+        z_idx = np.around((-transducer_depth[swath_index] - elevation) / self.delta_elevation).astype(int)
 
         # values from sonarnative are sent in the gridder
         gridder.fill_grid(sound_backscatter=echos, y_idx=y_idx, z_idx=z_idx, compensated=compensated)
