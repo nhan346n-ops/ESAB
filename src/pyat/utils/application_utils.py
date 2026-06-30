@@ -15,7 +15,31 @@ import pyat.utils.argument_utils as arg_util
 from pyat.utils.exceptions.exception_list import BadParameter
 
 
+def resolve_config_path(path: str) -> str:
+    if os.path.exists(path):
+        return path
+    
+    normalized = path.replace("\\", "/")
+    rel_path = normalized.split("gws/conf/")[-1] if "gws/conf/" in normalized else path
+
+    import sys
+    if getattr(sys, 'frozen', False):
+        base_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+        candidate = os.path.normpath(os.path.join(base_dir, "src", "gws", "conf", rel_path))
+        if os.path.exists(candidate):
+            return candidate
+    else:
+        pkg_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        src_dir = os.path.dirname(pkg_dir)
+        candidate = os.path.normpath(os.path.join(src_dir, "gws", "conf", rel_path))
+        if os.path.exists(candidate):
+            return candidate
+            
+    return path
+
+
 def launch_application(json_conf_file_path: str, callable_process: Callable[..., Dict | None] = None) -> None:
+    json_conf_file_path = resolve_config_path(json_conf_file_path)
     """
     Launch an application wrapping a callable process.
     :param json_conf_file_path: the path of the application (*_app.py)
@@ -42,11 +66,17 @@ def launch_application(json_conf_file_path: str, callable_process: Callable[...,
 
     if len(sys.argv) > 1:
         # Get arguments
-        arguments: Dict = {}
         system_args = sys.argv[1:]
-        if system_args[0].endswith("json"):
+        json_file = None
+        for arg in system_args:
+            clean_arg = arg.strip("'\"")
+            if clean_arg.lower().endswith(".json"):
+                json_file = clean_arg
+                break
+
+        if json_file is not None:
             # a json parameter file has been passed in system arguments
-            arguments = load_json_file(system_args[0])
+            arguments = load_json_file(json_file)
         else:
             # get parameters from command line. First one is the name of the processed file
             arg_parser = arg_util.create_argv_parser(callable_process.__name__, json_conf_file_path)
@@ -169,6 +199,7 @@ def _extract_function(json_conf_file_path: str):
     Extracts from the conguration file, the property function
     It represents the python entry point to be invoked to start the service
     """
+    json_conf_file_path = resolve_config_path(json_conf_file_path)
     conf = load_json_file(json_conf_file_path)
     module_path, function = conf["function"].rsplit(".", 1)
     mod = import_module(module_path)

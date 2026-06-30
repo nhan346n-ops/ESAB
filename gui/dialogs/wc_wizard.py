@@ -368,8 +368,8 @@ class PageParams(QWizardPage):
             elif key == "grid_count":
                 import netCDF4 as nc
                 with nc.Dataset(files[0]) as ds:
-                    bg = ds.groups['Sonar'].groups['Beam_group1']
-                    bathy = bg.groups.get('Bathymetry')
+                    bg = ds.groups['声呐 (Sonar)'].groups['Beam_group1']
+                    bathy = bg.groups.get('水深 (Bathymetry)')
                     depth_arr = np.array([])
                     if bathy and 'detection_z' in bathy.variables:
                         z = np.array(bathy.variables['detection_z'][:]).ravel()
@@ -390,7 +390,7 @@ class PageParams(QWizardPage):
                 spinbox.setToolTip(f"推荐值: {v}")
                 
         except Exception as e:
-            print("Error in parameter calculation:", e)
+            print("参数计算出错:", e)
             if isinstance(spinbox, QDoubleSpinBox):
                 spinbox.setValue(1.0)
             else:
@@ -482,7 +482,7 @@ class PageParams(QWizardPage):
                 self._coord_spins["北"].setValue(box["top"])
                 self._update_grid_size()
         except Exception as e:
-            print("Error filling bounds from files:", e)
+            print("从文件填充边界出错:", e)
         finally:
             self.unsetCursor()
 
@@ -578,6 +578,10 @@ class WcWizard(QWizard):
         self._config = config
         super().__init__(parent)
         self.setWindowTitle(config["title"])
+        self.setButtonText(QWizard.NextButton, "下一步 >")
+        self.setButtonText(QWizard.BackButton, "< 上一步")
+        self.setButtonText(QWizard.CancelButton, "取消")
+        self.setButtonText(QWizard.FinishButton, "完成")
         self.setMinimumSize(580, 540)
         self.setWizardStyle(QWizard.ModernStyle)
         self._page1 = PageInputOutput(self)

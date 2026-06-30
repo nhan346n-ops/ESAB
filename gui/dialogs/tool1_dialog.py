@@ -1,4 +1,4 @@
-"""\u5de5\u5177 1\uff1a\u5bfc\u51fa\u53c2\u8003 DTM \u5bf9\u8bdd\u6846\u3002
+"""\u5bfc\u51fa\u53c2\u8003 DTM \u5bf9\u8bdd\u6846\u3002
 
 \u53c2\u6570\uff1a\u58f0\u7eb3\u7c7b\u578b\u3001\u6295\u5f71\u3001\u5206\u8fa8\u7387\u3001\u7f3a\u5931\u586b\u8865\u3001
 \u6d77\u62d4\u6ee4\u6ce2\u3001BL1/BL2 \u6821\u6b63\u6807\u5fd7\u3002
@@ -21,7 +21,7 @@ from ..utils.config import (
 
 
 class Tool1Dialog(QDialog):
-    """\u5de5\u5177 1\u5bf9\u8bdd\u6846\uff1a\u5bfc\u51fa\u53c2\u8003 DTM \u4e0e\u672a\u6821\u6b63\u540e\u5411\u6563\u5c04\u9884\u89c8\u3002"""
+    """\u5bfc\u51fa\u53c2\u8003 DTM \u4e0e\u672a\u6821\u6b63\u540e\u5411\u6563\u5c04\u9884\u89c8\u3002"""
 
     def __init__(
         self,
@@ -31,7 +31,7 @@ class Tool1Dialog(QDialog):
         super().__init__(parent)
         self._selected_files = selected_files
         self._setup_ui()
-        self.setWindowTitle("\u5de5\u5177 1\uff1a\u5bfc\u51fa\u53c2\u8003 DTM")
+        self.setWindowTitle("\u5bfc\u51fa\u53c2\u8003 DTM")
         self.resize(550, 600)
 
     def _setup_ui(self) -> None:
@@ -56,7 +56,7 @@ class Tool1Dialog(QDialog):
 
         self._projection = QComboBox()
         self._projection.addItems(PROJECTIONS)
-        self._projection.setCurrentText("Auto Detect")
+        self._projection.setCurrentText("自动检测")
         basic_form.addRow("\u6295\u5f71:", self._projection)
 
         self._resolution = QComboBox()

@@ -149,7 +149,7 @@ class PageProjection(QWizardPage):
 
         self._proj = QComboBox()
         self._proj.addItems(PROJECTIONS)
-        self._proj.setCurrentText("Auto Detect")
+        self._proj.setCurrentText("自动检测")
         self._proj.setEditable(True)
         self._proj.currentTextChanged.connect(self._on_proj_changed)
         layout.addRow("\u6295\u5f71:", self._proj)
@@ -288,16 +288,16 @@ class PageProjection(QWizardPage):
         was_geo = "longlat" in old_proj or "latlong" in old_proj
         
         base = "+ellps=WGS84 +datum=WGS84 +no_defs"
-        if text == "Auto Detect":
+        if text == "自动检测":
             self._proj_def.setText("+proj=longlat " + base)
-        elif text == "Mercator":
+        elif text == "墨卡托 (Mercator)":
             lat_ts = 0
             if self._bounds:
                 _, lat_min, _, lat_max = self._bounds
                 lat_ts = round((lat_min + lat_max) / 2)
             self._proj_def.setText(
                 "+proj=merc +lon_0={} +lat_ts={} {}".format(0, lat_ts, base))
-        elif text == "UTM":
+        elif text == "通用横轴墨卡托 (UTM)":
             zone = 1
             if self._bounds:
                 lon_min, _, lon_max, _ = self._bounds
@@ -308,7 +308,7 @@ class PageProjection(QWizardPage):
                 south = " +south"
             self._proj_def.setText(
                 "+proj=utm +zone={}{} {}".format(zone, south, base))
-        elif text == "Custom EPSG":
+        elif text == "自定义 EPSG":
             pass
         
         # Auto-convert resolution when switching CRS units
@@ -591,6 +591,10 @@ class SounderToDtmWizard(QWizard):
                  parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setWindowTitle("\u58f0\u7eb3\u6570\u636e\u81f3 DTM \u5bfc\u51fa\u5411\u5bfc")
+        self.setButtonText(QWizard.NextButton, "下一步 >")
+        self.setButtonText(QWizard.BackButton, "< 上一步")
+        self.setButtonText(QWizard.CancelButton, "取消")
+        self.setButtonText(QWizard.FinishButton, "完成")
         self.setMinimumSize(550, 500)
         self.setWizardStyle(QWizard.ModernStyle)
 

@@ -77,7 +77,7 @@ def read_xsf_metadata(filepath: str) -> XsfMetadata:
                 ):
                     metadata.extra_attrs[attr_name] = _get_attr(ds, attr_name)
 
-            # Try to extract navigation bounds from /Sonar group if available
+            # Try to extract navigation bounds from /声呐 (Sonar) group if available
             _try_read_nav_bounds(ds, metadata)
 
     except Exception as e:

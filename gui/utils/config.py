@@ -5,6 +5,14 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 SRC_PATH = PROJECT_ROOT / "src"
 
+def resource_path(relative_path: str) -> str:
+    """Get absolute path to resource, works for dev and for PyInstaller."""
+    import sys
+    import os
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(str(PROJECT_ROOT.parent), relative_path)
+
 # GUI runtime directories
 GUI_DIR = PROJECT_ROOT / "gui"
 JOBS_DIR = GUI_DIR / ".pyat_gui" / "jobs"
@@ -27,13 +35,13 @@ SOUNDER_TYPES = [
 ]
 
 # Map projections
-PROJECTIONS = ["Auto Detect", "UTM", "Mercator", "Custom EPSG"]
+PROJECTIONS = ["自动检测", "通用横轴墨卡托 (UTM)", "墨卡托 (Mercator)", "自定义 EPSG"]
 
 # Grid resolutions (meters)
-RESOLUTIONS = ["0.5", "1.0", "2.0", "5.0", "10.0", "Custom"]
+RESOLUTIONS = ["0.5", "1.0", "2.0", "5.0", "10.0", "自定义"]
 
 # Gap filling methods
-GAP_FILL_METHODS = ["None", "Bilinear", "IDW"]
+GAP_FILL_METHODS = ["None", "双线性 (Bilinear)", "反距离权重 (IDW)"]
 
 # Integration methods (from configuration.py)
 INTEGRATION_METHODS = ["MEAN", "MEDIAN"]

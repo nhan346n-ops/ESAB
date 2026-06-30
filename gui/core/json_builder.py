@@ -66,7 +66,7 @@ def load_config_template(config_name: str) -> Optional[Dict[str, Any]]:
 def build_tool1_json(
     input_files: List[str],
     sounder_type: str = "AUTO",
-    projection: str = "Auto Detect",
+    projection: str = "自动检测",
     resolution: str = "2.0",
     gap_fill: str = "None",
     elev_min: Optional[float] = None,

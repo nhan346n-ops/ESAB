@@ -46,7 +46,7 @@ class ProcessManager(QObject):
             working_dir: Working directory for subprocess. Defaults to project root.
         """
         if self._state == ProcessState.RUNNING:
-            self.log_received.emit("WARNING", "A process is already running.")
+            self.log_received.emit("WARNING", "已有进程正在运行。")
             return
 
         if working_dir is None:
@@ -62,56 +62,76 @@ class ProcessManager(QObject):
         # Determine the Python interpreter dynamically
         import sys
         py310_exe = sys.executable
-        is_custom_env = "envs" in sys.executable or ".venv" in sys.executable
-        if not is_custom_env:
-            # Fallback to specific envs if base Python is running the GUI
-            candidates = [
-                r"C:\Users\GUO\AppData\Local\anaconda3\envs\env_pyat_runtime\python.exe",
-                r"C:\Users\GUO\AppData\Local\anaconda3\envs\pyat-py310\python.exe",
-                os.path.join(os.environ.get("CONDA_PREFIX", ""), "envs", "env_pyat_runtime", "python.exe"),
-                os.path.join(os.environ.get("CONDA_PREFIX", ""), "envs", "pyat-py310", "python.exe"),
-            ]
-            for c in candidates:
-                if os.path.isfile(c):
-                    py310_exe = c
-                    break
+        is_frozen = getattr(sys, 'frozen', False)
 
-        # Determine environment root dynamically from py310_exe
-        env_root = os.path.dirname(py310_exe)
-        if os.path.basename(env_root).lower() == "scripts":
-            env_root = os.path.dirname(env_root)
-
-        # Ensure PYTHONPATH includes src/ for pyat imports (replace any existing)
         env = QProcess.systemEnvironment()
-        env = [e for e in env if not e.startswith("PYTHONPATH=")]
-        src_path = os.path.join(working_dir, "src")
-        env.append(f"PYTHONPATH={src_path}")
 
-        # Ensure GDAL can find netCDF plugin and data files on Windows dynamically matching env_root
-        conda_lib_bin = os.path.join(env_root, "Library", "bin")
-        if not os.path.isdir(conda_lib_bin):
-            conda_lib_bin = r"C:\Users\GUO\AppData\Local\anaconda3\Library\bin" # fallback
+        if is_frozen:
+            # In PyInstaller packaged app, sys.executable points to the app itself
+            # We don't need Anaconda environments.
+            base_dir = sys._MEIPASS
+            
+            gdal_data = os.path.join(base_dir, "gdal")
+            if os.path.isdir(gdal_data):
+                env.append(f"GDAL_DATA={gdal_data}")
+                
+            gdal_plugin = os.path.join(base_dir, "gdalplugins")
+            if os.path.isdir(gdal_plugin):
+                env.append(f"GDAL_DRIVER_PATH={gdal_plugin}")
+                
+            proj_lib = os.path.join(base_dir, "proj")
+            if os.path.isdir(proj_lib):
+                env.append(f"PROJ_LIB={proj_lib}")
+        else:
+            is_custom_env = "envs" in sys.executable or ".venv" in sys.executable
+            if not is_custom_env:
+                # Fallback to specific envs if base Python is running the GUI
+                candidates = [
+                    r"C:\Users\GUO\AppData\Local\anaconda3\envs\env_pyat_runtime\python.exe",
+                    r"C:\Users\GUO\AppData\Local\anaconda3\envs\pyat-py310\python.exe",
+                    os.path.join(os.environ.get("CONDA_PREFIX", ""), "envs", "env_pyat_runtime", "python.exe"),
+                    os.path.join(os.environ.get("CONDA_PREFIX", ""), "envs", "pyat-py310", "python.exe"),
+                ]
+                for c in candidates:
+                    if os.path.isfile(c):
+                        py310_exe = c
+                        break
 
-        if os.path.isdir(conda_lib_bin):
-            env = [e for e in env if not e.startswith("PATH=")]
-            env.append(f"PATH={conda_lib_bin};{os.environ.get('PATH', '')}")
-            
-        gdal_plugin = os.path.join(conda_lib_bin, "..", "lib", "gdalplugins")
-        if os.path.isdir(gdal_plugin):
-            env.append(f"GDAL_DRIVER_PATH={os.path.normpath(gdal_plugin)}")
-            
-        gdal_data = os.path.join(env_root, "Library", "share", "gdal")
-        if not os.path.isdir(gdal_data):
-            gdal_data = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\gdal"
-        if os.path.isdir(gdal_data):
-            env.append(f"GDAL_DATA={gdal_data}")
-            
-        proj_lib = os.path.join(env_root, "Library", "share", "proj")
-        if not os.path.isdir(proj_lib):
-            proj_lib = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\proj"
-        if os.path.isdir(proj_lib):
-            env.append(f"PROJ_LIB={proj_lib}")
-            
+            # Determine environment root dynamically from py310_exe
+            env_root = os.path.dirname(py310_exe)
+            if os.path.basename(env_root).lower() == "scripts":
+                env_root = os.path.dirname(env_root)
+
+            # Ensure PYTHONPATH includes src/ for pyat imports (replace any existing)
+            env = [e for e in env if not e.startswith("PYTHONPATH=")]
+            src_path = os.path.join(working_dir, "src")
+            env.append(f"PYTHONPATH={src_path}")
+
+            # Ensure GDAL can find netCDF plugin and data files on Windows dynamically matching env_root
+            conda_lib_bin = os.path.join(env_root, "Library", "bin")
+            if not os.path.isdir(conda_lib_bin):
+                conda_lib_bin = r"C:\Users\GUO\AppData\Local\anaconda3\Library\bin" # fallback
+
+            if os.path.isdir(conda_lib_bin):
+                env = [e for e in env if not e.startswith("PATH=")]
+                env.append(f"PATH={conda_lib_bin};{os.environ.get('PATH', '')}")
+                
+            gdal_plugin = os.path.join(conda_lib_bin, "..", "lib", "gdalplugins")
+            if os.path.isdir(gdal_plugin):
+                env.append(f"GDAL_DRIVER_PATH={os.path.normpath(gdal_plugin)}")
+                
+            gdal_data = os.path.join(env_root, "Library", "share", "gdal")
+            if not os.path.isdir(gdal_data):
+                gdal_data = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\gdal"
+            if os.path.isdir(gdal_data):
+                env.append(f"GDAL_DATA={gdal_data}")
+                
+            proj_lib = os.path.join(env_root, "Library", "share", "proj")
+            if not os.path.isdir(proj_lib):
+                proj_lib = r"C:\Users\GUO\AppData\Local\anaconda3\Library\share\proj"
+            if os.path.isdir(proj_lib):
+                env.append(f"PROJ_LIB={proj_lib}")
+
         self._process.setEnvironment(env)
 
         # Connect signals
@@ -125,7 +145,7 @@ class ProcessManager(QObject):
         self.state_changed.emit(self._state)
 
         self.log_received.emit("INFO",
-            f"Running: {py310_exe} -m pyat {config_json_path}")
+            f"正在运行: {py310_exe} -m pyat {config_json_path}")
         self._process.start(py310_exe, ["-m", "pyat", config_json_path])
 
     def cancel(self) -> None:
@@ -133,7 +153,7 @@ class ProcessManager(QObject):
             self._process.kill()
             self._state = ProcessState.CANCELLED
             self.state_changed.emit(self._state)
-            self.log_received.emit("INFO", "Process cancelled by user.")
+            self.log_received.emit("INFO", "进程已被用户取消。")
 
     def is_running(self) -> bool:
         return self._state == ProcessState.RUNNING
@@ -164,7 +184,7 @@ class ProcessManager(QObject):
                     txt = msg.get("message", "")
                     self.log_received.emit(lvl, txt)
                 elif msg_type == "complete":
-                    self.log_received.emit("OK", f"Output: {msg.get('output_file', '')}")
+                    self.log_received.emit("OK", f"输出: {msg.get('output_file', '')}")
                 elif msg_type == "error":
                     self.log_received.emit("ERROR", msg.get("message", str(msg)))
                 else:
@@ -193,7 +213,7 @@ class ProcessManager(QObject):
         if exit_status == QProcess.CrashExit:
             self._state = ProcessState.ERROR
             self.state_changed.emit(self._state)
-            self.error_occurred.emit(f"Process crashed with exit code {exit_code}")
+            self.error_occurred.emit(f"进程崩溃，退出代码: {exit_code}")
             return
 
         if exit_code == 0:
@@ -201,21 +221,21 @@ class ProcessManager(QObject):
             self.log_received.emit("OK", f"Process completed successfully (exit 0).")
         else:
             self._state = ProcessState.ERROR
-            self.log_received.emit("ERROR", f"Process exited with code {exit_code}")
+            self.log_received.emit("ERROR", f"进程退出，代码: {exit_code}")
 
         self.state_changed.emit(self._state)
         self.finished.emit(exit_code, "")
 
     def _on_error(self, error: QProcess.ProcessError) -> None:
         err_map = {
-            QProcess.FailedToStart: "Failed to start process. Is 'python' on PATH?",
-            QProcess.Crashed: "Process crashed.",
-            QProcess.Timedout: "Process timed out.",
-            QProcess.WriteError: "Write error.",
-            QProcess.ReadError: "Read error.",
-            QProcess.UnknownError: "Unknown error.",
+            QProcess.FailedToStart: "启动进程失败。请检查系统 PATH 中是否包含 'python'？",
+            QProcess.Crashed: "进程崩溃。",
+            QProcess.Timedout: "进程超时。",
+            QProcess.WriteError: "写入错误。",
+            QProcess.ReadError: "读取错误。",
+            QProcess.UnknownError: "未知错误。",
         }
-        msg = err_map.get(error, f"Process error: {error}")
+        msg = err_map.get(error, f"进程错误: {error}")
         self._state = ProcessState.ERROR
         self.state_changed.emit(self._state)
         self.error_occurred.emit(msg)

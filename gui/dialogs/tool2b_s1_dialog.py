@@ -30,8 +30,8 @@ class _InputOutputPage(QWizardPage):
     def __init__(self, selected_files: List[str],
                  parent: Optional[QWizard] = None):
         super().__init__(parent)
-        self.setTitle("Step 1: Input & Output")
-        self.setSubTitle("Select the BSAR model, optional DTM, and output folder.")
+        self.setTitle("第1步：输入与输出")
+        self.setSubTitle("选择 BSAR 模型、可选的 DTM，以及输出文件夹。")
 
         layout = QVBoxLayout(self)
 
@@ -45,11 +45,11 @@ class _InputOutputPage(QWizardPage):
 
         # BSAR model (required)
         bsar_row = QHBoxLayout()
-        bsar_row.addWidget(QLabel("BSAR 模型 (.bsar.nc):"))
+        bsar_row.addWidget(QLabel("角度响应模型 (.bsar.nc):"))
         self._bsar_edit = QLineEdit()
-        self._bsar_edit.setPlaceholderText("Required \u2014 pre-computed BSAR model")
+        self._bsar_edit.setPlaceholderText("必填 — 预先计算的 BSAR 模型")
         bsar_row.addWidget(self._bsar_edit)
-        bsar_btn = QPushButton("Browse\u2026")
+        bsar_btn = QPushButton("浏览...")
         bsar_btn.clicked.connect(self._browse_bsar)
         bsar_row.addWidget(bsar_btn)
         layout.addLayout(bsar_row)
@@ -59,44 +59,44 @@ class _InputOutputPage(QWizardPage):
         dtm_row = QHBoxLayout()
         dtm_row.addWidget(QLabel("参考 DTM (_bathy.nc):"))
         self._dtm_edit = QLineEdit()
-        self._dtm_edit.setPlaceholderText("Optional \u2014 for incidence-angle correction")
+        self._dtm_edit.setPlaceholderText("可选 — 用于入射角校正")
         dtm_row.addWidget(self._dtm_edit)
-        dtm_btn = QPushButton("Browse\u2026")
+        dtm_btn = QPushButton("浏览...")
         dtm_btn.clicked.connect(self._browse_dtm)
         dtm_row.addWidget(dtm_btn)
         layout.addLayout(dtm_row)
 
         # Output
-        out_grp = QGroupBox("Output")
+        out_grp = QGroupBox("输出")
         of = QFormLayout(out_grp)
         dir_row = QHBoxLayout()
         self._out_dir = QLineEdit()
-        self._out_dir.setPlaceholderText("Leave empty to use input file directory")
+        self._out_dir.setPlaceholderText("留空则使用输入文件所在的目录")
         dir_row.addWidget(self._out_dir)
-        browse_out = QPushButton("Browse\u2026")
+        browse_out = QPushButton("浏览...")
         browse_out.clicked.connect(self._browse_out)
         dir_row.addWidget(browse_out)
-        of.addRow("Directory:", dir_row)
-        self._overwrite = QCheckBox("Overwrite existing output files")
+        of.addRow("目录:", dir_row)
+        self._overwrite = QCheckBox("覆盖已存在的输出文件")
         of.addRow(self._overwrite)
         layout.addWidget(out_grp)
 
     def _browse_bsar(self) -> None:
         f, _ = QFileDialog.getOpenFileName(
-            self, "Select BSAR model", "",
+            self, "选择 BSAR 模型", "",
             "BSAR files (*.bsar.nc);;NetCDF files (*.nc);;All (*.*)")
         if f:
             self._bsar_edit.setText(f)
 
     def _browse_dtm(self) -> None:
         f, _ = QFileDialog.getOpenFileName(
-            self, "Select DTM file", "",
+            self, "选择 DTM 文件", "",
             "DTM files (*.dtm.nc *.nc);;All (*.*)")
         if f:
             self._dtm_edit.setText(f)
 
     def _browse_out(self) -> None:
-        d = QFileDialog.getExistingDirectory(self, "Output Directory")
+        d = QFileDialog.getExistingDirectory(self, "输出目录")
         if d:
             self._out_dir.setText(d)
 
@@ -118,8 +118,8 @@ class _InputOutputPage(QWizardPage):
 class _ParametersPage(QWizardPage):
     def __init__(self, parent: Optional[QWizard] = None):
         super().__init__(parent)
-        self.setTitle("Step 2: Parameters")
-        self.setSubTitle("Reference level, compensation and processing options.")
+        self.setTitle("第2步：参数")
+        self.setSubTitle("参考基准面、补偿及处理选项。")
 
         layout = QFormLayout(self)
 
@@ -131,41 +131,41 @@ class _ParametersPage(QWizardPage):
         self._ref_level.setSuffix(" dB")
         self._ref_level.setDecimals(1)
         ref_row.addWidget(self._ref_level)
-        eval_btn = QPushButton("Evaluate")
-        eval_btn.setToolTip("Auto-estimate reference level.")
+        eval_btn = QPushButton("评估")
+        eval_btn.setToolTip("自动评估参考基准面。")
         eval_btn.clicked.connect(self._on_evaluate)
         ref_row.addWidget(eval_btn)
-        layout.addRow("Reference level:", ref_row)
+        layout.addRow("参考基准面:", ref_row)
 
-        self._apply_comp = QCheckBox("Apply incidence angle compensation")
+        self._apply_comp = QCheckBox("应用入射角补偿")
         self._apply_comp.setChecked(True)
         layout.addRow(self._apply_comp)
 
-        self._snippets = QCheckBox("Use snippet mean")
+        self._snippets = QCheckBox("使用片段平均值")
         layout.addRow(self._snippets)
 
         # Separator
         layout.addRow(QLabel(""))
-        layout.addRow(QLabel("以下选项从 BSAR 模型中读取 "
+        layout.addRow(QLabel("以下选项从角度响应模型中读取 "
                              "如果不可用或需要覆盖，请勾选复选框并手动设置:"))
 
         self._sounder = QComboBox()
         self._sounder.addItems(SOUNDER_TYPES)
         self._sounder.setCurrentText("AUTO")
         self._sounder.setEnabled(False)
-        layout.addRow("Sounder type:", self._sounder)
+        layout.addRow("测深仪类型:", self._sounder)
 
         self._integration = QComboBox()
         self._integration.addItems(INTEGRATION_METHODS)
         self._integration.setCurrentText("MEAN")
         self._integration.setEnabled(False)
-        layout.addRow("Integration method:", self._integration)
+        layout.addRow("积分方法:", self._integration)
 
         self._scale = QComboBox()
         self._scale.addItems(LINEAR_SCALES)
         self._scale.setCurrentText("AMPLITUDE")
         self._scale.setEnabled(False)
-        layout.addRow("Linear scale:", self._scale)
+        layout.addRow("线性比例:", self._scale)
 
     def _on_evaluate(self) -> None:
         wiz = self.wizard()
@@ -175,8 +175,8 @@ class _ParametersPage(QWizardPage):
         if not bsar_path or not os.path.isfile(bsar_path):
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(
-                self, "Missing BSAR Model",
-                "Please select a BSAR model file in Step 1 first.")
+                self, "缺失 BSAR 模型",
+                "请先在第一步中选择一个 BSAR 模型文件。")
             return
 
         from PySide6.QtWidgets import QMessageBox, QApplication
@@ -196,13 +196,13 @@ class _ParametersPage(QWizardPage):
                 if ref_level is not None:
                     self._ref_level.setValue(round(float(ref_level), 1))
                     QMessageBox.information(
-                        self, "Evaluation Complete",
-                        f"Estimated reference level: {ref_level:.1f} dB\n"
-                        f"(weighted mean of all modes in the BSAR model)")
+                        self, "评估完成",
+                        f"预估参考基准面: {ref_level:.1f} dB\n"
+                        f"（基于 BSAR 模型中所有模式的加权平均值）")
         except Exception as e:
             QMessageBox.warning(
-                self, "Evaluation Failed",
-                f"Could not evaluate reference level:\n{e}")
+                self, "评估失败",
+                f"无法评估参考基准面:\n{e}")
         finally:
             QApplication.restoreOverrideCursor()
 
@@ -219,27 +219,27 @@ class _ParametersPage(QWizardPage):
 class _AdvancedPage(QWizardPage):
     def __init__(self, parent: Optional[QWizard] = None):
         super().__init__(parent)
-        self.setTitle("Step 3: Advanced Options")
-        self.setSubTitle("BL0/BL2 correction flags (read from BSAR model, shown for reference).")
+        self.setTitle("第3步：高级选项")
+        self.setSubTitle("BL0/BL2 校正标志（从 BSAR 模型读取，仅供参考）。")
 
         layout = QFormLayout(self)
 
-        self._use_svp = QCheckBox("Use embedded sound velocity profiles")
+        self._use_svp = QCheckBox("使用内嵌声速剖面")
         self._use_svp.setChecked(True)
         self._use_svp.setEnabled(False)
         layout.addRow(self._use_svp)
 
-        self._use_ia = QCheckBox("Recompute insonified area from seafloor incidence")
+        self._use_ia = QCheckBox("通过海底入射角重新计算声照面积")
         self._use_ia.setChecked(True)
         self._use_ia.setEnabled(False)
         layout.addRow(self._use_ia)
 
-        self._remove_comp = QCheckBox("Remove angular compensation")
+        self._remove_comp = QCheckBox("移除角度补偿")
         self._remove_comp.setChecked(True)
         self._remove_comp.setEnabled(False)
         layout.addRow(self._remove_comp)
 
-        self._remove_cal = QCheckBox("Remove calibration (BScorr from kmall)")
+        self._remove_cal = QCheckBox("移除校准 (从 kmall 中移除 BScorr)")
         self._remove_cal.setChecked(True)
         self._remove_cal.setEnabled(False)
         layout.addRow(self._remove_cal)
@@ -253,8 +253,8 @@ class _AdvancedPage(QWizardPage):
 class _SummaryPage(QWizardPage):
     def __init__(self, parent: Optional[QWizard] = None):
         super().__init__(parent)
-        self.setTitle("Step 4: Summary")
-        self.setSubTitle("Review settings and run.")
+        self.setTitle("第4步：总结")
+        self.setSubTitle("确认设置并运行。")
 
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel("配置总结:"))
@@ -279,6 +279,10 @@ class Tool2BS1Dialog(QWizard):
                  parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setWindowTitle("\u9759\u6001\u89d2\u5ea6\u91cd\u89c4\u8303\u5316")
+        self.setButtonText(QWizard.NextButton, "下一步 >")
+        self.setButtonText(QWizard.BackButton, "< 上一步")
+        self.setButtonText(QWizard.CancelButton, "取消")
+        self.setButtonText(QWizard.FinishButton, "完成")
         self.setMinimumSize(540, 490)
         self.setWizardStyle(QWizard.ModernStyle)
 
@@ -322,16 +326,16 @@ class Tool2BS1Dialog(QWizard):
         p1 = self._page1
         p2 = self._page2.getParams()
         lines = [
-            "=== Input / Output ===",
-            f"  XSF files:          {len(self._selected_files)}",
+            "=== 输入 / 输出 ===",
+            f"  XSF 文件:           {len(self._selected_files)}",
             f"  BSAR model:         {p1.getBsarNc()}",
-            f"  Reference DTM:      {p1.getBathyNc() or '(not set)'}",
+            f"  参考 DTM:           {p1.getBathyNc() or '(not set)'}",
             f"  Output directory:   {p1.getOutputDir() or '(same as input)'}",
             f"  Overwrite:          {p1.getOverwrite()}",
             "",
-            "=== Parameters ===",
-            f"  Reference level:           {p2['reference_level']} dB",
+            "=== 参数 ===",
+            f"  参考基准面:           {p2['reference_level']} dB",
             f"  Incidence compensation:    {p2['apply_compensation']}",
-            f"  Use snippet mean:          {p2['use_snippets']}",
+            f"  使用片段平均值:          {p2['use_snippets']}",
         ]
         return "\n".join(lines)

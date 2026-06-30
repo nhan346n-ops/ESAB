@@ -1,0 +1,17 @@
+{
+  "configuration_file": "D:\\Ruanjian\\BS\\pyat-main\\src\\gws\\conf\\sonar\\bs\\bs_sliding_angular_renormalization.json",
+  "i_paths": [
+    "D:/Software/test/0005_20250704_064148.xsf.nc"
+  ],
+  "o_paths": [
+    "D:/YBK\\0005_20250704_064148.xsf_bs_sliding.nc"
+  ],
+  "sounder_type": "AUTO",
+  "sliding_window": 30,
+  "ref_angle_min": 45.0,
+  "ref_angle_max": 45.0,
+  "use_snippets": false,
+  "use_svp": true,
+  "use_insonified_area": true,
+  "remove_calibration": true
+}

@@ -126,13 +126,13 @@ class ProjectExplorer(QWidget):
         self._cat_unprocessed.setData(0, Qt.UserRole, ITEM_CATEGORY)
         self._cat_unprocessed.setForeground(0, QBrush(QColor("#808080")))
 
-        self._root_dtm = QTreeWidgetItem(self._file_tree, ["\u53c2\u8003 DTM", "", ""])
+        self._root_dtm = QTreeWidgetItem(self._file_tree, ["参考地形 (DTM)", "", ""])
         self._root_dtm.setData(0, Qt.UserRole, ITEM_ROOT)
 
-        self._root_bsar = QTreeWidgetItem(self._file_tree, ["BSAR \u6a21\u578b", "", ""])
+        self._root_bsar = QTreeWidgetItem(self._file_tree, ["角度响应模型 (BSAR)", "", ""])
         self._root_bsar.setData(0, Qt.UserRole, ITEM_ROOT)
 
-        self._root_products = QTreeWidgetItem(self._file_tree, ["\u4ea7\u54c1", "", ""])
+        self._root_products = QTreeWidgetItem(self._file_tree, ["输出结果 (镶嵌图/网格)", "", ""])
         self._root_products.setData(0, Qt.UserRole, ITEM_ROOT)
 
         self._file_tree.expandAll()
@@ -178,7 +178,7 @@ class ProjectExplorer(QWidget):
         dtm_layout.addWidget(self._dtm_none)
         dtm_layout.addWidget(self._dtm_bs)
         dtm_layout.addWidget(self._dtm_elev)
-        dtm_layout.addWidget(QLabel("Gamma \u8c03\u8282:"))
+        dtm_layout.addWidget(QLabel("\u4f3d\u9a6c\u8c03\u8282:"))
         gamma_row = QHBoxLayout()
         self._gamma_slider = QSlider(Qt.Horizontal)
         self._gamma_slider.setRange(-100, 100)
@@ -349,7 +349,7 @@ class ProjectExplorer(QWidget):
             if filepath in self._metadata_cache:
                 self.file_selected.emit([self._metadata_cache[filepath]])
 
-            action_t1 = menu.addAction("\u5de5\u5177 1: \u5bfc\u51fa\u53c2\u8003 DTM")
+            action_t1 = menu.addAction("\u5bfc\u51fa\u53c2\u8003 DTM")
             action_t1.triggered.connect(lambda: self.tool_requested.emit("tool1"))
 
             angle_menu = menu.addMenu("\u89d2\u5ea6\u54cd\u5e94")

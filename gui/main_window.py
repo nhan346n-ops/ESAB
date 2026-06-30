@@ -11,11 +11,11 @@ import tempfile
 from datetime import datetime
 from typing import Optional, List
 
-from PySide6.QtCore import Qt, QSettings
-from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtCore import Qt, QSettings, QSize
+from PySide6.QtGui import QAction, QKeySequence, QIcon
 from PySide6.QtWidgets import (
     QMainWindow, QDockWidget, QTabWidget, QWidget,
-    QStatusBar, QMessageBox, QWizard, QFileDialog, QApplication,
+    QStatusBar, QMessageBox, QWizard, QFileDialog, QApplication, QToolBar,
 )
 
 from .project_explorer import ProjectExplorer
@@ -30,6 +30,7 @@ from .core.json_builder import (
     build_tool2b_step2b_json, build_sounder_to_dtm_json, build_wc_json,
 )
 from .core.xsf_reader import XsfMetadata, read_xsf_metadata
+from .utils.config import resource_path
 from .dialogs.tool1_dialog import Tool1Dialog
 from .dialogs.sounder_to_dtm_wizard import SounderToDtmWizard
 from .dialogs.tool2a_dialog import Tool2ADialog
@@ -48,6 +49,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setWindowTitle("pyat GUI — 多波束回声处理")
+
         self.resize(1400, 900)
 
         # ── 设置窗口图标 ──
@@ -93,25 +95,25 @@ class MainWindow(QMainWindow):
         menu_bar = self.menuBar()
 
         # ── File ──
-        file_menu = menu_bar.addMenu("\u6587\u4ef6(&F)")
-        add_action = QAction("\u6dfb\u52a0 XSF \u6587\u4ef6...", self)
+        file_menu = menu_bar.addMenu("文件(&F)")
+        add_action = QAction("导入 XSF 文件...", self)
         add_action.triggered.connect(self._project_explorer._add_files)
         file_menu.addAction(add_action)
-        add_folder_action = QAction("\u6dfb\u52a0 XSF \u6587\u4ef6\u5939...", self)
+        add_folder_action = QAction("导入 XSF 文件夹...", self)
         add_folder_action.triggered.connect(self._project_explorer._add_folder)
         file_menu.addAction(add_folder_action)
 
         file_menu.addSeparator()
-        import_dtm = QAction("\u5bfc\u5165 DTM (.dtm.nc)...", self)
+        import_dtm = QAction("导入 DTM (.dtm.nc)...", self)
         import_dtm.triggered.connect(self._import_dtm)
         file_menu.addAction(import_dtm)
 
-        import_g3d = QAction("打开水柱 g3d 文件...", self)
+        import_g3d = QAction("导入水柱 g3d 文件...", self)
         import_g3d.triggered.connect(lambda: self._wc2d_viewer._open_file())
         file_menu.addAction(import_g3d)
         file_menu.addSeparator()
 
-        exit_action = QAction("\u9000\u51fa(&X)", self)
+        exit_action = QAction("退出(&X)", self)
         exit_action.setShortcut(QKeySequence.Quit)
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
@@ -120,21 +122,34 @@ class MainWindow(QMainWindow):
         tools_menu = menu_bar.addMenu("\u5de5\u5177(&T)")
 
         # 后向散射处理
-        t1 = QAction("导出参考 DTM...", self)
+        t1 = QAction(QIcon(resource_path("resources/svg/data_export.svg")), "导出参考 DTM...", self)
         t1.triggered.connect(lambda: self._dispatch_tool("tool1"))
         tools_menu.addAction(t1)
         tools_menu.addSeparator()
 
-        t2as2 = QAction("统计角响应 (BSAR)...", self)
+        t2as2 = QAction(QIcon(resource_path("resources/svg/backscatter.svg")), "统计角响应 (BSAR)...", self)
         t2as2.triggered.connect(lambda: self._dispatch_tool("tool2b_step2"))
         tools_menu.addAction(t2as2)
-        t2as1 = QAction("静态角度重规范化...", self)
+        t2as1 = QAction(QIcon(resource_path("resources/svg/bias_correction.svg")), "静态角度重规范化...", self)
         t2as1.triggered.connect(lambda: self._dispatch_tool("tool2b_step1"))
         tools_menu.addAction(t2as1)
-        t2a = QAction("滑动角度重规范化...", self)
+        t2a = QAction(QIcon(resource_path("resources/svg/auto_bias.svg")), "滑动角度重规范化...", self)
         t2a.triggered.connect(lambda: self._dispatch_tool("tool2a"))
         tools_menu.addAction(t2a)
         tools_menu.addSeparator()
+
+        # ── Toolbar ──
+        main_toolbar = QToolBar("主要功能", self)
+        main_toolbar.setIconSize(QSize(24, 24))
+        main_toolbar.setStyleSheet("QToolBar { border: none; background: transparent; spacing: 5px; } QToolButton { padding: 4px; border-radius: 4px; } QToolButton:hover { background-color: rgba(0, 120, 212, 0.1); }")
+        
+        main_toolbar.addAction(t1)
+        main_toolbar.addSeparator()
+        main_toolbar.addAction(t2as1)
+        main_toolbar.addAction(t2a)
+        main_toolbar.addAction(t2as2)
+        
+        self.addToolBar(Qt.TopToolBarArea, main_toolbar)
 
         # 水柱分析子菜单
         wc_menu = tools_menu.addMenu("水柱分析")
@@ -188,7 +203,7 @@ class MainWindow(QMainWindow):
     def _setup_central(self) -> None:
         self._central_tabs = QTabWidget()
         self._central_tabs.addTab(self._map_view, "\u5730\u56fe\u89c6\u56fe")
-        self._central_tabs.addTab(self._bsar_viewer, "BSAR \u89c6\u56fe")
+        self._central_tabs.addTab(self._bsar_viewer, "角度响应曲线视图")
         self._central_tabs.addTab(self._wc2d_viewer, "\u6c34\u67f1 2D")
         self.setCentralWidget(self._central_tabs)
 
@@ -306,7 +321,7 @@ class MainWindow(QMainWindow):
     def _extract_nav_coords(self, filepath: str) -> List[List[float]]:
         """Extract vessel track [lat, lon] pairs from XSF.
         
-        Uses ping-level platform_latitude/longitude (Sonar/Beam_group1/).
+        Uses ping-level platform_latitude/longitude (声呐 (Sonar)/Beam_group1/).
         NOT detection_latitude (beam-level, would show swath coverage).
         Decimates to ~2000 points max for map display.
         """
@@ -424,9 +439,9 @@ class MainWindow(QMainWindow):
             self._map_view.show_dtm_layer("backscatter")
             # Add to Project Explorer
             self._project_explorer.add_external_file(dtm_path, "product")
-            self._console_view.append_text(f"DTM loaded on map: {dtm_path}", "OK")
+            self._console_view.append_text(f"DTM 已加载到地图: {dtm_path}", "OK")
         except Exception as e:
-            self._console_view.append_text(f"DTM overlay failed: {e}", "ERROR")
+            self._console_view.append_text(f"DTM 图层叠加失败: {e}", "ERROR")
 
     def _on_process_progress(self, percent: int, message: str) -> None:
         self._task_manager.update_progress(self._current_task_id, percent, message)
@@ -444,7 +459,7 @@ class MainWindow(QMainWindow):
 
     def _open_tool1(self, selected_files: list) -> None:
         if not selected_files:
-            QMessageBox.warning(self, "No Files", "Select XSF files first.")
+            QMessageBox.warning(self, "无文件", "请先选择 XSF 文件。")
             return
         # Compute overall bounds for grid size estimation and coord param
         lon_min, lat_min = 180, 90
@@ -484,7 +499,7 @@ class MainWindow(QMainWindow):
             out_files = [os.path.join(out_dir, f"{prefix}_combined.dtm.nc")]
             proj_def = p.get("proj_def", "")
             is_geo = "longlat" in proj_def or "latlong" in proj_def
-            # coord is always in lat/lon degrees. For projected CRS (Mercator/UTM),
+            # coord is always in lat/lon degrees. For projected CRS (墨卡托 (Mercator)/UTM),
             # passing degrees + meter resolution makes estimate_col(deg/m→0)→1 cell.
             # Let the backend auto-compute bounds from data in the correct CRS.
             if is_geo:
@@ -548,7 +563,7 @@ class MainWindow(QMainWindow):
 
     def _open_tool2a(self, selected_files: list) -> None:
         if not selected_files:
-            QMessageBox.warning(self, "No Files", "Select XSF files first.")
+            QMessageBox.warning(self, "无文件", "请先选择 XSF 文件。")
             return
         try:
             dlg = Tool2ADialog(selected_files, self)
@@ -569,7 +584,7 @@ class MainWindow(QMainWindow):
             if result == QMessageBox.Accepted:
                 self._execute_tool("工具 2A: 滑动角度重规范化", config_path)
             else:
-                self._console_view.append_text(f"Config saved: {config_path}", "INFO")
+                self._console_view.append_text(f"配置已保存: {config_path}", "INFO")
             self._statusbar.showMessage(f"工具 2A 配置已保存: {config_path}")
 
     # ── Tool 2B Step 1 ─────────────────────────────────────────────
@@ -590,8 +605,8 @@ class MainWindow(QMainWindow):
             return
         if result == QWizard.Accepted:
             if not wiz.bsar_nc:
-                QMessageBox.warning(self, "缺少 BSAR 模型",
-                                    "需要 BSAR 模型文件。\n"
+                QMessageBox.warning(self, "缺少角度响应模型",
+                                    "需要角度响应模型文件。\n"
                                     "请在步骤 1 中选择 .bsar.nc 文件。")
                 return
             params = wiz.get_params()
@@ -673,7 +688,7 @@ class MainWindow(QMainWindow):
     def _import_dtm(self) -> None:
         """Import one or more DTM.nc files and display their layers on the map."""
         paths, _ = QFileDialog.getOpenFileNames(
-            self, "Import DTM File(s)", "",
+            self, "导入 DTM 文件", "",
             "DTM files (*.dtm.nc *.nc);;All (*.*)"
         )
         if not paths:
@@ -682,13 +697,13 @@ class MainWindow(QMainWindow):
         errors = []
         for path in paths:
             try:
-                self._console_view.append_text(f"Importing DTM: {path}", "INFO")
+                self._console_view.append_text(f"正在导入 DTM: {path}", "INFO")
                 # Generate overlay PNG files
                 png_bs, data_url, bounds = dtm_layer_to_file(path, "backscatter", cmap="gray")
                 self._map_view.set_dtm_overlay(path, "backscatter", data_url, bounds)
                 png_el, data_el, _ = dtm_layer_to_file(path, "elevation", cmap="terrain", hillshade=True)
                 self._map_view.set_dtm_overlay(path, "elevation", data_el, bounds)
-                self._project_explorer.add_external_file(path, "product")
+                self._project_explorer.add_external_file(path, "dtm")
                 loaded += 1
             except Exception as e:
                 errors.append(f"{os.path.basename(path)}: {e}")
@@ -730,8 +745,8 @@ class MainWindow(QMainWindow):
                         tr = Transformer.from_crs(src, tgt, always_xy=True)
                         sw = tr.transform(float(x_arr[0]), float(y_arr[0]))
                         ne = tr.transform(float(x_arr[-1]), float(y_arr[-1]))
-                        lons = [sw[0], ne[0]]
-                        lats = [sw[1], ne[1]]
+                        lons = [min(sw[0], ne[0]), max(sw[0], ne[0])]
+                        lats = [min(sw[1], ne[1]), max(sw[1], ne[1])]
                     else:
                         lons = [float(x_arr.min()), float(x_arr.max())]
                         lats = [float(y_arr.min()), float(y_arr.max())]
@@ -891,7 +906,7 @@ class MainWindow(QMainWindow):
         self._map_view._run_js(";".join(parts))
         self._map_view.fly_to_bounds(lats, lons)
         self._statusbar.showMessage(
-            f"Located: {os.path.basename(filepath)} — {len(coords)} nav pts, {len(self._map_view._visible_tracks)} tracks shown"
+            f"已定位: {os.path.basename(filepath)} — {len(coords)} nav pts, {len(self._map_view._visible_tracks)} tracks shown"
         )
 
     # ── WC ──────────────────────────────────────────────────────────

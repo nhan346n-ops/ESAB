@@ -58,7 +58,7 @@ def _leaflet_html() -> str:
 <style>html,body,#map{margin:0;padding:0;width:100%;height:100%}#map{background:#F7F9FC}
 .leaflet-control-zoom a{background:#FFFFFF!important;color:#1C2B3A!important;border:1px solid #D0D9E4!important}
 .leaflet-image-layer img{image-rendering:auto;-ms-interpolation-mode:bicubic}
-#coords-overlay{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(255,255,255,0.85);color:#1C2B3A;padding:4px 10px;font-family:sans-serif;font-size:12px;border-radius:4px;border:1px solid #D0D9E4;pointer-events:none;min-width:420px;text-align:center;white-space:nowrap}
+#coords-overlay{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(255,255,255,0.85);color:#1C2B3A;padding:4px 10px;font-family:sans-serif;font-size:12px;border-radius:4px;border:1px solid #D0D9E4;pointer-events:none;min-width:420px;text-align:center;white-space:nowrap}
 #legend-container{position:absolute;bottom:15px;right:10px;z-index:1000;background:rgba(255,255,255,0.85);border:1px solid #D0D9E4;border-radius:4px;color:#1C2B3A;padding:8px;font-family:sans-serif;font-size:11px;display:none;width:110px}
 #legend-title{font-weight:bold;margin-bottom:6px;font-size:10px;text-align:center;white-space:nowrap}
 #legend-bar{width:12px;height:100px;border:1px solid #C2D0E0}
@@ -67,6 +67,10 @@ def _leaflet_html() -> str:
 #legend-val-max{top:0;transform:translateY(-50%)}
 #legend-val-mid{top:50%;transform:translateY(-50%)}
 #legend-val-min{bottom:0;transform:translateY(50%)}
+.leaflet-grid-label-top, .leaflet-grid-label-right { display: none !important; }
+.leaflet-grid-label-bottom { bottom: 2px !important; background: rgba(255,255,255,0.6); padding: 0 2px; margin-bottom: 0 !important; }
+.leaflet-grid-label-left { left: 2px !important; background: rgba(255,255,255,0.6); padding: 2px 0; margin-left: 0 !important; }
+.leaflet-grid-label { font-size: 9px !important; color: #1C2B3A !important; font-weight: bold; font-family: monospace; z-index: 1000; }
 </style></head>
 <body><div id="map"></div>
 <div id="coords-overlay">\u7ecf\u7eac\u5ea6: --, --</div>
@@ -82,9 +86,77 @@ def _leaflet_html() -> str:
     </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cloudybay/leaflet.latlng-graticule@master/leaflet.latlng-graticule.js"></script>
 <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
 <script>
+function formatDMS(deg, isLat) {
+    if (isNaN(deg)) return "--";
+    var d = Math.abs(deg);
+    var degrees = Math.floor(d);
+    var minutesNotTruncated = (d - degrees) * 60;
+    var minutes = Math.floor(minutesNotTruncated);
+    var seconds = Math.round((minutesNotTruncated - minutes) * 60);
+    if(seconds === 60) { seconds = 0; minutes++; }
+    if(minutes === 60) { minutes = 0; degrees++; }
+    var dir = isLat ? (deg >= 0 ? 'N' : 'S') : (deg >= 0 ? 'E' : 'W');
+    return degrees + "°" + minutes + "'" + seconds + '"' + dir;
+}
+
 var map=L.map('map',{zoomControl:true, preferCanvas:true, wheelDebounceTime:40, wheelPxPerZoomLevel:120}).setView([30,110],5);
+
+// Update map size on window resize
+window.addEventListener('resize', function() { map.invalidateSize(); });
+
+// Monkey-patch Canvas fillText to hide top and right graticule labels natively
+var originalFillText = CanvasRenderingContext2D.prototype.fillText;
+CanvasRenderingContext2D.prototype.fillText = function(text, x, y, maxWidth) {
+    if (this.canvas) {
+        var ww = this.canvas.width;
+        var hh = this.canvas.height;
+        // Leaflet sets canvas size to map size. Hide Right (x > 80% width) and Top (y < 20% height)
+        if (x > ww * 0.8 || y < hh * 0.2) {
+            return;
+        }
+    }
+    originalFillText.apply(this, arguments);
+};
+
+var graticule = L.latlngGraticule({
+    showLabel: true,
+    weight: 0.3,
+    color: '#999',
+    dashArray: [4, 4],
+    zoomInterval: [
+        {start: 2, end: 2, interval: 40},
+        {start: 3, end: 3, interval: 20},
+        {start: 4, end: 4, interval: 10},
+        {start: 5, end: 5, interval: 5},
+        {start: 6, end: 6, interval: 2},
+        {start: 7, end: 7, interval: 1},
+        {start: 8, end: 8, interval: 0.5},
+        {start: 9, end: 9, interval: 0.25},
+        {start: 10, end: 10, interval: 0.16666666666666666},
+        {start: 11, end: 11, interval: 0.08333333333333333},
+        {start: 12, end: 12, interval: 0.03333333333333333},
+        {start: 13, end: 13, interval: 0.016666666666666666},
+        {start: 14, end: 14, interval: 0.008333333333333333},
+        {start: 15, end: 15, interval: 0.005555555555555556},
+        {start: 16, end: 16, interval: 0.002777777777777778},
+        {start: 17, end: 17, interval: 0.001388888888888889},
+        {start: 18, end: 18, interval: 0.0005555555555555556}
+    ],
+    latFormatTickLabel: function(lat) { return formatDMS(lat, true); },
+    lngFormatTickLabel: function(lon) { return formatDMS(lon, false); }
+}).addTo(map);
+
+// Hide graticule during zoom to prevent wobbling/shaking
+map.on('zoomstart', function() {
+    if (graticule && graticule._canvas) graticule._canvas.style.display = 'none';
+});
+map.on('zoomend', function() {
+    if (graticule && graticule._canvas) graticule._canvas.style.display = 'block';
+});
+
 var tk='351963c8b638ff7517f17374145c6115';
 var sub=['0','1','2','3','4','5','6','7'];
 var wmts='SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=';
@@ -118,11 +190,15 @@ function setDtmOverlay(fp,type,imageUrl,bounds){
     try{
         var old=dtmOverlays[fp]&&dtmOverlays[fp][type];
         if(old){dtmLayer.removeLayer(old)}
-        var o=L.imageOverlay(imageUrl,bounds,{opacity:.9,className:'dtm-overlay'});
+        var boundsObj = (Array.isArray(bounds) && Array.isArray(bounds[0])) ? bounds : [[bounds[0], bounds[1]], [bounds[2], bounds[3]]];
+        var img=L.imageOverlay(imageUrl,boundsObj,{opacity:0.9,interactive:true});
+        img.fp=fp;img.type=type;
         if(!dtmOverlays[fp])dtmOverlays[fp]={};
-        dtmOverlays[fp][type]=o;
-        if(dtmVisible[fp]!==false&&activeDtmLayer===type){dtmLayer.addLayer(o)}
-    }catch(e){}
+        dtmOverlays[fp][type]=img;
+        if(dtmVisible[fp]!==false&&activeDtmLayer===type){
+            img.addTo(dtmLayer);
+        }
+    }catch(e){console.error(e);}
 }
 function showDtmFile(fp,vis){
     dtmVisible[fp]=vis;
@@ -145,7 +221,7 @@ function showDtmLayer(type){
     }catch(e){}
 }
 function updateCoordsAndValue(lon,lat,valText){
-    var txt='\u7ecf\u5ea6: '+lon.toFixed(6)+'\u00b0  \u7eac\u5ea6: '+lat.toFixed(6)+'\u00b0';
+    var txt='\u7ecf\u5ea6: '+formatDMS(lon, false)+'  \u7eac\u5ea6: '+formatDMS(lat, true);
     if(valText){
         txt+=' | '+valText;
     }
@@ -239,12 +315,7 @@ class MapView(QWidget):
         self._map_combo.setCurrentText("\u77e2\u91cf\u5e95\u56fe")
         self._map_combo.currentTextChanged.connect(self._on_map_type_changed)
         tb.addWidget(self._map_combo)
-        tb.addSeparator()
-        self._roi_btn = QPushButton("ROI \u591a\u8fb9\u5f62")
-        self._roi_btn.setCheckable(True)
-        self._roi_btn.toggled.connect(lambda c: self._run_js("toggleROIDraw()"))
-        tb.addWidget(self._roi_btn)
-        tb.addWidget(QPushButton("\u9002\u5408\u5168\u90e8", clicked=lambda: self._run_js("try{map.fitBounds(map.getBounds())}catch(e){}")))
+        # ROI and Fit All buttons have been removed per user request
         layout.addWidget(tb)
 
         self._web = QWebEngineView()

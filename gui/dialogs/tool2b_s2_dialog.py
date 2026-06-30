@@ -68,7 +68,7 @@ class _InputOutputPage(QWizardPage):
 
     def _browse_out_bsar(self) -> None:
         f, _ = QFileDialog.getSaveFileName(
-            self, "Save BSAR Model As", "bsar_model.bsar.nc",
+            self, "另存 BSAR 模型为", "bsar_model.bsar.nc",
             "BSAR files (*.bsar.nc);;NetCDF files (*.nc);;All (*.*)")
         if f:
             if not f.endswith(".bsar.nc") and not f.endswith(".nc"):
@@ -77,7 +77,7 @@ class _InputOutputPage(QWizardPage):
 
     def _browse_dtm(self) -> None:
         f, _ = QFileDialog.getOpenFileName(
-            self, "Select DTM file", "",
+            self, "选择 DTM 文件", "",
             "DTM files (*.dtm.nc *.nc);;All (*.*)")
         if f:
             self._dtm_edit.setText(f)
@@ -190,6 +190,10 @@ class Tool2BS2Dialog(QWizard):
                  parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setWindowTitle("\u7edf\u8ba1\u89d2\u54cd\u5e94\uff08BSAR\uff09")
+        self.setButtonText(QWizard.NextButton, "下一步 >")
+        self.setButtonText(QWizard.BackButton, "< 上一步")
+        self.setButtonText(QWizard.CancelButton, "取消")
+        self.setButtonText(QWizard.FinishButton, "完成")
         self.setMinimumSize(540, 480)
         self.setWizardStyle(QWizard.ModernStyle)
 
@@ -233,21 +237,21 @@ class Tool2BS2Dialog(QWizard):
         p2 = self._page2.getParams()
         p3 = self._page3.getParams()
         lines = [
-            "=== Input / Output ===",
-            f"  XSF files:       {len(self._selected_files)}",
-            f"  Output BSAR:     {p1.getOutputBsar()}",
-            f"  Reference DTM:   {p1.getBathyNc() or '(not set)'}",
+            "=== 输入 / 输出 ===",
+            f"  XSF 文件:        {len(self._selected_files)}",
+            f"  输出 BSAR:       {p1.getOutputBsar()}",
+            f"  参考 DTM:        {p1.getBathyNc() or '(not set)'}",
             "",
-            "=== Parameters ===",
-            f"  Sounder type:            {p2['sounder_type']}",
-            f"  Integration method:      {p2['integration_method']}",
-            f"  Linear scale:            {p2['linear_scale']}",
-            f"  Use snippet mean:        {p2['use_snippets']}",
+            "=== 参数 ===",
+            f"  测深仪类型:            {p2['sounder_type']}",
+            f"  积分方法:      {p2['integration_method']}",
+            f"  线性比例:            {p2['linear_scale']}",
+            f"  使用片段平均值:        {p2['use_snippets']}",
             "",
-            "=== Advanced ===",
-            f"  Use SVP:                 {p3['use_svp']}",
-            f"  Recompute insonified area: {p3['use_insonified_area']}",
-            f"  Remove compensation:     {p3['remove_compensation']}",
-            f"  Remove calibration:      {p3['remove_calibration']}",
+            "=== 高级 ===",
+            f"  使用内嵌 SVP:            {p3['use_svp']}",
+            f"  重新计算声照面积:        {p3['use_insonified_area']}",
+            f"  移除补偿:                {p3['remove_compensation']}",
+            f"  移除校准:                {p3['remove_calibration']}",
         ]
         return "\n".join(lines)

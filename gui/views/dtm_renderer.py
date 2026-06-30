@@ -173,14 +173,20 @@ def _read_dtm_layer(dtm_path: str, layer_name: str,
                     trans = Transformer.from_crs(src_crs, tgt_crs, always_xy=True)
                     sw = trans.transform(float(x_arr[0]), float(y_arr[0]))
                     ne = trans.transform(float(x_arr[-1]), float(y_arr[-1]))
-                    min_lon, min_lat = sw
-                    max_lon, max_lat = ne
+                    min_lon = min(sw[0], ne[0])
+                    max_lon = max(sw[0], ne[0])
+                    min_lat = min(sw[1], ne[1])
+                    max_lat = max(sw[1], ne[1])
                 else:
-                    min_lon, min_lat = float(x_arr[0]), float(y_arr[0])
-                    max_lon, max_lat = float(x_arr[-1]), float(y_arr[-1])
+                    min_lon = min(float(x_arr[0]), float(x_arr[-1]))
+                    max_lon = max(float(x_arr[0]), float(x_arr[-1]))
+                    min_lat = min(float(y_arr[0]), float(y_arr[-1]))
+                    max_lat = max(float(y_arr[0]), float(y_arr[-1]))
             except Exception:
-                min_lon, min_lat = float(x_arr[0]), float(y_arr[0])
-                max_lon, max_lat = float(x_arr[-1]), float(y_arr[-1])
+                min_lon = min(float(x_arr[0]), float(x_arr[-1]))
+                max_lon = max(float(x_arr[0]), float(x_arr[-1]))
+                min_lat = min(float(y_arr[0]), float(y_arr[-1]))
+                max_lat = max(float(y_arr[0]), float(y_arr[-1]))
         else:
             raise IOError("DTM file has neither lon/lat nor x/y variables")
 

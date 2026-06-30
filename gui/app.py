@@ -9,29 +9,49 @@ Or from the project root:
 import sys
 import os
 
+# Disable Chromium sandbox to fix map rendering issues
+os.environ["QTWEBENGINE_DISABLE_SANDBOX"] = "1"
+
 # Setup DLL paths on Windows first
 if sys.platform == 'win32':
-    py_bin = os.path.dirname(sys.executable)
-    env_root = os.path.dirname(py_bin) if os.path.basename(py_bin).lower() == "scripts" else py_bin
-    conda_lib_bin = os.path.join(env_root, "Library", "bin")
-    if os.path.isdir(conda_lib_bin):
-        path_list = [p for p in os.environ.get("PATH", "").split(os.pathsep) if p]
-        first_path = os.path.normpath(path_list[0]).lower() if path_list else ""
-        conda_lib_bin_norm = os.path.normpath(conda_lib_bin).lower()
-
-        if first_path != conda_lib_bin_norm and not os.environ.get("PYAT_ENV_RESTARTED"):
-            import subprocess
-            os.environ["PATH"] = conda_lib_bin + os.pathsep + os.environ.get("PATH", "")
-            os.environ["PYAT_ENV_RESTARTED"] = "1"
-            os.environ.pop("USE_PATH_FOR_GDAL_PYTHON", None)
-            sys.exit(subprocess.call([sys.executable] + sys.argv, env=os.environ.copy()))
-
-        os.environ.pop("USE_PATH_FOR_GDAL_PYTHON", None)
+    if getattr(sys, 'frozen', False):
+        # Packaged/frozen application: Clean PATH to prevent loading conflicting DLLs from Anaconda
+        path_list = os.environ.get("PATH", "").split(os.pathsep)
+        clean_path = [p for p in path_list if not ('anaconda' in p.lower() or 'conda' in p.lower())]
+        os.environ["PATH"] = os.pathsep.join(clean_path)
+        
+        # Add packaged DLL folders to Windows DLL search paths
+        internal_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        pyside_dir = os.path.join(internal_dir, "PySide6")
         if sys.version_info >= (3, 8):
             try:
-                os.add_dll_directory(conda_lib_bin)
+                os.add_dll_directory(internal_dir)
+                os.add_dll_directory(pyside_dir)
             except Exception:
                 pass
+    else:
+        # Development environment: Setup Anaconda environment DLL paths
+        py_bin = os.path.dirname(sys.executable)
+        env_root = os.path.dirname(py_bin) if os.path.basename(py_bin).lower() == "scripts" else py_bin
+        conda_lib_bin = os.path.join(env_root, "Library", "bin")
+        if os.path.isdir(conda_lib_bin):
+            path_list = [p for p in os.environ.get("PATH", "").split(os.pathsep) if p]
+            first_path = os.path.normpath(path_list[0]).lower() if path_list else ""
+            conda_lib_bin_norm = os.path.normpath(conda_lib_bin).lower()
+
+            if first_path != conda_lib_bin_norm and not os.environ.get("PYAT_ENV_RESTARTED"):
+                import subprocess
+                os.environ["PATH"] = conda_lib_bin + os.pathsep + os.environ.get("PATH", "")
+                os.environ["PYAT_ENV_RESTARTED"] = "1"
+                os.environ.pop("USE_PATH_FOR_GDAL_PYTHON", None)
+                sys.exit(subprocess.call([sys.executable] + sys.argv, env=os.environ.copy()))
+
+            os.environ.pop("USE_PATH_FOR_GDAL_PYTHON", None)
+            if sys.version_info >= (3, 8):
+                try:
+                    os.add_dll_directory(conda_lib_bin)
+                except Exception:
+                    pass
 
 # Ensure the pyat backend is importable
 SRC_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src")
